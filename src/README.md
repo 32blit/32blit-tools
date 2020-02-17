@@ -26,3 +26,9 @@ Latest/development library from GitHub:
 * `cd 32blit-tools`
 * `sudo ./install.sh`
 
+
+# Changelog
+0.0.1
+-----
+
+* Initial Release
