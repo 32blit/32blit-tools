@@ -77,23 +77,15 @@ class AssetBuilder(Tool):
 
     def binary_to_c_header(self, input_data, variable=None):
         input_data = self._helper_raw_to_c_source_hex(input_data)
-        return f'''#prama once
-#include <cstdint>
-const uint8_t {variable}[] = {{{input_data}}};
-'''
+        return f'''const uint8_t {variable}[] = {{{input_data}}};'''
 
     def binary_to_c_source_hpp(self, input_data, variable=None):
         input_data = self._helper_raw_to_c_source_hex(input_data)
-        return f'''#prama once
-extern const uint8_t {variable}[];
-'''
+        return f'''extern const uint8_t {variable}[];'''
 
     def binary_to_c_source_cpp(self, input_data, variable=None):
         input_data = self._helper_raw_to_c_source_hex(input_data)
-        return f'''#include <cstdint>
-#include <asset.hpp>
-const uint8_t {variable}[] = {{{input_data}}};
-'''
+        return f'''const uint8_t {variable}[] = {{{input_data}}};'''
 
     def _guess_type(self, args):
         if args.type is not None:

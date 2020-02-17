@@ -13,12 +13,18 @@ def main():
 
     tools = {}
 
-    tools[packer.Packer.command] = packer.Packer(subparsers)
-
-    tools[image.Image.command] = image.Image(subparsers)
+    tools[sprite.Sprite.command] = sprite.Sprite(subparsers)
     tools[map.Map.command] = map.Map(subparsers)
     tools[raw.Raw.command] = raw.Raw(subparsers)
-    tools[sprite.Sprite.command] = sprite.Sprite(subparsers)
+    tools[image.Image.command] = image.Image(subparsers)
+
+    _packer = packer.Packer(subparsers)
+
+    # Register the asset tools with the packer
+    _packer.register_asset_builders(tools)
+
+    # Add the non-asset tools
+    tools[packer.Packer.command] = _packer
 
     args = parser.parse_args()
 

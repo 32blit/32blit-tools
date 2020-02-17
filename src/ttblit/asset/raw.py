@@ -25,7 +25,12 @@ class Raw(AssetBuilder):
         self.output(output_data, args.output, args.format, args.force)
 
     def csv_to_data(self, input_data, base=10):
-        input_data = input_data.strip().decode('utf-8')
+        try:
+            input_data = input_data.decode('utf-8')
+        except AttributeError:
+            pass
+
+        input_data = input_data.strip()
 
         # Replace '1, 2, 3' to '1,2,3', might as well do it here
         input_data = input_data.replace(' ', '')

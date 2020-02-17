@@ -6,7 +6,7 @@ import re
 from ttblit.core import Tool
 
 class Packer(Tool):
-    command = 'packer'
+    command = 'pack'
     help = 'Pack a collection of assets for 32Blit'
 
     def __init__(self, parser):
@@ -18,6 +18,19 @@ class Packer(Tool):
         self.config = {}
         self.assets = []
         self.general_options = {}
+
+        self.asset_builders = {}
+
+    def register_asset_builders(self, asset_builders):
+        for k, v in asset_builders.items():
+            self.asset_builders[k] = v
+
+    def get_types(self):
+        types = {}
+        for command, asset_builder in self.asset_builders.items():
+            for type, extensions in asset_builder.typemap.items():
+                types[f'{command}/{type}'] = (asset_builder, extensions)
+        return types
 
     def parse_config(self, config_file):
         config = open(config_file).read()
@@ -78,7 +91,10 @@ class Packer(Tool):
 
             for file_glob, file_options in target_options.items():
                 # Treat the input string as a glob, and get an input filelist
-                input_files = list(self.working_path.glob(file_glob))
+                if type(file_glob) is str:
+                    input_files = list(self.working_path.glob(file_glob))
+                else:
+                    input_files = [file_glob]
                 if len(input_files) == 0:
                     print(f'Warning: Input file(s) not found {self.working_path / file_glob}')
                     continue
@@ -93,7 +109,7 @@ class Packer(Tool):
                     file_options = {'name': file_options}
         
                 asset_sources.append(
-                    AssetSource(input_files, **file_options)
+                    AssetSource(input_files, types=self.get_types(), **file_options)
                 )
 
             self.assets.append(AssetTarget(
@@ -103,50 +119,65 @@ class Packer(Tool):
             ))
 
         for target in self.assets:
-            target.inspect_target()
+            output = target.build()
+            print(output)
 
 
 class AssetSource():
     supported_options =  ('name', 'type', 'join')
-    types = {
-        '.png': 'sprite_packed',
-        '.tmx': 'map_tiled',
-        '.raw': 'raw',
-        '.bin': 'bin',
-    }
 
-    def __init__(self, input_files, **kwargs):
+    def __init__(self, input_files, types, **kwargs):
         self.input_files = input_files
+        self.types = types
+        self.type = None
         self.parse_source_options(**kwargs)
 
     def parse_source_options(self, name=None, type=None, join=False):
         self.join = True if join else False
 
-        # We're dealing with one file so it's.. kinda joined
-        if len(self.input_files) == 1:
-            self.join = True
-
         self.name = name
         if type is None:
             # Glob files all have the same suffix, so we only care about the first one
-            type = self.guess_type(self.input_files[0])
+            type = self.guess_type(self.input_files[0], self.types)
         self.type = type
 
-    def guess_type(self, file):
-        if file.suffix in self.types:
-            return self.types[file.suffix]
-        print(f'Warning: Unable to guess type, assuming raw/bin {file}')
-        return 'raw'
+    def guess_type(self, file, types):
+        for type, settings in self.types.items():
+            builder, suffixes = settings
+            if file.suffix in suffixes:
+                return type
+        print(f'Warning: Unable to guess type, assuming raw/binary {file}')
+        return 'raw/binary'
 
-    def symbol_name(self, file):
+    def variable_name(self, file, prefix=None):
         if self.name is not None and self.join:
-            symbol = self.name
+            variable = self.name
         else:
-            symbol = '_'.join(file.parts)
-        symbol = symbol.replace('.', '-')
-        symbol = re.sub('[^0-9A-Za-z_]', '_', symbol)
-        return symbol
+            variable = '_'.join(file.parts)
+            variable = variable.replace('.', '-')
+            variable = re.sub('[^0-9A-Za-z_]', '_', variable)
+        return f'{prefix}{variable}'
 
+    def build(self, format, prefix=None):
+        builder, extensions = self.types[self.type]
+        type = self.type.split('/')[-1]
+        if prefix is None:
+            prefix = ''
+
+        output = []
+
+        if self.join:
+            file = ', '.join([str(file) for file in self.input_files])
+            variable = self.variable_name(file, prefix=prefix)
+            output.append(builder.build(file, type, format, {'variable': variable}))
+            print(f' - {source.type} {file} -> {variable}')
+        else:
+            for file in self.input_files:
+                variable = self.variable_name(file, prefix=prefix)
+                output.append(builder.build(file, type, format, {'variable': variable}))
+                print(f' - {self.type} {file} -> {variable}')
+
+        return output
 
 class AssetTarget():
     supported_options =  ('prefix', 'type')
@@ -170,27 +201,16 @@ class AssetTarget():
                 raise ValueError(f'Unknown asset output type {type}')
         self.type = type
 
-    def inspect_target(self):
+    def build(self):
         for source in self.sources:
-            if source.join:
-                file = ', '.join([str(file) for file in source.input_files])
-                symbol = self.symbol_name(file, source)
-                print(f' - {source.type} {file} -> {symbol} -> {self.output_file}')
-            else:
-                for file in source.input_files:
-                    symbol = self.symbol_name(file, source)
-                    print(f' - {source.type} {file} -> {symbol} -> {self.output_file}')
+            data = source.build(format=self.type, prefix=self.prefix)
+        return data
 
     def guess_type(self, file):
         if file.suffix in self.types:
             return self.types[file.suffix]
         print(f'Warning: Unable to guess type, assuming raw/bin {file}')
         return 'raw'
-
-    def symbol_name(self, file, source):
-        symbol = source.symbol_name(file)
-
-        return f'{self.prefix}{symbol}'
 
     def pack(self):
         pass

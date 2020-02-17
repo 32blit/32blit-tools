@@ -7,3 +7,6 @@ class Sprite(AssetBuilder):
     typemap = {
         'image': ('.png', '.gif')
     }
+
+    def image_to_c_header(self, input_data, variable=None):
+        return 'some c header'
