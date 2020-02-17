@@ -3,7 +3,8 @@ __version__ = '0.0.1'
 
 import argparse
 
-from .asset import builder, image, map, raw, sprite
+from .asset import image, map, raw, sprite
+from .tool import packer
 
 
 def main():
@@ -12,11 +13,12 @@ def main():
 
     tools = {}
 
-    tools[builder.Builder.command] = builder.Builder(subparsers)
-    tools[image.Builder.command] = image.Builder(subparsers)
-    tools[map.Builder.command] = map.Builder(subparsers)
-    tools[raw.Builder.command] = raw.Builder(subparsers)
-    tools[sprite.Builder.command] = sprite.Builder(subparsers)
+    tools[packer.Packer.command] = packer.Packer(subparsers)
+
+    tools[image.Image.command] = image.Image(subparsers)
+    tools[map.Map.command] = map.Map(subparsers)
+    tools[raw.Raw.command] = raw.Raw(subparsers)
+    tools[sprite.Sprite.command] = sprite.Sprite(subparsers)
 
     args = parser.parse_args()
 

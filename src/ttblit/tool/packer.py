@@ -3,14 +3,14 @@ import argparse
 import pathlib
 import re
 
-from ttblit.core import AssetBuilder
+from ttblit.core import Tool
 
-class Builder(AssetBuilder):
-    command = 'builder'
-    help = 'Compile a collection of assets for 32Blit'
+class Packer(Tool):
+    command = 'packer'
+    help = 'Pack a collection of assets for 32Blit'
 
     def __init__(self, parser):
-        AssetBuilder.__init__(self, parser)
+        Tool.__init__(self, parser)
         self.parser.add_argument('--config', type=pathlib.Path, help='Asset config file')
         self.parser.add_argument('--output', type=pathlib.Path, help='Name for <output>.cpp and <output>.hpp')
         self.parser.add_argument('--files', nargs='+', type=pathlib.Path, help='Input files')
