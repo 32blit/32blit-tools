@@ -73,6 +73,8 @@ class AssetBuilder(Tool):
         return output_data
 
     def _helper_raw_to_c_source_hex(self, input_data):
+        if type(input_data) is str:
+            input_data = bytes(input_data, encoding='utf-8')
         return ', '.join([f'0x{c:02x}' for c in input_data])
 
     def binary_to_c_header(self, input_data, variable=None):
@@ -130,4 +132,7 @@ class AssetBuilder(Tool):
             raise ValueError(f'Refusing to overwrite {output_file} (use force)')
         else:
             print(f'Writing {output_file}')
-            open(output_file, 'wb').write(output_data.encode('utf-8'))
+            if type(output_data) is str:
+                open(output_file, 'wb').write(output_data.encode('utf-8'))
+            else:
+                open(output_file, 'wb').write(output_data)
