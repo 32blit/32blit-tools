@@ -1,5 +1,6 @@
 from ttblit.core import AssetBuilder
 
+
 class Raw(AssetBuilder):
     command = 'raw'
     help = 'Convert raw/binary data for 32Blit'

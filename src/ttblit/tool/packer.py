@@ -1,9 +1,9 @@
 import yaml
-import argparse
 import pathlib
 import re
 
 from ttblit.core import Tool, CHeader, CSource, RawBinary
+
 
 class Packer(Tool):
     command = 'pack'
@@ -84,11 +84,11 @@ class Packer(Tool):
             for key, value in options.items():
                 if key in AssetTarget.supported_options:
                     target_options[key] = value
-            
+
             # Strip high-level options from the dict
             # Leaving just file source globs
             for key, value in target_options.items():
-                    options.pop(key)
+                options.pop(key)
 
             for file_glob, asset_options in options.items():
                 # Treat the input string as a glob, and get an input filelist
@@ -102,7 +102,6 @@ class Packer(Tool):
 
                 # Default file_options to an empty dict for kwargs expansion
                 file_options = {}
-                builder_options = {}
 
                 # Rewrite a single string option to `name: option`
                 # This handles: `inputfile.bin: filename` entries
@@ -114,7 +113,6 @@ class Packer(Tool):
                         if value is not None:
                             file_options[valid_option] = value
 
-        
                 asset_sources.append(
                     AssetSource(input_files, types=self.get_types(), builder_options=asset_options, **file_options)
                 )
@@ -131,7 +129,7 @@ class Packer(Tool):
 
 
 class AssetSource():
-    supported_options =  ('name', 'type')
+    supported_options = ('name', 'type')
 
     def __init__(self, input_files, types, **kwargs):
         self.input_files = input_files
@@ -186,9 +184,8 @@ class AssetSource():
         return output
 
 
-
 class AssetTarget():
-    supported_options =  ('prefix', 'type')
+    supported_options = ('prefix', 'type')
     types = {
         '.hpp': CHeader,
         '.cpp': CSource,

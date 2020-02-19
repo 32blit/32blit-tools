@@ -30,7 +30,7 @@ class Palette():
             if fn is None:
                 self.load_image(palette_file)
             else:
-                fn(open(palette_file, 'rb').read())
+                fn(palette_file, open(palette_file, 'rb').read())
 
             self.extract_palette()
 
@@ -47,7 +47,7 @@ class Palette():
             return self.transparent
         return None
 
-    def load_act(self, data):
+    def load_act(self, palette_file, data):
         # Adobe Colour Table .act
         palette = data
         if len(palette) < 772:
@@ -58,7 +58,7 @@ class Palette():
         self.height = size
         self.image = Image.frombytes('RGB', (self.width, self.height), palette).convert('RGBA')
 
-    def load_pal(self, data):
+    def load_pal(self, palette_file, data):
         # Pro Motion NG .pal - MS Palette files and raw palette files share .pal suffix
         # Raw files are just 768 bytes
         palette = data
@@ -69,7 +69,7 @@ class Palette():
         self.height = 16
         self.image = Image.frombytes('RGB', (self.width, self.height), palette).convert('RGBA')
 
-    def load_gpl(self, data):
+    def load_gpl(self, palette_file, data):
         palette = data
         palette = palette.decode('utf-8').strip()
         if not palette.startswith('GIMP Palette'):
@@ -95,7 +95,7 @@ class Palette():
         if self.width * self.height > 256:
             raise ValueError(f'palette {palette_file} has too many pixels {self.width}x{self.height}={self.width*self.height} (max 256)')
         print(f'Using palette {palette_file} {self.width}x{self.height}')
-    
+
         self.image = palette.convert('RGBA')
 
     def get_entry(self, r, g, b, a, remap_transparent=True, strict=False):

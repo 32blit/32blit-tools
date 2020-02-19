@@ -1,5 +1,3 @@
-import pathlib
-import argparse
 import struct
 import math
 import io
@@ -59,7 +57,6 @@ class Sprite(AssetBuilder):
             else:
                 print(f'Could not find transparent colour ({r},{g},{b}) in palette')
 
-
         output_data = self.build(args.input, self.types[0], args.format, extra_args)
 
         self.output(output_data, args.output, args.format, args.force)
@@ -82,7 +79,6 @@ class Sprite(AssetBuilder):
         return output_image
 
     def _sprite_to_binary(self, input_data, **kwargs):
-        variable = kwargs.get('variable', None)
         palette = kwargs.get('palette', None)
         transparent = kwargs.get('transparent', None)
         packed = kwargs.get('packed', None)
@@ -109,11 +105,10 @@ class Sprite(AssetBuilder):
 
         return palette_length, palette_data, image_size, image_data
 
-    def sprite_to_binary(self, input_data, variable=None, palette=None, transparent=None, packed=None):
+    def sprite_to_binary(self, input_data, **kwargs):
         packed = kwargs.get('packed', None)
 
-        palette_length, palette_data,
-        image_size, image_data = self._sprite_to_binary(input_data, **kwargs)
+        palette_length, palette_data, image_size, image_data = self._sprite_to_binary(input_data, **kwargs)
 
         data = bytes('SPRITEPK' if packed else 'SPRITERW')
         data += palette_length
@@ -133,7 +128,7 @@ class Sprite(AssetBuilder):
     def sprite_to_c_header(self, input_data, **kwargs):
         packed = kwargs.get('packed', None)
         variable = kwargs.get('variable', None)
- 
+
         palette_length, palette_data, image_size, image_data = self._sprite_to_binary(input_data, **kwargs)
 
         payload_size = len('SPRITEPK')
@@ -144,7 +139,7 @@ class Sprite(AssetBuilder):
         payload_size += 2  # Cols
         payload_size += 1  # Format
         payload_size += 1  # Length of palette
-        payload_size += len(palette_data) # Palette entries
+        payload_size += len(palette_data)  # Palette entries
         payload_size += len(image_data)
 
         payload_size = ', '.join([hex(x) for x in struct.pack('H', payload_size)])

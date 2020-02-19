@@ -1,7 +1,6 @@
 import pathlib
 import sys
 import re
-import struct
 
 
 class OutputFormat():
@@ -19,7 +18,7 @@ class CHeader(OutputFormat):
     name = 'c_header'
     extensions = ('.hpp', '.h')
 
-    def join(self, ext, data):
+    def join(self, ext, filename, data):
         if type(data) is list:
             data = '\n'.join(data)
         return f'''// Auto Generated File - DO NOT EDIT!
@@ -27,6 +26,7 @@ class CHeader(OutputFormat):
 #include <cstdint>
 {data}
 '''
+
 
 class CSource(OutputFormat):
     name = 'c_source'
@@ -54,7 +54,7 @@ class RawBinary(OutputFormat):
     name = 'raw_binary'
     extensions = ('.raw', '.bin')
 
-    def join(self, ext, data):
+    def join(self, ext, filename, data):
         if type(data) is list:
             data = ''.join(data)
         return data
@@ -82,7 +82,7 @@ class Tool():
 
     def output(self, output_data, output_file, output_format, force=False):
         if output_file is None:
-            output_data = output_format().join(extension, output_file, output_data)
+            output_data = output_format().join(None, output_file, output_data)
             print(output_data)
         else:
             if type(output_data) is dict:
@@ -90,7 +90,7 @@ class Tool():
                     data = output_format().join(extension, output_file, data)
                     self.write_file(output_file.with_suffix(f'.{extension}'), data, force)
             else:
-                output_data = output_format().join(extension, output_file, output_data)
+                output_data = output_format().join(None, output_file, output_data)
                 self.write_file(output_file, output_data, force)
 
     def write_file(self, output_file, output_data, force=False):
@@ -188,7 +188,7 @@ class AssetBuilder(Tool):
     def _guess_type(self, args):
         if args.type is not None:
             return
-        for type in self.types.items():
+        for type, extensions in self.typemap.items():
             for extension in extensions:
                 if args.input.name.endswith(extension):
                     args.type = type
@@ -201,8 +201,8 @@ class AssetBuilder(Tool):
         if args.format is not None:
             return
         if args.output is None:
-            args.format = self.no_output_file_default_format()
-            print(f"No --output given, writing to stdout assuming {self.no_output_file_default_format}")
+            args.format = self.no_output_file_default_format
+            print(f"No --output given, writing to stdout assuming {self.no_output_file_default_format.name}")
             return
         for output_format in self.formats:
             for extension in output_format.extensions:
