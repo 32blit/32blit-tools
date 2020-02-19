@@ -1,6 +1,7 @@
 import pathlib
 import sys
 import re
+import struct
 
 
 class Tool():
@@ -31,7 +32,7 @@ class AssetBuilder(Tool):
 
     def __init__(self, parser):
         Tool.__init__(self, parser)
-        self.parser.add_argument('--input', type=pathlib.Path)
+        self.parser.add_argument('--input', type=pathlib.Path, required=True, help=f'Input file')
         if(len(self.types) > 1):
             self.parser.add_argument('--type', type=str, default=None, choices=self.types, help=f'Input file type')
         self.parser.add_argument('--output', type=pathlib.Path, default=None)
