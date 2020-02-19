@@ -131,7 +131,7 @@ class Packer(Tool):
 
 
 class AssetSource():
-    supported_options =  ('name', 'type', 'join')
+    supported_options =  ('name', 'type')
 
     def __init__(self, input_files, types, **kwargs):
         self.input_files = input_files
@@ -157,9 +157,7 @@ class AssetSource():
         return 'raw/binary'
 
     def variable_name(self, file, prefix=None):
-        if self.name is not None and self.join:
-            variable = self.name
-        elif self.name is not None and len(self.input_files) == 1:
+        if self.name is not None and len(self.input_files) == 1:
             variable = self.name
         else:
             variable = '_'.join(file.parts)
@@ -179,18 +177,11 @@ class AssetSource():
 
         options.update(builder.prepare_options(self.builder_options))
 
-        if self.join:
-            file = ', '.join([str(file) for file in self.input_files])
+        for file in self.input_files:
             variable = self.variable_name(file, prefix=prefix)
             options['variable'] = variable
             output.append(builder.build(file, type, format, extra_args=options))
             print(f' - {self.type} {file} -> {variable}')
-        else:
-            for file in self.input_files:
-                variable = self.variable_name(file, prefix=prefix)
-                options['variable'] = variable
-                output.append(builder.build(file, type, format, extra_args=options))
-                print(f' - {self.type} {file} -> {variable}')
 
         return output
 
