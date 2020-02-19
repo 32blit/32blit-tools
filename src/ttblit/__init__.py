@@ -5,7 +5,7 @@ import argparse
 import sys
 
 from .asset import image, map, raw
-from .tool import packer
+from .tool import cmake, packer
 
 
 def exception_handler(exception_type, exception, traceback):
@@ -30,6 +30,7 @@ def main():
 
     # Add the non-asset tools
     tools[packer.Packer.command] = _packer
+    tools[cmake.CMake.command] = cmake.CMake(subparsers)
 
     args = parser.parse_args()
 
