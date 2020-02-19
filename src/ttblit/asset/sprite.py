@@ -55,7 +55,7 @@ class Sprite(AssetBuilder):
             p = self.palette.set_transparent_colour(r, g, b)
             if p is not None:
                 print(f'Found transparent colour ({r},{g},{b}) in palette')
-                extra_args['transparent'] = p
+                extra_args['transparent'] = args.transparent
             else:
                 print(f'Could not find transparent colour ({r},{g},{b}) in palette')
 
@@ -64,7 +64,7 @@ class Sprite(AssetBuilder):
 
         self.output(output_data, args.output, args.format, args.force)
 
-    def quantize_image(self, input_data, palette, strict):
+    def quantize_image(self, input_data, palette, transparent, strict):
         if strict and len(palette) == 0:
             raise TypeError("Attempting to enforce strict colours with an empty palette, did you really want to do this?")
         # Since we already have bytes, we need to pass PIL an io.BytesIO object
@@ -74,6 +74,8 @@ class Sprite(AssetBuilder):
         for y in range(h):
             for x in range(w):
                 r, g, b, a = image.getpixel((x, y))
+                if (r, g, b) == tuple(transparent):
+                    a = 0x00
                 index = palette.get_entry(r, g, b, a, strict=strict)
                 output_image.putpixel((x, y), index)
 
@@ -86,10 +88,14 @@ class Sprite(AssetBuilder):
         packed = kwargs.get('packed', None)
         strict = kwargs.get('strict', False)
 
+        if transparent is not None:
+            r, g, b = transparent
+            palette.set_transparent_colour(r, g, b)
+
         if palette is None:
             palette = Palette()
 
-        image = self.quantize_image(input_data, palette, strict)
+        image = self.quantize_image(input_data, palette, transparent, strict)
         palette_data = palette.tobytes()
 
         if packed:
@@ -130,18 +136,39 @@ class Sprite(AssetBuilder):
  
         palette_length, palette_data, image_size, image_data = self._sprite_to_binary(input_data, **kwargs)
 
+        payload_size = len('SPRITEPK')
+        payload_size += 2  # Payload bytes
+        payload_size += 2  # Width
+        payload_size += 2  # height
+        payload_size += 2  # Rows
+        payload_size += 2  # Cols
+        payload_size += 1  # Format
+        payload_size += 1  # Length of palette
+        payload_size += len(palette_data) # Palette entries
+        payload_size += len(image_data)
+
+        payload_size = ', '.join([hex(x) for x in struct.pack('H', payload_size)])
+
         header = self._helper_raw_to_c_source_hex('SPRITEPK' if packed else 'SPRITERW')
         palette_data = self._helper_raw_to_c_source_hex(palette_data)
         image_data = self._helper_raw_to_c_source_hex(image_data)
         image_size = ', '.join([hex(x) for x in image_size])
-        palette_size = ', '.join([hex(x) for x in palette_length])
+        # palette_size = ', '.join([hex(x) for x in palette_length])
+        palette_size = hex(palette_length[0])
 
         data = f'''
 {header},
+{payload_size},
+0x80, 0x00,
+0x80, 0x00,
+0x10, 0x00,
+0x10, 0x00,
+
+0x02, // Format
+
 {palette_size}, // Palette entry count
 // Palette entries
 {palette_data},
-{image_size}, // Image width / height
 // Image data
 {image_data}
 '''
