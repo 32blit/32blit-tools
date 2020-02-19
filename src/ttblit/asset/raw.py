@@ -24,7 +24,7 @@ class Raw(AssetBuilder):
 
         self.output(output_data, args.output, args.format, args.force)
 
-    def csv_to_data(self, input_data, base=10):
+    def csv_to_data(self, input_data, base=10, offset=0):
         try:
             input_data = input_data.decode('utf-8')
         except AttributeError:
@@ -43,7 +43,7 @@ class Raw(AssetBuilder):
 
         # Flatten our rows/cols 2d array into a 1d array of bytes
         # Might as well do the int conversion here, to save another loop
-        input_data = [int(col, base) for row in input_data for col in row if col != '']
+        input_data = [(int(col, base) + offset) for row in input_data for col in row if col != '']
 
         return input_data
 

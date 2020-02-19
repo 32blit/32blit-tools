@@ -17,7 +17,8 @@ class Map(Raw):
         for layer in layers:
             data += self.csv_to_data(
                     layer.text,
-                    base=10)
+                    base=10,
+                    offset=-1)  # Tiled indexes from 1 rather than 0
         return data
 
     def tiled_to_c_source_cpp(self, input_data, variable=None):
