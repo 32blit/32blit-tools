@@ -4,22 +4,35 @@ import struct
 from PIL import Image
 
 
+class Colour():
+    def __init__(self, colour):
+        if len(colour) == 6:
+            self.r, self.g, self.b = tuple(bytes.fromhex(colour))
+        if ',' in colour:
+            self.r, self.g, self.b = [int(c, 10) for c in colour.split(',')]
+
+    def __getitem__(self, index):
+        return [self.r, self.g, self.b][index]
+
+
 class Palette():
-    def __init__(self, palette_file):
+    def __init__(self, palette_file=None):
         self.transparent = None
+        self.entries = []
 
-        palette_file = pathlib.Path(palette_file)
-        palette_type = palette_file.suffix[1:]
+        if palette_file is not None:
+            palette_file = pathlib.Path(palette_file)
+            palette_type = palette_file.suffix[1:]
 
-        palette_loader = f'load_{palette_type}'
+            palette_loader = f'load_{palette_type}'
 
-        fn = getattr(self, palette_loader, None)
-        if fn is None:
-            self.load_image(palette_file)
-        else:
-            fn(open(palette_file, 'rb').read())
+            fn = getattr(self, palette_loader, None)
+            if fn is None:
+                self.load_image(palette_file)
+            else:
+                fn(open(palette_file, 'rb').read())
 
-        self.extract_palette()
+            self.extract_palette()
 
     def extract_palette(self):
         self.entries = []
@@ -85,25 +98,23 @@ class Palette():
     
         self.image = palette.convert('RGBA')
 
-    def get_entry(self, r, g, b, a, create=True, remap_transparent=True, strict=False):
+    def get_entry(self, r, g, b, a, remap_transparent=True, strict=False):
         if (r, g, b, a) in self.entries:
             index = self.entries.index((r, g, b, a))
+            return index
             # Noisy print
             # print(f'Re-mapping ({r}, {g}, {b}, {a}) at ({x}x{y}) to ({index})')
         # Anything with 0 alpha that's not in the palette might as well be the transparent colour
         elif a == 0 and self.transparent is not None:
             return self.transparent
-        elif create:
+        elif not strict:
             if len(self.entries) < 256:
                 self.entries.append((r, g, b, a))
                 return len(self.entries) - 1
             else:
                 raise TypeError('Out of palette entries')
         else:
-            if strict:
-                raise TypeError(f'Colour {r}, {g}, {b}, {a} does not exist in palette!')
-            return 0
-        return index
+            raise TypeError(f'Colour {r}, {g}, {b}, {a} does not exist in palette!')
 
     def tolist(self):
         result = []

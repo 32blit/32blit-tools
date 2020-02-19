@@ -2,9 +2,10 @@ import pathlib
 import argparse
 import struct
 import math
+import io
 
 from ttblit.core import AssetBuilder
-from ttblit.palette import Palette
+from ttblit.palette import Palette, Colour
 
 from PIL import Image
 from bitstring import BitArray
@@ -17,12 +18,20 @@ class Sprite(AssetBuilder):
     typemap = {
         'sprite': ('.png', '.gif')
     }
+    # TODO: maybe expand this so that parser arguments can be generated from the options dict
+    options = {
+        'palette': Palette,
+        'transparent': Colour,
+        'packed': bool,
+        'strict': bool
+    }
 
     def __init__(self, parser):
         AssetBuilder.__init__(self, parser)
-        self.parser.add_argument('--palette', type=str, default=[], help='Image or palette file of colours to use')
-        self.parser.add_argument('--transparent', type=self.load_colour, help='Transparent colour')
+        self.parser.add_argument('--palette', type=Palette, default=Palette(), help='Image or palette file of colours to use')
+        self.parser.add_argument('--transparent', type=Colour, help='Transparent colour')
         self.parser.add_argument('--packed', action='store_true', help='Pack into bits depending on palette colour count')
+        self.parser.add_argument('--strict', action='store_true', help='Reject colours not in the palette')
         self.palette = None
 
     def colour_distance(self, c1, c2):
@@ -33,7 +42,7 @@ class Sprite(AssetBuilder):
     def run(self, args):
         AssetBuilder.run(self, args)
 
-        self.palette = Palette(args.palette)
+        self.palette = args.palette
 
         extra_args = {
             'variable': args.var,
@@ -55,14 +64,9 @@ class Sprite(AssetBuilder):
 
         self.output(output_data, args.output, args.format, args.force)
 
-    def load_colour(self, colour):
-        if len(colour) == 6:
-            return tuple(bytes.fromhex(colour))
-        if ',' in colour:
-            return [int(c, 10) for c in colour.split(',')]
-
-    def quantize_image(self, input_data, variable=None, palette=None, transparent=None):
-        import io
+    def quantize_image(self, input_data, palette, strict):
+        if strict and len(palette) == 0:
+            raise TypeError("Attempting to enforce strict colours with an empty palette, did you really want to do this?")
         # Since we already have bytes, we need to pass PIL an io.BytesIO object
         image = Image.open(io.BytesIO(input_data)).convert('RGBA')
         w, h = image.size
@@ -70,13 +74,22 @@ class Sprite(AssetBuilder):
         for y in range(h):
             for x in range(w):
                 r, g, b, a = image.getpixel((x, y))
-                index = palette.get_entry(r, g, b, a)
+                index = palette.get_entry(r, g, b, a, strict=strict)
                 output_image.putpixel((x, y), index)
 
         return output_image
 
-    def _sprite_to_binary(self, input_data, variable=None, palette=None, transparent=None, packed=None):
-        image = self.quantize_image(input_data, variable, palette, transparent)
+    def _sprite_to_binary(self, input_data, **kwargs):
+        variable = kwargs.get('variable', None)
+        palette = kwargs.get('palette', None)
+        transparent = kwargs.get('transparent', None)
+        packed = kwargs.get('packed', None)
+        strict = kwargs.get('strict', False)
+
+        if palette is None:
+            palette = Palette()
+
+        image = self.quantize_image(input_data, palette, strict)
         palette_data = palette.tobytes()
 
         if packed:
@@ -91,8 +104,10 @@ class Sprite(AssetBuilder):
         return palette_length, palette_data, image_size, image_data
 
     def sprite_to_binary(self, input_data, variable=None, palette=None, transparent=None, packed=None):
+        packed = kwargs.get('packed', None)
+
         palette_length, palette_data,
-        image_size, image_data = self._sprite_to_binary(input_data, variable, palette, transparent, packed)
+        image_size, image_data = self._sprite_to_binary(input_data, **kwargs)
 
         data = bytes('SPRITEPK' if packed else 'SPRITERW')
         data += palette_length
@@ -102,8 +117,18 @@ class Sprite(AssetBuilder):
 
         return data
 
-    def sprite_to_c_header(self, input_data, variable=None, palette=None, transparent=None, packed=None):
-        palette_length, palette_data, image_size, image_data = self._sprite_to_binary(input_data, variable, palette, transparent, packed)
+    def sprite_to_c_source_cpp(self, input_data, **kwargs):
+        return self.sprite_to_c_header(input_data, **kwargs)
+
+    def sprite_to_c_source_hpp(self, input_data, **kwargs):
+        variable = kwargs.get('variable', None)
+        return self.binary_to_c_source_hpp(input_data, variable)
+
+    def sprite_to_c_header(self, input_data, **kwargs):
+        packed = kwargs.get('packed', None)
+        variable = kwargs.get('variable', None)
+ 
+        palette_length, palette_data, image_size, image_data = self._sprite_to_binary(input_data, **kwargs)
 
         header = self._helper_raw_to_c_source_hex('SPRITEPK' if packed else 'SPRITERW')
         palette_data = self._helper_raw_to_c_source_hex(palette_data)
@@ -120,5 +145,4 @@ class Sprite(AssetBuilder):
 // Image data
 {image_data}
 '''
-
-        return data
+        return self.string_to_c_header(data, variable)

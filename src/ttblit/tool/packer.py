@@ -3,7 +3,7 @@ import argparse
 import pathlib
 import re
 
-from ttblit.core import Tool
+from ttblit.core import Tool, CHeader, CSource, RawBinary
 
 class Packer(Tool):
     command = 'pack'
@@ -14,6 +14,7 @@ class Packer(Tool):
         self.parser.add_argument('--config', type=pathlib.Path, help='Asset config file')
         self.parser.add_argument('--output', type=pathlib.Path, help='Name for <output>.cpp and <output>.hpp')
         self.parser.add_argument('--files', nargs='+', type=pathlib.Path, help='Input files')
+        self.parser.add_argument('--force', action='store_true', help=f'Force file overwrite')
 
         self.config = {}
         self.assets = []
@@ -73,23 +74,23 @@ class Packer(Tool):
         self.get_general_options()
 
         # Top level of our config is filegroups and general settings
-        for target, target_options in self.config.items():
+        for target, options in self.config.items():
             output_file = self.working_path / target
             print(f'Preparing output target {output_file}')
 
             asset_sources = []
-            asset_options = {}
+            target_options = {}
 
-            for key, value in target_options.items():
+            for key, value in options.items():
                 if key in AssetTarget.supported_options:
-                    asset_options[key] = value
+                    target_options[key] = value
             
             # Strip high-level options from the dict
             # Leaving just file source globs
-            for key, value in asset_options.items():
-                    target_options.pop(key)
+            for key, value in target_options.items():
+                    options.pop(key)
 
-            for file_glob, file_options in target_options.items():
+            for file_glob, asset_options in options.items():
                 # Treat the input string as a glob, and get an input filelist
                 if type(file_glob) is str:
                     input_files = list(self.working_path.glob(file_glob))
@@ -100,27 +101,33 @@ class Packer(Tool):
                     continue
 
                 # Default file_options to an empty dict for kwargs expansion
-                if file_options is None:
-                    file_options = {}
+                file_options = {}
+                builder_options = {}
 
                 # Rewrite a single string option to `name: option`
                 # This handles: `inputfile.bin: filename` entries
-                if type(file_options) is str:
+                if type(asset_options) is str:
                     file_options = {'name': file_options}
+                elif asset_options is not None:
+                    for valid_option in AssetSource.supported_options:
+                        value = asset_options.pop(valid_option, None)
+                        if value is not None:
+                            file_options[valid_option] = value
+
         
                 asset_sources.append(
-                    AssetSource(input_files, types=self.get_types(), **file_options)
+                    AssetSource(input_files, types=self.get_types(), builder_options=asset_options, **file_options)
                 )
 
             self.assets.append(AssetTarget(
                 output_file,
                 asset_sources,
-                **asset_options
+                **target_options
             ))
 
         for target in self.assets:
             output = target.build()
-            print(output)
+            self.output(output, target.output_file, target.type, force=args.force)
 
 
 class AssetSource():
@@ -132,9 +139,9 @@ class AssetSource():
         self.type = None
         self.parse_source_options(**kwargs)
 
-    def parse_source_options(self, name=None, type=None, join=False):
+    def parse_source_options(self, builder_options=None, name=None, type=None, join=False):
         self.join = True if join else False
-
+        self.builder_options = builder_options
         self.name = name
         if type is None:
             # Glob files all have the same suffix, so we only care about the first one
@@ -152,6 +159,8 @@ class AssetSource():
     def variable_name(self, file, prefix=None):
         if self.name is not None and self.join:
             variable = self.name
+        elif self.name is not None and len(self.input_files) == 1:
+            variable = self.name
         else:
             variable = '_'.join(file.parts)
             variable = variable.replace('.', '-')
@@ -166,25 +175,34 @@ class AssetSource():
 
         output = []
 
+        options = {}
+
+        options.update(builder.prepare_options(self.builder_options))
+
         if self.join:
             file = ', '.join([str(file) for file in self.input_files])
             variable = self.variable_name(file, prefix=prefix)
-            output.append(builder.build(file, type, format, {'variable': variable}))
-            print(f' - {source.type} {file} -> {variable}')
+            options['variable'] = variable
+            output.append(builder.build(file, type, format, extra_args=options))
+            print(f' - {self.type} {file} -> {variable}')
         else:
             for file in self.input_files:
                 variable = self.variable_name(file, prefix=prefix)
-                output.append(builder.build(file, type, format, {'variable': variable}))
+                options['variable'] = variable
+                output.append(builder.build(file, type, format, extra_args=options))
                 print(f' - {self.type} {file} -> {variable}')
 
         return output
 
+
+
 class AssetTarget():
     supported_options =  ('prefix', 'type')
     types = {
-        '.hpp': 'c_header',
-        '.blit': 'blit_asset',
-        '.raw': 'raw_binary'
+        '.hpp': CHeader,
+        '.cpp': CSource,
+        '.blit': RawBinary,
+        '.raw': RawBinary
     }
 
     def __init__(self, output_file, sources, **kwargs):
@@ -202,15 +220,19 @@ class AssetTarget():
         self.type = type
 
     def build(self):
+        output = {}
         for source in self.sources:
             data = source.build(format=self.type, prefix=self.prefix)
-        return data
+            for file in data:
+                for ext, content in file.items():
+                    if ext not in output:
+                        output[ext] = []
+                    output[ext].append(content)
+
+        return output
 
     def guess_type(self, file):
         if file.suffix in self.types:
             return self.types[file.suffix]
-        print(f'Warning: Unable to guess type, assuming raw/bin {file}')
-        return 'raw'
-
-    def pack(self):
-        pass
+        print(f'Warning: Unable to guess type, assuming raw/binary {file}')
+        return 'raw/binary'
