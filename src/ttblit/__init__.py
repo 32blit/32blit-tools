@@ -4,7 +4,7 @@ __version__ = '0.0.1'
 import argparse
 import sys
 
-from .asset import image, map, raw, sprite
+from .asset import image, map, raw
 from .tool import packer
 
 
@@ -19,10 +19,9 @@ def main():
 
     tools = {}
 
-    tools[sprite.Sprite.command] = sprite.Sprite(subparsers)
-    tools[map.Map.command] = map.Map(subparsers)
-    tools[raw.Raw.command] = raw.Raw(subparsers)
-    tools[image.Image.command] = image.Image(subparsers)
+    tools[image.ImageAsset.command] = image.ImageAsset(subparsers)
+    tools[map.MapAsset.command] = map.MapAsset(subparsers)
+    tools[raw.RawAsset.command] = raw.RawAsset(subparsers)
 
     _packer = packer.Packer(subparsers)
 

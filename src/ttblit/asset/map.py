@@ -1,7 +1,7 @@
-from ttblit.asset.raw import Raw
+from ttblit.asset.raw import RawAsset
 
 
-class Map(Raw):
+class MapAsset(RawAsset):
     command = 'map'
     help = 'Convert popular tilemap formats for 32Blit'
     types = ['tiled']
@@ -21,12 +21,12 @@ class Map(Raw):
                 offset=-1)  # Tiled indexes from 1 rather than 0
         return data
 
-    def tiled_to_c_source_cpp(self, input_data, variable=None):
-        return self.tiled_to_c_header(input_data, variable=variable)
+    def tiled_to_c_source_cpp(self, input_data):
+        return self.tiled_to_c_header(input_data)
 
-    def tiled_to_c_source_hpp(self, input_data, variable=None):
-        return self.binary_to_c_source_hpp(input_data, variable)
+    def tiled_to_c_source_hpp(self, input_data):
+        return self.binary_to_c_source_hpp(input_data)
 
-    def tiled_to_c_header(self, input_data, variable=None):
+    def tiled_to_c_header(self, input_data):
         data = self.tiled_to_binary(input_data)
-        return self.binary_to_c_header(data, variable)
+        return self.binary_to_c_header(data)

@@ -1,29 +1,17 @@
-from ttblit.core import AssetBuilder
+from ttblit.core.assetbuilder import AssetBuilder
 
 
-class Raw(AssetBuilder):
+class RawAsset(AssetBuilder):
     command = 'raw'
-    help = 'Convert raw/binary data for 32Blit'
+    help = 'Convert raw/binary or csv data for 32Blit'
     types = ['binary', 'csv']
     typemap = {
         'binary': ('.bin', '.raw'),
         'csv': ('.csv')
     }
 
-    def run(self, args):
-        AssetBuilder.run(self, args)
-        self._guess_type(args)
-
-        extra_args = {
-            'variable': args.var
-        }
-
-        if args.type == 'csv':
-            extra_args['base'] = 10
-
-        output_data = self.build(args.input, args.type, args.format, extra_args)
-
-        self.output(output_data, args.output, args.format, args.force)
+    def _prepare(self, args):
+        AssetBuilder._prepare(self, args)
 
     def csv_to_data(self, input_data, base=10, offset=0):
         try:
@@ -48,14 +36,14 @@ class Raw(AssetBuilder):
 
         return input_data
 
-    def csv_to_c_header(self, input_data, variable=None, base=10):
-        input_data = self.csv_to_data(input_data, base)
-        return self.binary_to_c_header(input_data, variable)
+    def csv_to_c_header(self, input_data):
+        input_data = self.csv_to_data(input_data, base=10)
+        return self.binary_to_c_header(input_data)
 
-    def csv_to_c_source_hpp(self, input_data, variable=None, base=10):
-        input_data = self.csv_to_data(input_data, base)
-        return self.binary_to_c_source_hpp(input_data, variable)
+    def csv_to_c_source_hpp(self, input_data):
+        input_data = self.csv_to_data(input_data, base=10)
+        return self.binary_to_c_source_hpp(input_data)
 
-    def csv_to_c_source_cpp(self, input_data, variable=None, base=10):
-        input_data = self.csv_to_data(input_data, base)
-        return self.binary_to_c_source_cpp(input_data, variable)
+    def csv_to_c_source_cpp(self, input_data):
+        input_data = self.csv_to_data(input_data, base=10)
+        return self.binary_to_c_source_cpp(input_data)

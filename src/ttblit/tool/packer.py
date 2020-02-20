@@ -1,8 +1,8 @@
 import yaml
 import pathlib
-import re
 
-from ttblit.core import Tool, CHeader, CSource, RawBinary
+from ttblit.core.tool import Tool
+from ttblit.core.outputformat import CHeader, CSource, RawBinary
 
 
 class Packer(Tool):
@@ -23,15 +23,9 @@ class Packer(Tool):
         self.asset_builders = {}
 
     def register_asset_builders(self, asset_builders):
+        """Register class instances for each asset builder with the packer tool."""
         for k, v in asset_builders.items():
             self.asset_builders[k] = v
-
-    def get_types(self):
-        types = {}
-        for command, asset_builder in self.asset_builders.items():
-            for type, extensions in asset_builder.typemap.items():
-                types[f'{command}/{type}'] = (asset_builder, extensions)
-        return types
 
     def parse_config(self, config_file):
         config = open(config_file).read()
@@ -90,7 +84,7 @@ class Packer(Tool):
             for key, value in target_options.items():
                 options.pop(key)
 
-            for file_glob, asset_options in options.items():
+            for file_glob, file_options in options.items():
                 # Treat the input string as a glob, and get an input filelist
                 if type(file_glob) is str:
                     input_files = list(self.working_path.glob(file_glob))
@@ -100,21 +94,16 @@ class Packer(Tool):
                     print(f'Warning: Input file(s) not found {self.working_path / file_glob}')
                     continue
 
-                # Default file_options to an empty dict for kwargs expansion
-                file_options = {}
-
                 # Rewrite a single string option to `name: option`
                 # This handles: `inputfile.bin: filename` entries
-                if type(asset_options) is str:
+                if type(file_options) is str:
                     file_options = {'name': file_options}
-                elif asset_options is not None:
-                    for valid_option in AssetSource.supported_options:
-                        value = asset_options.pop(valid_option, None)
-                        if value is not None:
-                            file_options[valid_option] = value
+
+                elif file_options is None:
+                    file_options = {}
 
                 asset_sources.append(
-                    AssetSource(input_files, types=self.get_types(), builder_options=asset_options, **file_options)
+                    AssetSource(input_files, builders=self.asset_builders, file_options=file_options)
                 )
 
             self.assets.append(AssetTarget(
@@ -125,61 +114,60 @@ class Packer(Tool):
 
         for target in self.assets:
             output = target.build()
-            self.output(output, target.output_file, target.type, force=args.force)
+            self.output(output, target.output_file, target.output_format, force=args.force)
 
 
 class AssetSource():
     supported_options = ('name', 'type')
 
-    def __init__(self, input_files, types, **kwargs):
+    def __init__(self, input_files, builders, file_options):
         self.input_files = input_files
-        self.types = types
+        self.asset_builders = builders
+        self.builder_options = {}
         self.type = None
-        self.parse_source_options(**kwargs)
+        self.name = None
+        self.parse_source_options(file_options)
 
-    def parse_source_options(self, builder_options=None, name=None, type=None, join=False):
-        self.join = True if join else False
-        self.builder_options = builder_options
-        self.name = name
-        if type is None:
+    def parse_source_options(self, opts):
+        for option, value in opts.items():
+            if option not in self.supported_options:
+                self.builder_options[option] = value
+            else:
+                setattr(self, option, value)
+
+        if self.type is None:
             # Glob files all have the same suffix, so we only care about the first one
-            type = self.guess_type(self.input_files[0], self.types)
-        self.type = type
+            self.type = self.guess_type(self.input_files[0])
 
-    def guess_type(self, file, types):
-        for type, settings in self.types.items():
-            builder, suffixes = settings
-            if file.suffix in suffixes:
-                return type
+    def guess_type(self, file):
+        for command, asset_builder in self.asset_builders.items():
+            for input_type, suffixes in asset_builder.typemap.items():
+                if file.suffix in suffixes:
+                    return f'{command}/{input_type}'
         print(f'Warning: Unable to guess type, assuming raw/binary {file}')
         return 'raw/binary'
 
-    def variable_name(self, file, prefix=None):
-        if self.name is not None and len(self.input_files) == 1:
-            variable = self.name
-        else:
-            variable = '_'.join(file.parts)
-            variable = variable.replace('.', '-')
-            variable = re.sub('[^0-9A-Za-z_]', '_', variable)
-        return f'{prefix}{variable}'
+    def build(self, format, prefix=None, output_file=None):
+        builder, input_type = self.type.split('/')
+        builder = self.asset_builders[builder]
 
-    def build(self, format, prefix=None):
-        builder, extensions = self.types[self.type]
-        type = self.type.split('/')[-1]
         if prefix is None:
             prefix = ''
 
         output = []
 
-        options = {}
-
-        options.update(builder.prepare_options(self.builder_options))
-
         for file in self.input_files:
-            variable = self.variable_name(file, prefix=prefix)
-            options['variable'] = variable
-            output.append(builder.build(file, type, format, extra_args=options))
-            print(f' - {self.type} {file} -> {variable}')
+            self.builder_options.update({
+                'input_file': file,
+                'output_file': output_file,
+                'input_type': input_type,
+                'output_format': format,
+                'symbol_name': self.name,
+                'prefix': prefix
+            })
+            builder.prepare_options(self.builder_options)
+            output.append(builder.build())
+            print(f' - {self.type} {file} -> {builder.symbol_name}')
 
         return output
 
@@ -205,12 +193,12 @@ class AssetTarget():
         else:
             if type not in self.types.values():
                 raise ValueError(f'Unknown asset output type {type}')
-        self.type = type
+        self.output_format = type
 
     def build(self):
         output = {}
         for source in self.sources:
-            data = source.build(format=self.type, prefix=self.prefix)
+            data = source.build(format=self.output_format, output_file=self.output_file, prefix=self.prefix)
             for file in data:
                 for ext, content in file.items():
                     if ext not in output:
