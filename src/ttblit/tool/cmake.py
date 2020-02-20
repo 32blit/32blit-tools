@@ -1,5 +1,6 @@
-import yaml
 import pathlib
+
+import yaml
 
 from ttblit.core.tool import Tool
 from ttblit.tool.packer import AssetTarget

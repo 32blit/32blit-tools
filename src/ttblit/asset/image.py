@@ -1,11 +1,11 @@
-import struct
 import io
+import struct
+
+from bitstring import BitArray
+from PIL import Image
 
 from ttblit.core.assetbuilder import AssetBuilder
-from ttblit.core.palette import Palette, Colour
-
-from PIL import Image
-from bitstring import BitArray
+from ttblit.core.palette import Colour, Palette
 
 
 class ImageAsset(AssetBuilder):

@@ -1,8 +1,9 @@
 import pathlib
 import re
 
+from .outputformat import (CHeader, OutputFormat, output_formats,
+                           parse_output_format)
 from .tool import Tool
-from .outputformat import OutputFormat, output_formats, parse_output_format, CHeader
 
 
 class AssetBuilder(Tool):
