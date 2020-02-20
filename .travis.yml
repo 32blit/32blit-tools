@@ -7,19 +7,17 @@ git:
 
 matrix:
   include:
-    - python: "2.7"
-      env: TOXENV=py27
-    - python: "3.5"
-      env: TOXENV=py35
+    - python: "3.6"
+      env: TOXENV=py36
 
 install:
   - pip install --ignore-installed --upgrade setuptools pip tox coveralls
 
 script:
-  - cd library
+  - cd src
   - tox -vv
 
-after_success: if [ "$TOXENV" == "py35" ]; then coveralls; fi
+after_success: if [ "$TOXENV" == "py36" ]; then coveralls; fi
 
 notifications:
   email: false
