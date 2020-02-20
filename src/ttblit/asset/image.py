@@ -82,63 +82,30 @@ class ImageAsset(AssetBuilder):
 
         return palette_length, palette_data, image_size, image_data
 
-    def image_to_binary(self, input_data):
-        palette_length, palette_data, image_size, image_data = self._image_to_binary(input_data)
+    def to_binary(self, input_data):
+        header_size = 20
 
-        data = bytes('SPRITEPK' if self.packed else 'SPRITERW')
-        data += palette_length
-        data += palette_data
+        image = self.quantize_image(input_data)
+        palette_data = self.palette.tobytes()
+
+        if self.packed:
+            bit_length = self.palette.bit_length()
+            image_data = BitArray().join(BitArray(uint=x, length=bit_length) for x in image.tobytes()).tobytes()
+        else:
+            image_data = image.tobytes()
+
+        palette_size = struct.pack('<B', len(self.palette))
+
+        payload_size = struct.pack('<H', len(image_data) + len(palette_data) + header_size)
+        image_size = struct.pack('<HH', *image.size)
+
+        data = bytes('SPRITEPK' if self.packed else 'SPRITERW', encoding='utf-8')
+        data += payload_size
         data += image_size
+        data += bytes([0x10, 0x00, 0x10, 0x00])  # Rows/cols deprecated
+        data += b'\x02'                          # Pixel format
+        data += palette_size
+        data += palette_data
         data += image_data
 
         return data
-
-    def image_to_c_source_cpp(self, input_data):
-        return self._image_to_c_header(input_data)
-
-    def image_to_c_source_hpp(self, input_data):
-        return self.binary_to_c_source_hpp(input_data)
-
-    def image_to_c_header(self, input_data):
-        return self._image_to_c_header(input_data)
-
-    def _image_to_c_header(self, input_data):
-        palette_length, palette_data, image_size, image_data = self._image_to_binary(input_data)
-
-        payload_size = len('SPRITEPK')
-        payload_size += 2  # Payload bytes
-        payload_size += 2  # Width
-        payload_size += 2  # height
-        payload_size += 2  # Rows
-        payload_size += 2  # Cols
-        payload_size += 1  # Format
-        payload_size += 1  # Length of palette
-        payload_size += len(palette_data)  # Palette entries
-        payload_size += len(image_data)
-
-        payload_size = ', '.join([hex(x) for x in struct.pack('H', payload_size)])
-
-        header = self._helper_raw_to_c_source_hex('SPRITEPK' if self.packed else 'SPRITERW')
-        palette_data = self._helper_raw_to_c_source_hex(palette_data)
-        image_data = self._helper_raw_to_c_source_hex(image_data)
-        image_size = ', '.join([hex(x) for x in image_size])
-        # palette_size = ', '.join([hex(x) for x in palette_length])
-        palette_size = hex(palette_length[0])
-
-        data = f'''
-{header},
-{payload_size},
-0x80, 0x00,
-0x80, 0x00,
-0x10, 0x00,
-0x10, 0x00,
-
-0x02, // Format
-
-{palette_size}, // Palette entry count
-// Palette entries
-{palette_data},
-// Image data
-{image_data}
-'''
-        return self.string_to_c_header(data)

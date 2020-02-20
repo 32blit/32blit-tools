@@ -86,9 +86,11 @@ class AssetBuilder(Tool):
     def build(self):
         input_data = open(self.input_file, 'rb').read()
 
-        output_data = {}
+        output_data = self.to_binary(input_data)
 
-        if self.output_format.components is not None:
+        return self.output_format().build(output_data, self.symbol_name)
+
+        """if self.output_format.components is not None:
             for component in self.output_format.components:
                 dispatch = f'{self.input_type}_to_{self.output_format.name}_{component}'
                 output_data[component] = getattr(self, dispatch)(input_data)
@@ -96,26 +98,7 @@ class AssetBuilder(Tool):
             dispatch = f'{self.input_type}_to_{self.output_format.name}'
             output_data[self.output_file.suffix[1:]] = getattr(self, dispatch)(input_data)
 
-        return output_data
-
-    def _helper_raw_to_c_source_hex(self, input_data):
-        if type(input_data) is str:
-            input_data = bytes(input_data, encoding='utf-8')
-        return ', '.join([f'0x{c:02x}' for c in input_data])
-
-    def string_to_c_header(self, input_string):
-        return f'''const uint8_t {self.symbol_name}[] = {{{input_string}}};'''
-
-    def binary_to_c_header(self, input_data):
-        input_data = self._helper_raw_to_c_source_hex(input_data)
-        return self.string_to_c_header(input_data)
-
-    def binary_to_c_source_hpp(self, input_data):
-        return f'''extern const uint8_t {self.symbol_name}[];'''
-
-    def binary_to_c_source_cpp(self, input_data):
-        input_data = self._helper_raw_to_c_source_hex(input_data)
-        return self.string_to_c_header(input_data)
+        return output_data"""
 
     def _guess_type(self):
         for input_type, extensions in self.typemap.items():

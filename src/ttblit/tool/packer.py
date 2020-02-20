@@ -33,13 +33,13 @@ class Packer(Tool):
 
         self.config = config
 
-    def filelist_to_config(self, filelist):
+    def filelist_to_config(self, filelist, output):
         config = {}
 
         for file in filelist:
             config[file] = {}
 
-        self.config = {'assets.hpp': config}
+        self.config = {f'{output}': config}
 
     def get_general_options(self):
         for key, value in self.config.items():
@@ -62,8 +62,8 @@ class Packer(Tool):
             self.parse_config(args.config)
             print(f'Using config at {args.config}')
 
-        elif args.files is not None:
-            self.filelist_to_config(args.files)
+        elif args.files is not None and args.output is not None:
+            self.filelist_to_config(args.files, args.output)
 
         self.get_general_options()
 
@@ -196,16 +196,23 @@ class AssetTarget():
         self.output_format = type
 
     def build(self):
-        output = {}
-        for source in self.sources:
-            data = source.build(format=self.output_format, output_file=self.output_file, prefix=self.prefix)
-            for file in data:
-                for ext, content in file.items():
-                    if ext not in output:
-                        output[ext] = []
-                    output[ext].append(content)
-
-        return output
+        if self.output_format.components is None:
+            output = []
+            for source in self.sources:
+                data = source.build(format=self.output_format, output_file=self.output_file, prefix=self.prefix)
+                for file in data:
+                    output.append(file)
+            return output
+        else:
+            output = {}
+            for source in self.sources:
+                data = source.build(format=self.output_format, output_file=self.output_file, prefix=self.prefix)
+                for file in data:
+                    for ext, content in file.items():
+                        if ext not in output:
+                            output[ext] = []
+                        output[ext].append(content)
+            return output
 
     def guess_type(self, file):
         if file.suffix in self.types:

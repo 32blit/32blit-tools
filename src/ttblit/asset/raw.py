@@ -36,14 +36,7 @@ class RawAsset(AssetBuilder):
 
         return input_data
 
-    def csv_to_c_header(self, input_data):
-        input_data = self.csv_to_data(input_data, base=10)
-        return self.binary_to_c_header(input_data)
-
-    def csv_to_c_source_hpp(self, input_data):
-        input_data = self.csv_to_data(input_data, base=10)
-        return self.binary_to_c_source_hpp(input_data)
-
-    def csv_to_c_source_cpp(self, input_data):
-        input_data = self.csv_to_data(input_data, base=10)
-        return self.binary_to_c_source_cpp(input_data)
+    def to_binary(self, input_data):
+        if self.input_type == 'csv':
+            input_data = self.csv_to_data(input_data, base=10)
+        return input_data
