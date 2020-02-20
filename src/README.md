@@ -23,6 +23,11 @@ python3 setup.py develop
 
 # Changelog
 
+0.0.3
+-----
+
+* Fix packaging mishap so tool actually works
+
 0.0.2
 -----
 
