@@ -12,7 +12,7 @@ class Packer(Tool):
     def __init__(self, parser):
         Tool.__init__(self, parser)
         self.parser.add_argument('--config', type=pathlib.Path, help='Asset config file')
-        self.parser.add_argument('--output', type=pathlib.Path, help='Name for <output>.cpp and <output>.hpp')
+        self.parser.add_argument('--output', type=pathlib.Path, help='Name for output file(s) or root path when using --config')
         self.parser.add_argument('--files', nargs='+', type=pathlib.Path, help='Input files')
         self.parser.add_argument('--force', action='store_true', help=f'Force file overwrite')
 
@@ -57,6 +57,11 @@ class Packer(Tool):
                 self.working_path = args.config.parent
             else:
                 print(f'Unable to find config at {args.config}')
+
+        if args.output is not None:
+            self.destination_path = args.output
+        else:
+            self.destination_path = self.working_path
 
         if args.config is not None:
             self.parse_config(args.config)
@@ -112,9 +117,11 @@ class Packer(Tool):
                 target_options
             ))
 
+        self.destination_path.mkdir(parents=True, exist_ok=True)
+
         for target in self.assets:
             output = target.build()
-            self.output(output, target.output_file, target.output_format, force=args.force)
+            self.output(output, self.destination_path / target.output_file, target.output_format, force=args.force)
 
 
 class AssetSource():
