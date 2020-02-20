@@ -22,6 +22,14 @@ python3 setup.py develop
 ```
 
 # Changelog
+
+0.0.2
+-----
+
+* Real initial release
+* Pack, cmake and asset commands working
+* Very beta!
+
 0.0.1
 -----
 
