@@ -2,8 +2,8 @@ import yaml
 import pathlib
 
 from ttblit.core.tool import Tool
-
 from ttblit.tool.packer import AssetTarget
+
 
 class CMake(Tool):
     command = 'cmake'
@@ -70,7 +70,7 @@ class CMake(Tool):
             else:
                 for suffix in output_formatter.components:
                     all_outputs.append(self.destination_path / target.with_suffix(f'.{suffix}').name)
-            
+
             # Strip high-level options from the dict
             # Leaving just file source globs
             for key in AssetTarget.supported_options:
@@ -88,8 +88,8 @@ class CMake(Tool):
 
                 all_inputs += input_files
 
-        all_inputs = '\n'.join(f'"{x}"'.replace('\\','/') for x in all_inputs)
-        all_outputs = '\n'.join(f'"{x}"'.replace('\\','/') for x in all_outputs)
+        all_inputs = '\n'.join(f'"{x}"'.replace('\\', '/') for x in all_inputs)
+        all_outputs = '\n'.join(f'"{x}"'.replace('\\', '/') for x in all_outputs)
 
         open(args.cmake, 'w').write(f'''# Auto Generated File - DO NOT EDIT!
 set(ASSET_DEPENDS
