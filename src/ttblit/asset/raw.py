@@ -1,4 +1,4 @@
-from ttblit.core.assetbuilder import AssetBuilder
+from ..core.assetbuilder import AssetBuilder
 
 
 class RawAsset(AssetBuilder):

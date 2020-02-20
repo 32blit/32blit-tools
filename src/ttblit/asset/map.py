@@ -1,4 +1,4 @@
-from ttblit.asset.raw import RawAsset
+from .raw import RawAsset
 
 
 class MapAsset(RawAsset):

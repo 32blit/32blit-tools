@@ -2,8 +2,8 @@ import pathlib
 
 import yaml
 
-from ttblit.core.tool import Tool
-from ttblit.tool.packer import AssetTarget
+from ..core.tool import Tool
+from ..tool.packer import AssetTarget
 
 
 class CMake(Tool):

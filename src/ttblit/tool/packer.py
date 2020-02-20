@@ -2,8 +2,8 @@ import pathlib
 
 import yaml
 
-from ttblit.core.outputformat import CHeader, CSource, RawBinary
-from ttblit.core.tool import Tool
+from ..core.outputformat import CHeader, CSource, RawBinary
+from ..core.tool import Tool
 
 
 class Packer(Tool):

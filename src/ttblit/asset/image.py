@@ -4,8 +4,8 @@ import struct
 from bitstring import BitArray
 from PIL import Image
 
-from ttblit.core.assetbuilder import AssetBuilder
-from ttblit.core.palette import Colour, Palette
+from ..core.assetbuilder import AssetBuilder
+from ..core.palette import Colour, Palette
 
 
 class ImageAsset(AssetBuilder):
