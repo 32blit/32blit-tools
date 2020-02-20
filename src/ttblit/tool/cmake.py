@@ -12,7 +12,7 @@ class CMake(Tool):
     def __init__(self, parser):
         Tool.__init__(self, parser)
         self.parser.add_argument('--config', type=pathlib.Path, help='Asset config file')
-        self.parser.add_argument('output')
+        self.parser.add_argument('--output', type=pathlib.Path, help='Output CMake file')
 
         self.config = {}
         self.general_options = {}
@@ -51,7 +51,19 @@ class CMake(Tool):
 
         # Top level of our config is filegroups and general settings
         for target, options in self.config.items():
-            all_outputs.append(self.working_path / target)
+            target = pathlib.Path(target)
+
+            if target.suffix in AssetTarget.output_formats:
+                output_formatter = AssetTarget.output_formats[target.suffix]
+            else:
+                print(f'Warning: Unable to guess type of {target}, assuming raw/binary')
+                output_formatter = AssetTarget.output_formats['.raw']
+
+            if output_formatter.components is None:
+                all_outputs.append(self.working_path / target)
+            else:
+                for suffix in output_formatter.components:
+                    all_outputs.append(self.working_path / target.with_suffix(f'.{suffix}'))
             
             # Strip high-level options from the dict
             # Leaving just file source globs
