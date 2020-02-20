@@ -13,7 +13,7 @@ class RawAsset(AssetBuilder):
     def _prepare(self, args):
         AssetBuilder._prepare(self, args)
 
-    def csv_to_data(self, input_data, base=10, offset=0):
+    def csv_to_binary(self, input_data, base=10, offset=0):
         try:
             input_data = input_data.decode('utf-8')
         except AttributeError:
@@ -34,9 +34,9 @@ class RawAsset(AssetBuilder):
         # Might as well do the int conversion here, to save another loop
         input_data = [(int(col, base) + offset) for row in input_data for col in row if col != '']
 
-        return input_data
+        return bytes(input_data)
 
     def to_binary(self, input_data):
         if self.input_type == 'csv':
-            input_data = self.csv_to_data(input_data, base=10)
+            input_data = self.csv_to_binary(input_data, base=10)
         return input_data

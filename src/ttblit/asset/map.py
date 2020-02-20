@@ -15,11 +15,11 @@ class MapAsset(RawAsset):
         layers = root.findall('layer/data')
         data = []
         for layer in layers:
-            data += self.csv_to_data(
+            data.append(self.csv_to_binary(
                 layer.text,
                 base=10,
-                offset=-1)  # Tiled indexes from 1 rather than 0
-        return data
+                offset=-1))  # Tiled indexes from 1 rather than 0
+        return b''.join(data)
 
     def to_binary(self, input_data):
         if self.input_type == 'tiled':

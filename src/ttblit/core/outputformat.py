@@ -80,7 +80,7 @@ class RawBinary(OutputFormat):
 
     def join(self, ext, filename, data):
         if type(data) is list:
-            data = ''.join(data)
+            data = b''.join(data)
         return data
 
 

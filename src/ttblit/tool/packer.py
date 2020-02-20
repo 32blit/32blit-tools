@@ -109,7 +109,7 @@ class Packer(Tool):
             self.assets.append(AssetTarget(
                 output_file,
                 asset_sources,
-                **target_options
+                target_options
             ))
 
         for target in self.assets:
@@ -131,6 +131,7 @@ class AssetSource():
     def parse_source_options(self, opts):
         for option, value in opts.items():
             if option not in self.supported_options:
+                # These options are passed into the Map/Image/Raw builder
                 self.builder_options[option] = value
             else:
                 setattr(self, option, value)
@@ -140,6 +141,8 @@ class AssetSource():
             self.type = self.guess_type(self.input_files[0])
 
     def guess_type(self, file):
+        # We need a high-level guess type that can query the types each builder supports
+        # and dispatch our builds to the right one
         for command, asset_builder in self.asset_builders.items():
             for input_type, suffixes in asset_builder.typemap.items():
                 if file.suffix in suffixes:
@@ -150,9 +153,6 @@ class AssetSource():
     def build(self, format, prefix=None, output_file=None):
         builder, input_type = self.type.split('/')
         builder = self.asset_builders[builder]
-
-        if prefix is None:
-            prefix = ''
 
         output = []
 
@@ -174,48 +174,57 @@ class AssetSource():
 
 class AssetTarget():
     supported_options = ('prefix', 'type')
-    types = {
+    output_formats = {
         '.hpp': CHeader,
         '.cpp': CSource,
         '.blit': RawBinary,
         '.raw': RawBinary
     }
 
-    def __init__(self, output_file, sources, **kwargs):
+    def __init__(self, output_file, sources, target_options):
         self.output_file = output_file
         self.sources = sources
-        self.parse_asset_options(**kwargs)
+        self.parse_target_options(target_options)
 
-    def parse_asset_options(self, prefix=None, type=None):
-        self.prefix = '' if prefix is None else prefix
-        if type is None:
-            type = self.guess_type(self.output_file)
+    def parse_target_options(self, target_options):
+        self.prefix = target_options.get('prefix')
+        output_format = target_options.get('type')
+        if output_format is None:
+            output_format = self.guess_output_format(self.output_file)
         else:
-            if type not in self.types.values():
-                raise ValueError(f'Unknown asset output type {type}')
-        self.output_format = type
+            if type not in self.output_formats.values():
+                raise ValueError(f'Unknown asset output format {output_format}')
+        self.output_format = output_format
 
     def build(self):
-        if self.output_format.components is None:
-            output = []
-            for source in self.sources:
-                data = source.build(format=self.output_format, output_file=self.output_file, prefix=self.prefix)
-                for file in data:
-                    output.append(file)
-            return output
-        else:
-            output = {}
-            for source in self.sources:
-                data = source.build(format=self.output_format, output_file=self.output_file, prefix=self.prefix)
-                for file in data:
-                    for ext, content in file.items():
-                        if ext not in output:
-                            output[ext] = []
-                        output[ext].append(content)
-            return output
+        # TODO I hate this code, but because we're dealing with multiple input files
+        # the output can potentially be spread across multiple files with multiple snippets
+        # We need to gather each input files declarations/definitions (or otherwise) into
+        # the right output file.
+        output = []
 
-    def guess_type(self, file):
-        if file.suffix in self.types:
-            return self.types[file.suffix]
+        # If the output_format deals with multiple files, switch to a dict and prep the files
+        if self.output_format.components is not None:
+            output = {}
+            for ext in self.output_format.components:
+                output[ext] = []
+
+        # Iterate through all the sources (input files) and build them
+        for source in self.sources:
+            data = source.build(format=self.output_format, output_file=self.output_file, prefix=self.prefix)
+            for snippet in data:
+                if self.output_format.components is not None:
+                    # If there are multiple output files, collect all the snippets into their respective outputs
+                    for ext, content in snippet.items():
+                        output[ext].append(content)
+                else:
+                    # If it's a single file format just append the snippet to the list
+                    output.append(snippet)
+
+        return output
+
+    def guess_output_format(self, file):
+        if file.suffix in self.output_formats:
+            return self.output_formats[file.suffix]
         print(f'Warning: Unable to guess type, assuming raw/binary {file}')
-        return 'raw/binary'
+        return RawBinary
