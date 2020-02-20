@@ -12,14 +12,15 @@ class CMake(Tool):
     def __init__(self, parser):
         Tool.__init__(self, parser)
         self.parser.add_argument('--config', type=pathlib.Path, help='Asset config file')
-        self.parser.add_argument('--output', type=pathlib.Path, help='Output CMake file')
+        self.parser.add_argument('--cmake', type=pathlib.Path, help='Output CMake file')
+        self.parser.add_argument('--output', type=pathlib.Path, help='Name for output file(s) or root path when using --config')
 
         self.config = {}
         self.general_options = {}
 
     def parse_config(self, config_file):
         config = open(config_file).read()
-        config = yaml.load(config)
+        config = yaml.safe_load(config)
 
         self.config = config
 
@@ -44,6 +45,11 @@ class CMake(Tool):
             self.parse_config(args.config)
             print(f'Using config at {args.config}')
 
+        if args.output is not None:
+            self.destination_path = args.output
+        else:
+            self.destination_path = self.working_path
+
         self.get_general_options()
 
         all_inputs = []
@@ -60,10 +66,10 @@ class CMake(Tool):
                 output_formatter = AssetTarget.output_formats['.raw']
 
             if output_formatter.components is None:
-                all_outputs.append(self.working_path / target)
+                all_outputs.append(self.destination_path / target.name)
             else:
                 for suffix in output_formatter.components:
-                    all_outputs.append(self.working_path / target.with_suffix(f'.{suffix}'))
+                    all_outputs.append(self.destination_path / target.with_suffix(f'.{suffix}').name)
             
             # Strip high-level options from the dict
             # Leaving just file source globs
@@ -82,10 +88,10 @@ class CMake(Tool):
 
                 all_inputs += input_files
 
-        all_inputs = '\n'.join(str(x) for x in all_inputs)
-        all_outputs = '\n'.join(str(x) for x in all_outputs)
+        all_inputs = '\n'.join(f'"{x}"'.replace('\\','/') for x in all_inputs)
+        all_outputs = '\n'.join(f'"{x}"'.replace('\\','/') for x in all_outputs)
 
-        open(args.output, 'w').write(f'''# Auto Generated File - DO NOT EDIT!
+        open(args.cmake, 'w').write(f'''# Auto Generated File - DO NOT EDIT!
 set(ASSET_DEPENDS
 {all_inputs}
 )

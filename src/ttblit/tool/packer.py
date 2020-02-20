@@ -29,7 +29,7 @@ class Packer(Tool):
 
     def parse_config(self, config_file):
         config = open(config_file).read()
-        config = yaml.load(config)
+        config = yaml.safe_load(config)
 
         self.config = config
 
@@ -121,7 +121,7 @@ class Packer(Tool):
 
         for target in self.assets:
             output = target.build()
-            self.output(output, self.destination_path / target.output_file, target.output_format, force=args.force)
+            self.output(output, self.destination_path / target.output_file.name, target.output_format, force=args.force)
 
 
 class AssetSource():
