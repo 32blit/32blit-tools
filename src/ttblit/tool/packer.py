@@ -233,5 +233,5 @@ class AssetTarget():
     def guess_output_format(self, file):
         if file.suffix in self.output_formats:
             return self.output_formats[file.suffix]
-        print(f'Warning: Unable to guess type, assuming raw/binary {file}')
+        print(f'Warning: Unable to guess type of {file}, assuming raw/binary')
         return RawBinary
