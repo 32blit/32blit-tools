@@ -37,4 +37,3 @@ def test_map_instance(subparser):
     from ttblit.asset import map
 
     map.MapAsset(subparser)
-
