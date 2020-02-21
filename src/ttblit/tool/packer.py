@@ -15,7 +15,7 @@ class Packer(Tool):
         self.parser.add_argument('--config', type=pathlib.Path, help='Asset config file')
         self.parser.add_argument('--output', type=pathlib.Path, help='Name for output file(s) or root path when using --config')
         self.parser.add_argument('--files', nargs='+', type=pathlib.Path, help='Input files')
-        self.parser.add_argument('--force', action='store_true', help=f'Force file overwrite')
+        self.parser.add_argument('--force', action='store_true', help='Force file overwrite')
 
         self.config = {}
         self.assets = []
