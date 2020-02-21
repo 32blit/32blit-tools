@@ -33,7 +33,7 @@ class ImageAsset(AssetBuilder):
 
         self.parser.add_argument('--palette', type=Palette, default=None, help='Image or palette file of colours to use')
         self.parser.add_argument('--transparent', type=Colour, help='Transparent colour')
-        self.parser.add_argument('--packed', action='store_true', help='Pack into bits depending on palette colour count')
+        self.parser.add_argument('--packed', type=bool, default=True, help='Pack into bits depending on palette colour count')
         self.parser.add_argument('--strict', action='store_true', help='Reject colours not in the palette')
 
     def _prepare(self, args):
@@ -83,8 +83,6 @@ class ImageAsset(AssetBuilder):
         return palette_length, palette_data, image_size, image_data
 
     def to_binary(self, input_data):
-        header_size = 20
-
         image = self.quantize_image(input_data)
         palette_data = self.palette.tobytes()
 
