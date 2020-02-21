@@ -5,6 +5,8 @@
 [![PyPi Package](https://img.shields.io/pypi/v/32blit.svg)](https://pypi.python.org/pypi/32blit)
 [![Python Versions](https://img.shields.io/pypi/pyversions/32blit.svg)](https://pypi.python.org/pypi/32blit)
 
+This tool is intended for use with the 32Blit console to prepare assets and upload games.
+
 # WORK IN PROGRESS
 
 You should install from source using:
@@ -21,6 +23,34 @@ python3 setup.py develop
 32blit --help
 ```
 
+## Packing Image Assets
+
+All image assets are handled by Pillow so most image formats will work, be careful with lossy formats since they may add unwanted colours to your palette and leave you with oversized assets.
+
+Supported formats:
+
+* 8bit PNG .png
+* 24bit PNG .png
+
+Options:
+
+* `palette` - Image or palette file (Adobe .act, Pro Motion NG .pal, GIMP .gpl) containing the asset colour palette
+* `transparent` - Transparent colour (if palette isn't an RGBA image), should be either hex (FFFFFF) or R,G,B (255,255,255)
+* `packed` - (Defaults to true) will pack the output asset into bits depending on the palette size. A 16-colour palette would use 4-bits-per-pixel.
+* `strict` - Only allow colours that are present in the palette image/file
+
+## Packing Map Assets
+
+Supported formats:
+
+* Tiled .tmx - https://www.mapeditor.org/ (extremely alpha!)
+
+## Packing Raw Assets
+
+Supported formats:
+
+* CSV .csv
+* Binary .bin, .raw
 # Changelog
 
 0.0.3
