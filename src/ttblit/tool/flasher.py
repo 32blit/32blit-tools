@@ -26,7 +26,7 @@ class Flasher(Tool):
         self.op_delete = operations.add_parser('delete', help='Delete a game/file from your 32Blit')
         self.op_list = operations.add_parser('list', help='List games/files on your 32Blit')
         self.op_debug = operations.add_parser('debug', help='Enter serial debug mode')
-        self.op_debug = operations.add_parser('reset', help='Reset your 32Blit')
+        self.op_reset = operations.add_parser('reset', help='Reset your 32Blit')
 
     def find_comport(self):
         for comport in serial.tools.list_ports.comports():
