@@ -5,11 +5,11 @@ import argparse
 import sys
 
 from .asset import image, map, raw
-from .tool import cmake, packer
+from .tool import cmake, packer, flasher
 
 
 def exception_handler(exception_type, exception, traceback):
-    print(f"Error: {exception}")
+    print(f"{type(exception).__name__}: {exception}")
 
 
 def main():
@@ -31,6 +31,7 @@ def main():
     # Add the non-asset tools
     tools[packer.Packer.command] = _packer
     tools[cmake.CMake.command] = cmake.CMake(subparsers)
+    tools[flasher.Flasher.command] = flasher.Flasher(subparsers)
 
     args = parser.parse_args()
 
