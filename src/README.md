@@ -54,6 +54,12 @@ Supported formats:
 
 # Changelog
 
+0.0.4
+-----
+
+* Default images to packed (packed arg now takes a bool)
+* Fix bug in sprite payload size (thanks @Daft-Freak)
+
 0.0.3
 -----
 
