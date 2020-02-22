@@ -42,7 +42,7 @@ python-license: src/LICENSE.txt
 
 src/README.md: README.md src/CHANGELOG.txt
 	cp README.md src/README.md
-	printf "\n# Changelog\n\n" >> src/README.md
+	printf "\n\n# Changelog\n\n" >> src/README.md
 	cat src/CHANGELOG.txt >> src/README.md
 
 src/LICENSE.txt: LICENSE
@@ -61,6 +61,7 @@ python-clean:
 
 python-dist: python-clean python-wheels python-sdist
 	ls src/dist
+	-python3 -m twine check src/dist/*
 
 python-testdeploy: python-dist
 	twine upload --repository-url https://test.pypi.org/legacy/ src/dist/*

@@ -51,6 +51,7 @@ Supported formats:
 
 * CSV .csv
 * Binary .bin, .raw
+
 # Changelog
 
 0.0.3
