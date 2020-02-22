@@ -18,17 +18,17 @@ class ImageAsset(AssetBuilder):
 
     def __init__(self, parser):
         self.options.update({
-            'palette': Palette,
+            'palette': (Palette, Palette()),
             'transparent': Colour,
-            'packed': bool,
-            'strict': bool
+            'packed': (bool, True),
+            'strict': (bool, False)
         })
 
         AssetBuilder.__init__(self, parser)
 
         self.palette = None
         self.transparent = None
-        self.packed = False
+        self.packed = True
         self.strict = False
 
         self.parser.add_argument('--palette', type=Palette, default=None, help='Image or palette file of colours to use')
@@ -46,9 +46,6 @@ class ImageAsset(AssetBuilder):
                 print(f'Found transparent colour ({r},{g},{b}) in palette')
             else:
                 print(f'Could not find transparent colour ({r},{g},{b}) in palette')
-
-        if self.palette is None:
-            self.palette = Palette()
 
     def quantize_image(self, input_data):
         if self.strict and len(self.palette) == 0:

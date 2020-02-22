@@ -36,8 +36,7 @@ class AssetBuilder(Tool):
         Requires options to already be in their correct types.
 
         """
-        for option, option_type in self.options.items():
-            setattr(self, option, opts.get(option))
+        Tool._prepare(self, opts)
 
         if self.symbol_name is None:
             name = '_'.join(self.input_file.parts)
@@ -78,7 +77,10 @@ class AssetBuilder(Tool):
             for option_name, option_value in opts.items():
                 if option_name in self.options:
                     if option_value is not None:
-                        opts[option_name] = self.options[option_name](option_value)
+                        option_type = self.options[option_name]
+                        if type(option_type) is tuple:
+                            option_type, default_value = option_type
+                        opts[option_name] = option_type(option_value)
                 else:
                     print(f'Ignoring unsupported {self.command} option {option_name}')
 
