@@ -4,6 +4,8 @@ __version__ = '0.0.4'
 import argparse
 import sys
 
+import pathlib
+
 from .asset import image, map, raw
 from .tool import cmake, packer, flasher
 
@@ -16,6 +18,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', action='store_true', help='Enable exception traces')
     subparsers = parser.add_subparsers(dest='command', help='Commands')
+
+    if len(sys.argv) == 2:
+        file = pathlib.Path(sys.argv[1])
+        if file.is_file() and file.exists():
+            f = flasher.Flasher(subparsers)
+            f.run_save({'file': file})
+            return
 
     tools = {}
 

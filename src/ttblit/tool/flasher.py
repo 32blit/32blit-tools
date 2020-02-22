@@ -48,47 +48,59 @@ class Flasher(Tool):
         raise RuntimeError(f'Unable to find 32Blit on {device}')
 
     def run(self, args):
-        if args.port is None:
-           args.port = self.find_comport()
-
-        self.serial = serial.Serial(args.port)
-
         if args.operation is not None:
             dispatch = f'run_{args.operation}'
-            getattr(self, dispatch)(args)
+            getattr(self, dispatch)(vars(args))
 
-        self.serial.close()
+    def serial_command(fn):
+        """Set up and tear down a serial connection."""
+        def _decorated(self, args):
+            port = args.get('port', None)
+            if port is None:
+                port = self.find_comport()
+            sp = serial.Serial(port)
+            fn(self, sp, args)
+            sp.close()
+        return _decorated
 
-    def run_save(self, args):     
+    def _save(self, serial, file):
         sent_byte_count = 0
         chunk_size = 64
-        file_name = args.file.name
-        file_size = args.file.stat().st_size
-        print(f'Saving {args.file} ({file_size} bytes) as {file_name}')
+        file_name = file.name
+        file_size = file.stat().st_size
+        print(f'Saving {file} ({file_size} bytes) as {file_name}')
 
         command = f'32BLSAVE{file_name}\x00{file_size}\x00'
 
-        self.serial.reset_output_buffer()
-        self.serial.write(command.encode('ascii'))
+        serial.reset_output_buffer()
+        serial.write(command.encode('ascii'))
 
-        with open(args.file, 'rb') as file:
+        with open(file, 'rb') as file:
             progress = tqdm(total=file_size, desc="Flashing...", unit_scale=True, unit_divisor=1024, unit="B", ncols=70, dynamic_ncols=True)
 
             while sent_byte_count < file_size:
                 data = file.read(chunk_size)
-                self.serial.write(data)
+                serial.write(data)
                 sent_byte_count += chunk_size
                 progress.update(chunk_size)
 
-    def run_delete(self, args):
+    @serial_command
+    def run_save(self, serial, args):
+        self._save(serial, args.get('file'))
+
+    @serial_command
+    def run_delete(self, serial, args):
         pass
 
-    def run_list(self, args):
+    @serial_command
+    def run_list(self, serial, args):
         pass
 
-    def run_debug(self, args):
+    @serial_command
+    def run_debug(self, serial, args):
         pass
   
-    def run_reset(self, args):
+    @serial_command
+    def run_reset(self, serial, args):
         print('Resetting your 32Blit...')
-        self.serial.write(b'32BL_RST\x00')
+        serial.write(b'32BL_RST\x00')
