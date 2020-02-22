@@ -2,12 +2,11 @@
 __version__ = '0.0.4'
 
 import argparse
+import pathlib
 import sys
 
-import pathlib
-
 from .asset import image, map, raw
-from .tool import cmake, packer, flasher
+from .tool import cmake, flasher, packer
 
 
 def exception_handler(exception_type, exception, traceback):
@@ -15,7 +14,7 @@ def exception_handler(exception_type, exception, traceback):
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser('32Blit asset tools')
     parser.add_argument('--debug', action='store_true', help='Enable exception traces')
     subparsers = parser.add_subparsers(dest='command', help='Commands')
 

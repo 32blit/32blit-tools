@@ -1,13 +1,9 @@
-#!/usr/bin/env python3
-
 import pathlib
 
-import yaml
-
-import serial.tools.list_ports
 from tqdm import tqdm
 
-from ..core.outputformat import CHeader, CSource, RawBinary
+import serial.tools.list_ports
+
 from ..core.tool import Tool
 
 
@@ -99,7 +95,7 @@ class Flasher(Tool):
     @serial_command
     def run_debug(self, serial, args):
         pass
-  
+
     @serial_command
     def run_reset(self, serial, args):
         print('Resetting your 32Blit...')
