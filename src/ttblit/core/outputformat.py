@@ -30,7 +30,8 @@ class CHeader(OutputFormat):
 
     def output(self, input_data, symbol_name):
         input_data = self._helper_raw_to_c_source_hex(input_data)
-        return f'''inline const uint8_t {symbol_name}[] = {{{input_data}}};'''
+        return f'''inline const uint8_t {symbol_name}[] = {{{input_data}}};
+inline const uint32_t {symbol_name}_length = sizeof({symbol_name});'''
 
     def join(self, ext, filename, data):
         if type(data) is list:
@@ -48,11 +49,13 @@ class CSource(CHeader):
     extensions = ('.cpp', '.c')
 
     def output_hpp(self, input_data, symbol_name):
-        return f'''extern const uint8_t {symbol_name}[];'''
+        return f'''extern const uint8_t {symbol_name}[];
+extern const uint32_t {symbol_name}_length;'''
 
     def output_cpp(self, input_data, symbol_name):
         input_data = self._helper_raw_to_c_source_hex(input_data)
-        return f'''const uint8_t {symbol_name}[] = {{{input_data}}};'''
+        return f'''const uint8_t {symbol_name}[] = {{{input_data}}};
+const uint32_t {symbol_name}_length = sizeof({symbol_name});'''
 
     def join(self, ext, filename, data):
         if type(data) is list:
