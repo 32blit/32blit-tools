@@ -20,7 +20,7 @@ class ImageAsset(AssetBuilder):
         self.options.update({
             'palette': (Palette, Palette()),
             'transparent': Colour,
-            'packed': (bool, True),
+            'packed': (str, 'yes'),
             'strict': (bool, False)
         })
 
@@ -33,11 +33,14 @@ class ImageAsset(AssetBuilder):
 
         self.parser.add_argument('--palette', type=type_palette, default=None, help='Image or palette file of colours to use')
         self.parser.add_argument('--transparent', type=Colour, help='Transparent colour')
-        self.parser.add_argument('--packed', type=bool, default=True, help='Pack into bits depending on palette colour count')
+        self.parser.add_argument('--packed', type=str, nargs='?', default='yes', choices=('yes', 'no'), help='Pack into bits depending on palette colour count')
         self.parser.add_argument('--strict', action='store_true', help='Reject colours not in the palette')
 
     def prepare(self, args):
         AssetBuilder.prepare(self, args)
+
+        if type(self.packed) is not bool:
+            self.packed = self.packed == 'yes'
 
         if self.transparent is not None:
             r, g, b = self.transparent
@@ -63,21 +66,6 @@ class ImageAsset(AssetBuilder):
                 output_image.putpixel((x, y), index)
 
         return output_image
-
-    def _image_to_binary(self, input_data):
-        image = self.quantize_image(input_data)
-        palette_data = self.palette.tobytes()
-
-        if self.packed:
-            bit_length = self.palette.bit_length()
-            image_data = BitArray().join(BitArray(uint=x, length=bit_length) for x in image.tobytes()).tobytes()
-        else:
-            image_data = image.tobytes()
-
-        palette_length = struct.pack('<H', len(self.palette))
-        image_size = struct.pack('<HH', *image.size)
-
-        return palette_length, palette_data, image_size, image_data
 
     def to_binary(self, input_data):
         image = self.quantize_image(input_data)

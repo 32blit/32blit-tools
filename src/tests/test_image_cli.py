@@ -43,6 +43,30 @@ def test_image_png_cli(parsers, test_input_file):
     image.run(args)
 
 
+def test_image_png_cli_unpacked(parsers, test_input_file):
+    from ttblit.asset import image
+
+    parser, subparser = parsers
+
+    image = image.ImageAsset(subparser)
+
+    args = parser.parse_args(['image', '--input_file', test_input_file.name, '--packed', 'no', '--output_format', 'c_header'])
+
+    image.run(args)
+
+
+def test_image_png_cli_packed(parsers, test_input_file):
+    from ttblit.asset import image
+
+    parser, subparser = parsers
+
+    image = image.ImageAsset(subparser)
+
+    args = parser.parse_args(['image', '--input_file', test_input_file.name, '--packed', '--output_format', 'c_header'])
+
+    image.run(args)
+
+
 def test_image_png_cli_strict_palette_act(parsers, test_input_file):
     from ttblit.asset import image
 
@@ -94,3 +118,51 @@ def test_image_png_cli_strict_palette_pal_missing(parsers, test_input_file):
         args = parser.parse_args(['image', '--input_file', test_input_file.name, '--output_format', 'c_header', '--strict', '--palette', test_palette_file.name])
         with pytest.raises(TypeError):
             image.run(args)
+
+
+def test_image_png_cli_strict_nopalette(parsers, test_input_file):
+    from ttblit.asset import image
+
+    parser, subparser = parsers
+
+    image = image.ImageAsset(subparser)
+
+    args = parser.parse_args(['image', '--input_file', test_input_file.name, '--output_format', 'c_header', '--strict'])
+
+    with pytest.raises(TypeError):
+        image.run(args)
+
+
+def test_image_png_cli_strict_palette_pal_transparent(parsers, test_input_file):
+    from ttblit.asset import image
+
+    parser, subparser = parsers
+
+    image = image.ImageAsset(subparser)
+
+    with tempfile.NamedTemporaryFile('wb', suffix='.pal') as test_palette_file:
+        test_palette_file.write(b'\x00\x00\x00')  # Write black colour
+        test_palette_file.write(b'\x00\xff\x00')  # Write green colour
+        test_palette_file.write(b'\xff\xff\xff')  # Write white colour
+        test_palette_file.write(b'\x00' * (768 - 9))  # Pad to 768 bytes
+        test_palette_file.flush()
+
+        args = parser.parse_args([
+            'image',
+            '--input_file', test_input_file.name,
+            '--output_format', 'c_header',
+            '--strict',
+            '--palette', test_palette_file.name,
+            '--transparent', '0,255,0'])  # Make green transparent
+
+        image.run(args)
+
+        args = parser.parse_args([
+            'image',
+            '--input_file', test_input_file.name,
+            '--output_format', 'c_header',
+            '--strict',
+            '--palette', test_palette_file.name,
+            '--transparent', '88,88,88'])  # Invalid colour
+
+        image.run(args)

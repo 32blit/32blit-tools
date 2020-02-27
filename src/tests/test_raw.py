@@ -10,12 +10,16 @@ def subparser():
     return parser.add_subparsers(dest='command', help='Commands')
 
 
-def test_raw_csv(subparser):
+def test_raw_csv_to_binary(subparser):
     from ttblit.asset import raw
 
     raw = raw.RawAsset(subparser)
 
-    output = raw.csv_to_binary('''1, 2, 3,
+    raw.prepare_options({
+        'input_type': 'csv',
+        'symbol_name': 'csv'  # Since we're not supplying an input file, an empty symbol_name will fail
+    })
+    output = raw.to_binary('''1, 2, 3,
 4, 5, 6,
 7, 8, 9''')
 
