@@ -1,15 +1,17 @@
+import argparse
 import pathlib
 import struct
-import argparse
 
 from PIL import Image
 
 
 class Colour():
     def __init__(self, colour):
-        if len(colour) == 6:
+        if type(colour) is Colour:
+            self.r, self.g, self.b = colour
+        elif len(colour) == 6:
             self.r, self.g, self.b = tuple(bytes.fromhex(colour))
-        if ',' in colour:
+        elif ',' in colour:
             self.r, self.g, self.b = [int(c, 10) for c in colour.split(',')]
 
     def __getitem__(self, index):
@@ -20,6 +22,11 @@ class Palette():
     def __init__(self, palette_file=None):
         self.transparent = None
         self.entries = []
+
+        if type(palette_file) is Palette:
+            self.transparent = palette_file.transparent
+            self.entries = palette_file.entries
+            return
 
         if palette_file is not None:
             palette_file = pathlib.Path(palette_file)
@@ -52,7 +59,7 @@ class Palette():
         # Adobe Colour Table .act
         palette = data
         if len(palette) < 772:
-            raise ValueError(f'palette {palette_file} is not a valid Adobe .act')
+            raise ValueError(f'palette {palette_file} is not a valid Adobe .act (length {len(palette)} != 772')
 
         size, _ = struct.unpack('>HH', palette[-4:])
         self.width = 1
@@ -143,9 +150,12 @@ def type_palette(palette_file):
     # Only used as a type in argparse.
     # This wrapper around Palette traps errors and
     # raises in a way that's visible to the user
+    if type(palette_file) is Palette:
+        return palette_file
+
     try:
         return Palette(palette_file)
     except TypeError as e:
-        raise argparse.ArgumentTypeError(none, str(e))
+        raise argparse.ArgumentTypeError(None, str(e))
     except ValueError as e:
-        raise argparse.ArgumentError(none, str(e))
+        raise argparse.ArgumentError(None, str(e))

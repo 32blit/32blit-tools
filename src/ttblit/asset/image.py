@@ -36,8 +36,8 @@ class ImageAsset(AssetBuilder):
         self.parser.add_argument('--packed', type=bool, default=True, help='Pack into bits depending on palette colour count')
         self.parser.add_argument('--strict', action='store_true', help='Reject colours not in the palette')
 
-    def _prepare(self, args):
-        AssetBuilder._prepare(self, args)
+    def prepare(self, args):
+        AssetBuilder.prepare(self, args)
 
         if self.transparent is not None:
             r, g, b = self.transparent
@@ -81,6 +81,11 @@ class ImageAsset(AssetBuilder):
 
     def to_binary(self, input_data):
         image = self.quantize_image(input_data)
+
+        # TODO Image format needs rewriting to support more than 255 palette entries, this is a bug!
+        # This fix allows `test_image_png_cli_strict_palette_pal` to pass.
+        self.palette.entries = self.palette.entries[:255]
+
         palette_data = self.palette.tobytes()
 
         if self.packed:

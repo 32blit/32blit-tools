@@ -26,17 +26,17 @@ class AssetBuilder(Tool):
         if(len(self.types) > 1):
             self.parser.add_argument('--input_type', type=str, default=None, choices=self.types, help=f'Input file type')
         self.parser.add_argument('--output_file', type=pathlib.Path, default=None)
-        self.parser.add_argument('--output_format', type=parse_output_format, default=None, choices=self.formats, help=f'Output file format')
+        self.parser.add_argument('--output_format', type=str, default=None, choices=self.formats.keys(), help=f'Output file format')
         self.parser.add_argument('--symbol_name', type=str, default=None, help=f'Output symbol name')
         self.parser.add_argument('--force', action='store_true', help=f'Force file overwrite')
 
-    def _prepare(self, opts):
+    def prepare(self, opts):
         """Imports a dictionary of options to class variables.
 
         Requires options to already be in their correct types.
 
         """
-        Tool._prepare(self, opts)
+        Tool.prepare(self, opts)
 
         if self.symbol_name is None:
             name = '_'.join(self.input_file.parts)
@@ -49,9 +49,10 @@ class AssetBuilder(Tool):
 
         if self.output_format is None:
             self._guess_format()
+        elif type(self.output_format) is str:
+            self.output_format = parse_output_format(self.output_format)
         elif not issubclass(self.output_format, OutputFormat):
-            formats = tuple([str(f()) for f in self.formats])
-            raise ValueError(f'Invalid format {self.output_format}, choices {formats}')
+            raise ValueError(f'Invalid format {self.output_format}, choices {self.formats.keys()}')
 
         if self.input_type is None:
             self._guess_type()
@@ -59,7 +60,7 @@ class AssetBuilder(Tool):
             raise ValueError(f'Invalid type {self.input_type}, choices {self.types}')
 
     def run(self, args):
-        self._prepare(vars(args))
+        self.prepare_options(vars(args))
 
         output_data = self.build()
 
@@ -76,15 +77,18 @@ class AssetBuilder(Tool):
         if self.options is not None and opts is not None:
             for option_name, option_value in opts.items():
                 if option_name in self.options:
+                    option_type = self.options[option_name]
+                    default_value = None
+                    if type(option_type) is tuple:
+                        option_type, default_value = option_type
                     if option_value is not None:
-                        option_type = self.options[option_name]
-                        if type(option_type) is tuple:
-                            option_type, default_value = option_type
                         opts[option_name] = option_type(option_value)
+                    else:
+                        opts[option_name] = default_value
                 else:
                     print(f'Ignoring unsupported {self.command} option {option_name}')
 
-        self._prepare(opts)
+        self.prepare(opts)
 
     def build(self):
         input_data = open(self.input_file, 'rb').read()
@@ -93,16 +97,6 @@ class AssetBuilder(Tool):
 
         return self.output_format().build(output_data, self.symbol_name)
 
-        """if self.output_format.components is not None:
-            for component in self.output_format.components:
-                dispatch = f'{self.input_type}_to_{self.output_format.name}_{component}'
-                output_data[component] = getattr(self, dispatch)(input_data)
-        else:
-            dispatch = f'{self.input_type}_to_{self.output_format.name}'
-            output_data[self.output_file.suffix[1:]] = getattr(self, dispatch)(input_data)
-
-        return output_data"""
-
     def _guess_type(self):
         for input_type, extensions in self.typemap.items():
             for extension in extensions:
@@ -110,6 +104,7 @@ class AssetBuilder(Tool):
                     self.input_type = input_type
                     print(f"Guessed type {input_type} for {self.input_file}")
                     return
+
         raise TypeError(f"Unable to identify type of input file {self.input_file}")
 
     def _guess_format(self):
@@ -117,10 +112,12 @@ class AssetBuilder(Tool):
             self.output_format = self.no_output_file_default_format
             print(f"No --output given, writing to stdout assuming {self.no_output_file_default_format.name}")
             return
+
         for format_name, format_class in self.formats.items():
             for extension in format_class.extensions:
                 if self.output_file.name.endswith(extension):
                     self.output_format = format_class
                     print(f"Guessed output format {format_class.name} for {self.output_file}")
                     return
+
         raise TypeError(f"Unable to identify type of output file {self.output_file}")

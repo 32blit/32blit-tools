@@ -23,6 +23,9 @@ class CHeader(OutputFormat):
     name = 'c_header'
     extensions = ('.hpp', '.h')
 
+    def __init__(self):
+        OutputFormat.__init__(self)
+
     def _helper_raw_to_c_source_hex(self, input_data):
         if type(input_data) is str:
             input_data = bytes(input_data, encoding='utf-8')
@@ -47,6 +50,9 @@ class CSource(CHeader):
     name = 'c_source'
     components = ('hpp', 'cpp')
     extensions = ('.cpp', '.c')
+
+    def __init__(self):
+        OutputFormat.__init__(self)
 
     def output_hpp(self, input_data, symbol_name):
         return f'''extern const uint8_t {symbol_name}[];
@@ -78,6 +84,9 @@ class RawBinary(OutputFormat):
     name = 'raw_binary'
     extensions = ('.raw', '.bin')
 
+    def __init__(self):
+        OutputFormat.__init__(self)
+
     def output(self, input_data, symbol_name):
         return input_data
 
@@ -93,6 +102,8 @@ object = None
 
 
 def parse_output_format(value):
+    if type(value) is str:
+        return output_formats.get(value, None)
     if issubclass(value, OutputFormat):
         return value
     return output_formats[value]
@@ -100,7 +111,7 @@ def parse_output_format(value):
 
 for name, object in globals().items():
     try:
-        if issubclass(object, OutputFormat):
-            output_formats[name] = object
+        if issubclass(object, OutputFormat) and not name == 'OutputFormat':
+            output_formats[object.name] = object
     except TypeError:
         pass
