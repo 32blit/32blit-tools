@@ -1,5 +1,6 @@
 import pathlib
 import struct
+import argparse
 
 from PIL import Image
 
@@ -93,7 +94,7 @@ class Palette():
         palette = Image.open(palette_file)
         self.width, self.height = palette.size
         if self.width * self.height > 256:
-            raise ValueError(f'palette {palette_file} has too many pixels {self.width}x{self.height}={self.width*self.height} (max 256)')
+            raise argparse.ArgumentError(None, f'palette {palette_file} has too many pixels {self.width}x{self.height}={self.width*self.height} (max 256)')
         print(f'Using palette {palette_file} {self.width}x{self.height}')
 
         self.image = palette.convert('RGBA')
@@ -136,3 +137,15 @@ class Palette():
 
     def __getitem__(self, index):
         return self.entries[index]
+
+
+def type_palette(palette_file):
+    # Only used as a type in argparse.
+    # This wrapper around Palette traps errors and
+    # raises in a way that's visible to the user
+    try:
+        return Palette(palette_file)
+    except TypeError as e:
+        raise argparse.ArgumentTypeError(none, str(e))
+    except ValueError as e:
+        raise argparse.ArgumentError(none, str(e))
