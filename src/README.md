@@ -54,6 +54,14 @@ Supported formats:
 
 # Changelog
 
+0.0.5
+-----
+
+* Output data length symbols (thanks @Daft-Freak)
+* Fix --packed to be default, again (packed can be disabled with --packed no)
+* Various other tweaks
+* Start of 32blit file upload support
+
 0.0.4
 -----
 
