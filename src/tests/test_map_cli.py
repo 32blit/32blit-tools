@@ -1,6 +1,7 @@
-import pytest
 import argparse
 import tempfile
+
+import pytest
 
 
 @pytest.fixture

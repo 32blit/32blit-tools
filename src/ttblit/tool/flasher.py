@@ -1,8 +1,7 @@
 import pathlib
 
-from tqdm import tqdm
-
 import serial.tools.list_ports
+from tqdm import tqdm
 
 from ..core.tool import Tool
 

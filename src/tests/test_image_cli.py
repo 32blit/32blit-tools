@@ -1,7 +1,8 @@
-import pytest
 import argparse
-import tempfile
 import base64
+import tempfile
+
+import pytest
 
 
 @pytest.fixture
@@ -76,3 +77,20 @@ def test_image_png_cli_strict_palette_pal(parsers, test_input_file):
         test_palette_file.flush()
         args = parser.parse_args(['image', '--input_file', test_input_file.name, '--output_format', 'c_header', '--strict', '--palette', test_palette_file.name])
         image.run(args)
+
+
+def test_image_png_cli_strict_palette_pal_missing(parsers, test_input_file):
+    from ttblit.asset import image
+
+    parser, subparser = parsers
+
+    image = image.ImageAsset(subparser)
+
+    with tempfile.NamedTemporaryFile('wb', suffix='.pal') as test_palette_file:
+        test_palette_file.write(b'\x00\x00\x00')  # Write black colour
+        test_palette_file.write(b'\xff\xff\xff')  # Write white colour
+        test_palette_file.write(b'\x00' * (768 - 6))  # Pad to 768 bytes
+        test_palette_file.flush()
+        args = parser.parse_args(['image', '--input_file', test_input_file.name, '--output_format', 'c_header', '--strict', '--palette', test_palette_file.name])
+        with pytest.raises(TypeError):
+            image.run(args)
