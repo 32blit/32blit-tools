@@ -14,7 +14,7 @@ def exception_handler(exception_type, exception, traceback):
 
 
 def main():
-    parser = argparse.ArgumentParser('32Blit asset tools')
+    parser = argparse.ArgumentParser()
     parser.add_argument('--debug', action='store_true', help='Enable exception traces')
     subparsers = parser.add_subparsers(dest='command', help='Commands')
 
