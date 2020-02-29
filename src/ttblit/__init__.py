@@ -5,7 +5,7 @@ import argparse
 import pathlib
 import sys
 
-from .asset import image, map, raw
+from .asset import font, image, map, raw
 from .tool import cmake, flasher, packer
 
 
@@ -28,6 +28,7 @@ def main():
     tools = {}
 
     tools[image.ImageAsset.command] = image.ImageAsset(subparsers)
+    tools[font.FontAsset.command] = font.FontAsset(subparsers)
     tools[map.MapAsset.command] = map.MapAsset(subparsers)
     tools[raw.RawAsset.command] = raw.RawAsset(subparsers)
 
