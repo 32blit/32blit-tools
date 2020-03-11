@@ -50,7 +50,7 @@ def test_image_png_cli_unpacked(parsers, test_input_file):
 
     image = image.ImageAsset(subparser)
 
-    args = parser.parse_args(['image', '--input_file', test_input_file.name, '--packed', 'no', '--output_format', 'c_header'])
+    args = parser.parse_args(['image', '--input_file', test_input_file.name, '--raw', '--raw_format', 'RGBA', '--output_format', 'c_header'])
 
     image.run(args)
 
@@ -62,7 +62,7 @@ def test_image_png_cli_packed(parsers, test_input_file):
 
     image = image.ImageAsset(subparser)
 
-    args = parser.parse_args(['image', '--input_file', test_input_file.name, '--packed', '--output_format', 'c_header'])
+    args = parser.parse_args(['image', '--input_file', test_input_file.name, '--output_format', 'c_header'])
 
     image.run(args)
 
