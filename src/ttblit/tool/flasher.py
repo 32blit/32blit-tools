@@ -29,20 +29,28 @@ class Flasher(Tool):
         self.op_reset = operations.add_parser('reset', help='Reset your 32Blit')
 
     def find_comport(self):
+        ret = []
         for comport in serial.tools.list_ports.comports():
             if comport.vid == 0x0483 and comport.pid == 0x5740:
                 print(f'Found 32Blit on {comport.device}')
-                return comport.device
+                ret.append(comport.device)
+
+        if ret:
+            return ret
+
         raise RuntimeError('Unable to find 32Blit')
 
     def validate_comport(self, device):
         if device.lower() == 'auto':
+            return self.find_comport()[:1]
+        if device.lower() == 'all':
             return self.find_comport()
+
         for comport in serial.tools.list_ports.comports():
             if comport.device == device:
                 if comport.vid == 0x0483 and comport.pid == 0x5740:
                     print(f'Found 32Blit on {comport.device}')
-                    return device
+                    return [device]
         raise RuntimeError(f'Unable to find 32Blit on {device}')
 
     def run(self, args):
@@ -51,14 +59,16 @@ class Flasher(Tool):
             getattr(self, dispatch)(vars(args))
 
     def serial_command(fn):
-        """Set up and tear down a serial connection."""
+        """Set up and tear down serial connections."""
         def _decorated(self, args):
-            port = args.get('port', None)
-            if port is None:
-                port = self.find_comport()
-            sp = serial.Serial(port)
-            fn(self, sp, args)
-            sp.close()
+            ports = args.get('port', None)
+            if ports is None:
+                ports = self.find_comport()
+
+            for port in ports:
+                sp = serial.Serial(port)
+                fn(self, sp, args)
+                sp.close()
         return _decorated
 
     def _send_file(self, serial, file, dest):
