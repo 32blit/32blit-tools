@@ -132,7 +132,6 @@ def test_image_png_cli_strict_nopalette(parsers, test_input_file):
     with pytest.raises(TypeError):
         image.run(args)
 
-
 def test_image_png_cli_strict_palette_pal_transparent(parsers, test_input_file):
     from ttblit.asset import image
 
@@ -164,5 +163,37 @@ def test_image_png_cli_strict_palette_pal_transparent(parsers, test_input_file):
             '--strict',
             '--palette', test_palette_file.name,
             '--transparent', '88,88,88'])  # Invalid colour
+
+        image.run(args)
+
+def test_image_png_cli_packed_blank(parsers):
+    from ttblit.asset import image
+
+    parser, subparser = parsers
+
+    image = image.ImageAsset(subparser)
+
+    with tempfile.NamedTemporaryFile('wb', suffix='.png') as temp_png:
+        # this is a solid white image
+        temp_png.write(base64.b64decode(b'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9TxQ8qDq0g4pChOlkQFXHUKhShQqgVWnUwufQLmjQkKS6OgmvBwY/FqoOLs64OroIg+AHi5Oik6CIl/i8ptIjx4Lgf7+497t4BQr3MNKtjHNB020wl4mImuyp2vaIHAwhDRFhmljEnSUn4jq97BPh6F+NZ/uf+HH1qzmJAQCSeZYZpE28QT2/aBud94ggryirxOfGYSRckfuS64vEb54LLAs+MmOnUPHGEWCy0sdLGrGhqxFPEUVXTKV/IeKxy3uKslauseU/+wlBOX1nmOs1hJLCIJUjUkYIqSijDRoxWnRQLKdqP+/iHXL9ELoVcJTByLKACDbLrB/+D391a+ckJLykUBzpfHOdjBOjaBRo1x/k+dpzGCRB8Bq70lr9SB2Y+Sa+1tOgR0L8NXFy3NGUPuNwBBp8M2ZRdKUhTyOeB9zP6piwQvgV617zemvs4fQDS1FXyBjg4BEYLlL3u8+7u9t7+PdPs7wdkRXKhyqpX4AAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+QJFRQDAWzTXhEAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAFUlEQVQI12P8//8/AzbAxIADDE4JAFbUAw1h62h+AAAAAElFTkSuQmCC'))
+        temp_png.flush()
+
+        args = parser.parse_args(['image', '--input_file', temp_png.name, '--packed', '--output_format', 'c_header'])
+
+        image.run(args)
+
+def test_image_png_cli_packed_multi_transparent(parsers):
+    from ttblit.asset import image
+
+    parser, subparser = parsers
+
+    image = image.ImageAsset(subparser)
+
+    with tempfile.NamedTemporaryFile('wb', suffix='.png') as temp_png:
+        # many colours with alpha 0
+        temp_png.write(base64.b64decode(b'iVBORw0KGgoAAAANSUhEUgAAAIAAAAAICAYAAAAx3fd+AAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9TxQ8qDq0g4pChOlkQFXHUKhShQqgVWnUwufQLmjQkKS6OgmvBwY/FqoOLs64OroIg+AHi5Oik6CIl/i8ptIjx4Lgf7+497t4BQr3MNKtjHNB020wl4mImuyp2vaIHAwhDRFhmljEnSUn4jq97BPh6F+NZ/uf+HH1qzmJAQCSeZYZpE28QT2/aBud94ggryirxOfGYSRckfuS64vEb54LLAs+MmOnUPHGEWCy0sdLGrGhqxFPEUVXTKV/IeKxy3uKslauseU/+wlBOX1nmOs1hJLCIJUjUkYIqSijDRoxWnRQLKdqP+/iHXL9ELoVcJTByLKACDbLrB/+D391a+ckJLykUBzpfHOdjBOjaBRo1x/k+dpzGCRB8Bq70lr9SB2Y+Sa+1tOgR0L8NXFy3NGUPuNwBBp8M2ZRdKUhTyOeB9zP6piwQvgV617zemvs4fQDS1FXyBjg4BEYLlL3u8+7u9t7+PdPs7wdkRXKhyqpX4AAAAAZiS0dEAAAAAAD/1EFU8gAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+QJFRQALXUmYTEAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAACKUlEQVRYw71X7ZLjMAiTYN//jXd0P/yFCU7SvbvtDOPWgBCGxJQkYWYfCmHm+x4N5mcfmsEr/we/5Tt8li+73iMHM9DHHkHzENdAEu4+eZBL5zOWg86JZ+YbR6eBFs7NQx5cOFO3+fXvbmC2zRws1cYXRvbL8qQf8gUJ+P5u8vDRBzqllQ/+JywBsGIPAXfs6QZvCB8wmOxOeJb27uwz/ikWX3BQgVXlf9Jfbdiz+Q0hAP8L/b+IO/L1g92dzov1rd9TnKoOXvgz6SocP3AuYhM/7oBPq/UT+7tT8B+c8l1V86laUXH7Zfn/cb9IwGwJDXADzFTsReHVj4J5tlv2EyfaEfN70yvg84C1OLWVBUfuMQ2gCT7yHTEpuDc7M8HIpiNgPn73teDhA4sAh5+dZXC+O8tlo35XB84P+CfMIwaOd1n8psdJgABAlpeWAEDFrSsB3OeE5qKbW7QtjGvmqHVTrtlDoAgR01ndWwNr4nK+G1c89vS4pxDv1pnICNJ8tmMhj1MDyxPWxuPt5MHTRJS27d1Yxiu0Tu2gehIhFwpH8VmkwT6YqIDkOkTtfbSZkn2PwWwVVav3GgW1mEpdKy3OokI7ra4l2P2RGrCJlAYvoR4JJ2TsvHwSfD2Wvx247SPr7WlPk6aK3uP+lO4grAmrSJbXt4JC4PhkzhJNftrAJfXCs//upacSLgAq5diSIRWKc/3/wdvntHqbcuPIyPcyy3/w9+PF5w8xhbP1sQP9IwAAAABJRU5ErkJggg=='))
+        temp_png.flush()
+
+        args = parser.parse_args(['image', '--input_file', temp_png.name, '--packed', '--output_format', 'c_header'])
 
         image.run(args)
