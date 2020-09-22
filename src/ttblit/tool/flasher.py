@@ -20,26 +20,37 @@ class Flasher(Tool):
         self.op_save = operations.add_parser('save', help='Save a game/file to your 32Blit')
         self.op_save.add_argument('--file', type=pathlib.Path, required=True, help='File to save')
 
+        self.op_flash = operations.add_parser('flash', help='Flash a game to your 32Blit')
+        self.op_flash.add_argument('--file', type=pathlib.Path, required=True, help='File to flash')
+
         self.op_delete = operations.add_parser('delete', help='Delete a game/file from your 32Blit')
         self.op_list = operations.add_parser('list', help='List games/files on your 32Blit')
         self.op_debug = operations.add_parser('debug', help='Enter serial debug mode')
         self.op_reset = operations.add_parser('reset', help='Reset your 32Blit')
 
     def find_comport(self):
+        ret = []
         for comport in serial.tools.list_ports.comports():
             if comport.vid == 0x0483 and comport.pid == 0x5740:
                 print(f'Found 32Blit on {comport.device}')
-                return comport.device
+                ret.append(comport.device)
+
+        if ret:
+            return ret
+
         raise RuntimeError('Unable to find 32Blit')
 
     def validate_comport(self, device):
         if device.lower() == 'auto':
+            return self.find_comport()[:1]
+        if device.lower() == 'all':
             return self.find_comport()
+
         for comport in serial.tools.list_ports.comports():
             if comport.device == device:
                 if comport.vid == 0x0483 and comport.pid == 0x5740:
                     print(f'Found 32Blit on {comport.device}')
-                    return device
+                    return [device]
         raise RuntimeError(f'Unable to find 32Blit on {device}')
 
     def run(self, args):
@@ -48,24 +59,30 @@ class Flasher(Tool):
             getattr(self, dispatch)(vars(args))
 
     def serial_command(fn):
-        """Set up and tear down a serial connection."""
+        """Set up and tear down serial connections."""
         def _decorated(self, args):
-            port = args.get('port', None)
-            if port is None:
-                port = self.find_comport()
-            sp = serial.Serial(port)
-            fn(self, sp, args)
-            sp.close()
+            ports = args.get('port', None)
+            if ports is None:
+                ports = self.find_comport()
+
+            for port in ports:
+                sp = serial.Serial(port)
+                fn(self, sp, args)
+                sp.close()
         return _decorated
 
-    def _save(self, serial, file):
+    def _send_file(self, serial, file, dest):
         sent_byte_count = 0
         chunk_size = 64
         file_name = file.name
         file_size = file.stat().st_size
-        print(f'Saving {file} ({file_size} bytes) as {file_name}')
 
-        command = f'32BLSAVE{file_name}\x00{file_size}\x00'
+        if dest == 'sd':
+            print(f'Saving {file} ({file_size} bytes) as {file_name}')
+            command = f'32BLSAVE{file_name}\x00{file_size}\x00'
+        elif dest == 'flash':
+            print(f'Flashing {file} ({file_size} bytes)')
+            command = f'32BLPROG{file_name}\x00{file_size}\x00'
 
         serial.reset_output_buffer()
         serial.write(command.encode('ascii'))
@@ -81,7 +98,11 @@ class Flasher(Tool):
 
     @serial_command
     def run_save(self, serial, args):
-        self._save(serial, args.get('file'))
+        self._send_file(serial, args.get('file'), 'sd')
+
+    @serial_command
+    def run_flash(self, serial, args):
+        self._send_file(serial, args.get('file'), 'flash')
 
     @serial_command
     def run_delete(self, serial, args):
