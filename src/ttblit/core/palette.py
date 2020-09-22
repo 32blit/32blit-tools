@@ -116,6 +116,10 @@ class Palette():
         elif a == 0 and self.transparent is not None:
             return self.transparent
         elif not strict:
+            # Set this as the transparent colour if we don't have one
+            if a == 0 and self.transparent is None:
+                self.transparent = len(self.entries) - 1
+
             if len(self.entries) < 256:
                 self.entries.append((r, g, b, a))
                 return len(self.entries) - 1
@@ -137,7 +141,7 @@ class Palette():
         return bytes(self.tolist())
 
     def bit_length(self):
-        return (len(self.entries) - 1).bit_length()
+        return max(1, len(self.entries) - 1).bit_length()
 
     def __len__(self):
         return len(self.entries)
