@@ -6,7 +6,7 @@ import pathlib
 import sys
 
 from .asset import font, image, map, raw
-from .tool import cmake, flasher, packer
+from .tool import cmake, flasher, packer, metadata
 
 
 def exception_handler(exception_type, exception, traceback):
@@ -41,6 +41,7 @@ def main():
     tools[packer.Packer.command] = _packer
     tools[cmake.CMake.command] = cmake.CMake(subparsers)
     tools[flasher.Flasher.command] = flasher.Flasher(subparsers)
+    tools[metadata.Metadata.command] = metadata.Metadata(subparsers)
 
     args = parser.parse_args()
 
@@ -50,4 +51,4 @@ def main():
     if args.command is None:
         parser.print_help()
     else:
-        tools[args.command].run(args)
+        sys.exit(tools[args.command].run(args))
