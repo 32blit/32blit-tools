@@ -15,10 +15,13 @@ class MapAsset(RawAsset):
         layers = root.findall('layer/data')
         data = []
         for layer in layers:
-            data.append(self.csv_to_binary(
-                layer.text,
-                base=10,
-                offset=-1))  # Tiled indexes from 1 rather than 0
+            try:
+                data.append(self.csv_to_binary(
+                    layer.text,
+                    base=10,
+                    offset=-1))  # Tiled indexes from 1 rather than 0
+            except ValueError as e:
+                raise RuntimeError("Failed to convert .tmx, does it contain blank tiles? These export as -1 and blow everyting up")
         return b''.join(data)
 
     def to_binary(self, input_data):
