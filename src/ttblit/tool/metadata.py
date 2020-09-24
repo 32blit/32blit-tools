@@ -1,12 +1,12 @@
-import pathlib
 import argparse
+import pathlib
 import struct
 
 import yaml
 
+from ..asset.image import ImageAsset
 from ..core.outputformat import CHeader, CSource, RawBinary
 from ..core.tool import Tool
-from ..asset.image import ImageAsset
 
 
 class Metadata(Tool):
@@ -29,7 +29,7 @@ class Metadata(Tool):
 
         for option in required:
             if option not in config:
-                raise ValueError(f'Missing required option "{option}" from {config_file}"')
+                raise ValueError(f'Missing required option "{option}" from {config_file}')
 
         self.config = config
 
@@ -38,7 +38,7 @@ class Metadata(Tool):
         config['input_file'] = image_file
         config['output_file'] = image_file.with_suffix('.bin')
         if not image_file.is_file():
-            raise ValueError(f'{name} "{image_file}"" does not exist!')
+            raise ValueError(f'{name} "{image_file}" does not exist!')
         asset = ImageAsset(argparse.ArgumentParser().add_subparsers())
         asset.prepare(config)
 
@@ -64,10 +64,10 @@ class Metadata(Tool):
             print(f'Using config at {args.config}')
         else:
             print(f'Unable to find metadata config at {args.config}')
-        
+
         if 'icon' in self.config:
             icon = self.prepare_image_asset('icon', self.config['icon'])
-        
+
         if 'splash' in self.config:
             splash = self.prepare_image_asset('splash', self.config['splash'])
 
@@ -83,21 +83,19 @@ class Metadata(Tool):
             splash
         )
 
-        length = struct.pack("H", len(output))
+        length = struct.pack('H', len(output))
         output = header + length + output
 
         if bin.startswith(header):
-            if args.force:
-                length = struct.unpack("H", bin[8:10])[0]
-                bin = bin[8 + 2 + length:]
-                bin = output + bin
-                open(args.file, 'wb').write(bin)
-                print(f'Overwriting metadata in "{args.file}"')
-            else:
-                print(f'Refusing to overwrite metadata in "{args.file}"')
+            length = struct.unpack('H', bin[8:10])[0]
+            bin = bin[8 + 2 + length:]
+
+            if not args.force:
+                print(f'Refusing to overwrite metadata in {args.file}')
                 return 1
-        else:
-            bin = output + bin
-            open(args.file, 'wb').write(bin)
+
+        print(f'Adding metadata to {args.file}')
+        bin = output + bin
+        open(args.file, 'wb').write(bin)
 
         return 0
