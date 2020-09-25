@@ -92,6 +92,15 @@ class Metadata(Tool):
         description = bytes(self.config.get('description').encode('utf-8'))
         version = bytes(self.config.get('version').encode('utf-8'))
 
+        if len(title) > 64:
+            raise ValueError('Title should be a maximum of 64 characters!"')
+
+        if len(description) > 1024:
+            raise ValueError('Description should be a maximum of 1024 characters!')
+
+        if len(version) > 16:
+            raise ValueError('Version should be a maximum of 16 characters! eg: "v1.0.2"')
+
         metadata = (
             title + eof +
             description + eof +
