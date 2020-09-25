@@ -44,18 +44,35 @@ class Metadata(Tool):
 
         return asset.to_binary(open(image_file, 'rb').read())
 
+    def binary_size(self, bin):
+        return struct.unpack('<I', bin[16:20])[0] & 0xffffff
+
     def run(self, args):
         self.working_path = pathlib.Path('.')
-        header = bytes('BLITGAME'.encode('utf-8'))
+        game_header = bytes('BLIT'.encode('utf-8'))
+        meta_header = bytes('BLITMETA'.encode('utf-8'))
         eof = bytes('\0'.encode('utf-8'))
+        has_meta = False
 
         icon = bytes()
         splash = bytes()
         bin = bytes()
 
         if args.file.is_file():
-            print(f'Using bin file at {args.file}')
             bin = open(args.file, 'rb').read()
+            if bin.startswith(game_header):
+                binary_size = self.binary_size(bin)
+                if len(bin) == binary_size:
+                    has_meta = False
+                elif len(bin) > binary_size:
+                    if bin[binary_size:binary_size+8] == meta_header:
+                        has_meta = True
+                        bin = bin[:binary_size]
+                    else:
+                        raise ValueError(f'Invalid 32blit binary file {args.file}, expected {binary_size} bytes')
+                print(f'Using bin file at {args.file}')
+            else:
+                raise ValueError(f'Invalid 32blit binary file {args.file}')
         else:
             print(f'Unable to find bin file at {args.file}')
 
@@ -75,7 +92,7 @@ class Metadata(Tool):
         description = bytes(self.config.get('description').encode('utf-8'))
         version = bytes(self.config.get('version').encode('utf-8'))
 
-        output = (
+        metadata = (
             title + eof +
             description + eof +
             version + eof +
@@ -83,19 +100,17 @@ class Metadata(Tool):
             splash
         )
 
-        length = struct.pack('H', len(output))
-        output = header + length + output
+        length = struct.pack('H', len(metadata))
 
-        if bin.startswith(header):
-            length = struct.unpack('H', bin[8:10])[0]
-            bin = bin[8 + 2 + length:]
+        metadata = meta_header + length + metadata
 
+        if has_meta:
             if not args.force:
                 print(f'Refusing to overwrite metadata in {args.file}')
                 return 1
 
         print(f'Adding metadata to {args.file}')
-        bin = output + bin
+        bin = bin + metadata
         open(args.file, 'wb').write(bin)
 
         return 0
