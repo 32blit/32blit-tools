@@ -21,10 +21,12 @@ def test_cmake_instance(subparser):
 
     cmake.CMake(subparser)
 
+
 def test_flasher_instance(subparser):
     from ttblit.tool import flasher
 
     flasher.Flasher(subparser)
+
 
 def test_image_instance(subparser):
     from ttblit.asset import image

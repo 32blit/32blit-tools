@@ -6,7 +6,7 @@ import pathlib
 import sys
 
 from .asset import font, image, map, raw
-from .tool import cmake, flasher, packer, metadata
+from .tool import cmake, flasher, metadata, packer
 
 
 def exception_handler(exception_type, exception, traceback):

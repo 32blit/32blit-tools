@@ -1,8 +1,8 @@
 import io
 import struct
 
-from PIL import Image
 import freetype
+from PIL import Image
 
 from ..core.assetbuilder import AssetBuilder
 
@@ -13,7 +13,7 @@ class FontAsset(AssetBuilder):
     types = ['image', 'font']
     typemap = {
         'image': ('.png', '.gif'),
-        'font': ('.ttf') # possibly other freetype supported formats...
+        'font': ('.ttf')  # possibly other freetype supported formats...
     }
 
     def __init__(self, parser):
@@ -53,7 +53,7 @@ class FontAsset(AssetBuilder):
         char_height = h
 
         font_data = []
-        font_w = [] # per character width for variable-width mode
+        font_w = []  # per character width for variable-width mode
 
         for c in range(0, self.num_chars):
             char_w = 0
@@ -76,7 +76,7 @@ class FontAsset(AssetBuilder):
 
                 font_data.append(byte)
 
-            if c == 0: # space
+            if c == 0:  # space
                 font_w.append(self.space_width)
             else:
                 font_w.append(char_w + self.horizontal_spacing)
@@ -112,7 +112,7 @@ class FontAsset(AssetBuilder):
             if self.height - face.glyph.bitmap_top < min_y:
                 min_y = self.height - face.glyph.bitmap_top
 
-        char_height -= min_y # trim empty space at the top
+        char_height -= min_y  # trim empty space at the top
 
         font_data = []
 

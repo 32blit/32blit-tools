@@ -5,7 +5,6 @@ import struct
 import yaml
 
 from ..asset.image import ImageAsset
-from ..core.outputformat import CHeader, CSource, RawBinary
 from ..core.tool import Tool
 
 
@@ -65,7 +64,7 @@ class Metadata(Tool):
                 if len(bin) == binary_size:
                     has_meta = False
                 elif len(bin) > binary_size:
-                    if bin[binary_size:binary_size+8] == meta_header:
+                    if bin[binary_size:binary_size + 8] == meta_header:
                         has_meta = True
                         bin = bin[:binary_size]
                     else:
@@ -101,13 +100,11 @@ class Metadata(Tool):
         if len(version) > 16:
             raise ValueError('Version should be a maximum of 16 characters! eg: "v1.0.2"')
 
-        metadata = (
-            title + eof +
-            description + eof +
-            version + eof +
-            icon +
-            splash
-        )
+        metadata = title + eof
+        metadata += description + eof
+        metadata += version + eof
+        metadata += icon
+        metadata += splash
 
         length = struct.pack('H', len(metadata))
 
