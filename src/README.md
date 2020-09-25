@@ -54,6 +54,15 @@ Supported formats:
 
 # Changelog
 
+0.0.6
+-----
+
+* Font tool (thanks @Daft-Freak)
+* Flash command with multi-target function (thanks @Daft-Freak)
+* Bugfixes to palette handling (thanks @Daft-Freak)
+* Bugfixes to package recognition (seemed to affect Python 3.8 on Windows)
+* Friendly (ish) error message when a .tmx tilemap with 0-index tiles is used (tmx is 1-indexed for valid tiles)
+
 0.0.5
 -----
 
