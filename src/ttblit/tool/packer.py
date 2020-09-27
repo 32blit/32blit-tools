@@ -108,6 +108,10 @@ class Packer(Tool):
                 elif file_options is None:
                     file_options = {}
 
+                if 'palette' in file_options:
+                    if not pathlib.Path(file_options['palette']).is_absolute():
+                        file_options['palette'] = self.working_path / file_options['palette']
+
                 asset_sources.append(
                     AssetSource(input_files, builders=self.asset_builders, file_options=file_options)
                 )
