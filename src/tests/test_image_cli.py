@@ -132,6 +132,7 @@ def test_image_png_cli_strict_nopalette(parsers, test_input_file):
     with pytest.raises(TypeError):
         image.run(args)
 
+
 def test_image_png_cli_strict_palette_pal_transparent(parsers, test_input_file):
     from ttblit.asset import image
 
@@ -166,6 +167,7 @@ def test_image_png_cli_strict_palette_pal_transparent(parsers, test_input_file):
 
         image.run(args)
 
+
 def test_image_png_cli_packed_blank(parsers):
     from ttblit.asset import image
 
@@ -181,6 +183,7 @@ def test_image_png_cli_packed_blank(parsers):
         args = parser.parse_args(['image', '--input_file', temp_png.name, '--packed', '--output_format', 'c_header'])
 
         image.run(args)
+
 
 def test_image_png_cli_packed_multi_transparent(parsers):
     from ttblit.asset import image

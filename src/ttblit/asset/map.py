@@ -20,7 +20,7 @@ class MapAsset(RawAsset):
                     layer.text,
                     base=10,
                     offset=-1))  # Tiled indexes from 1 rather than 0
-            except ValueError as e:
+            except ValueError:
                 raise RuntimeError("Failed to convert .tmx, does it contain blank (0) tiles? Tiled is 1-indexed, so these get converted to -1 and blow everyting up")
         return b''.join(data)
 
