@@ -24,7 +24,7 @@ class Metadata(Tool):
         config = open(config_file).read()
         config = yaml.safe_load(config)
 
-        required = ['title', 'description', 'version']
+        required = ['title', 'description', 'version', 'author']
 
         for option in required:
             if option not in config:
@@ -90,19 +90,24 @@ class Metadata(Tool):
         title = bytes(self.config.get('title').encode('utf-8'))
         description = bytes(self.config.get('description').encode('utf-8'))
         version = bytes(self.config.get('version').encode('utf-8'))
+        author = bytes(self.config.get('author').encode('utf-8'))
 
-        if len(title) > 64:
-            raise ValueError('Title should be a maximum of 64 characters!"')
+        if len(title) > 24:
+            raise ValueError('Title should be a maximum of 24 characters!"')
 
-        if len(description) > 1024:
-            raise ValueError('Description should be a maximum of 1024 characters!')
+        if len(description) > 128:
+            raise ValueError('Description should be a maximum of 128 characters!')
 
         if len(version) > 16:
             raise ValueError('Version should be a maximum of 16 characters! eg: "v1.0.2"')
 
-        metadata = title + eof
-        metadata += description + eof
-        metadata += version + eof
+        if len(author) > 16:
+            raise ValueError('Author should be a maximum of 16 characters!')
+
+        metadata = b'T' + title + eof
+        metadata += b'D' + description + eof
+        metadata += b'V' + version + eof
+        metadata += b'A' + author + eof
         metadata += icon
         metadata += splash
 
