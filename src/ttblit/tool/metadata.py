@@ -53,9 +53,9 @@ class Metadata(Tool):
 
     def run(self, args):
         self.working_path = pathlib.Path('.')
-        game_header = 'BLIT'.encode('utf-8')
-        meta_header = 'BLITMETA'.encode('utf-8')
-        eof = '\0'.encode('utf-8')
+        game_header = 'BLIT'.encode('ascii')
+        meta_header = 'BLITMETA'.encode('ascii')
+        eof = '\0'.encode('ascii')
         has_meta = False
 
         icon = bytes()
@@ -94,10 +94,10 @@ class Metadata(Tool):
         if 'splash' in self.config:
             splash = self.prepare_image_asset('splash', self.config['splash'])
 
-        title = self.config.get('title').encode('utf-8')
-        description = self.config.get('description').encode('utf-8')
-        version = self.config.get('version').encode('utf-8')
-        author = self.config.get('author').encode('utf-8')
+        title = self.config.get('title').encode('ascii')
+        description = self.config.get('description').encode('ascii')
+        version = self.config.get('version').encode('ascii')
+        author = self.config.get('author').encode('ascii')
 
         if len(title) > 24:
             raise ValueError('Title should be a maximum of 24 characters!"')
@@ -112,7 +112,7 @@ class Metadata(Tool):
             raise ValueError('Author should be a maximum of 16 characters!')
 
         metadata = checksum
-        metadata += datetime.now().strftime("%Y%m%dT%H%M%S").encode('utf8') + eof
+        metadata += datetime.now().strftime("%Y%m%dT%H%M%S").encode('ascii') + eof
         metadata += title.ljust(24 + 1, eof)  # Left justify and pad with null chars to string length + 1 (terminator)
         metadata += description.ljust(128 + 1, eof)
         metadata += version.ljust(16 + 1, eof)
