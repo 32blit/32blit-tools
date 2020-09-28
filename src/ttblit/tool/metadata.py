@@ -1,6 +1,8 @@
 import argparse
 import pathlib
 import struct
+import binascii
+from datetime import datetime
 
 import yaml
 
@@ -46,21 +48,26 @@ class Metadata(Tool):
     def binary_size(self, bin):
         return struct.unpack('<I', bin[16:20])[0] & 0xffffff
 
+    def checksum(self, bin):
+        return struct.pack('<I', binascii.crc32(bin))
+
     def run(self, args):
         self.working_path = pathlib.Path('.')
-        game_header = bytes('BLIT'.encode('utf-8'))
-        meta_header = bytes('BLITMETA'.encode('utf-8'))
-        eof = bytes('\0'.encode('utf-8'))
+        game_header = 'BLIT'.encode('utf-8')
+        meta_header = 'BLITMETA'.encode('utf-8')
+        eof = '\0'.encode('utf-8')
         has_meta = False
 
         icon = bytes()
         splash = bytes()
+        checksum = bytes(4)
         bin = bytes()
 
         if args.file.is_file():
             bin = open(args.file, 'rb').read()
             if bin.startswith(game_header):
                 binary_size = self.binary_size(bin)
+                checksum = self.checksum(bin[:binary_size])
                 if len(bin) == binary_size:
                     has_meta = False
                 elif len(bin) > binary_size:
@@ -87,10 +94,10 @@ class Metadata(Tool):
         if 'splash' in self.config:
             splash = self.prepare_image_asset('splash', self.config['splash'])
 
-        title = bytes(self.config.get('title').encode('utf-8'))
-        description = bytes(self.config.get('description').encode('utf-8'))
-        version = bytes(self.config.get('version').encode('utf-8'))
-        author = bytes(self.config.get('author').encode('utf-8'))
+        title = self.config.get('title').encode('utf-8')
+        description = self.config.get('description').encode('utf-8')
+        version = self.config.get('version').encode('utf-8')
+        author = self.config.get('author').encode('utf-8')
 
         if len(title) > 24:
             raise ValueError('Title should be a maximum of 24 characters!"')
@@ -104,10 +111,12 @@ class Metadata(Tool):
         if len(author) > 16:
             raise ValueError('Author should be a maximum of 16 characters!')
 
-        metadata = b'T' + title + eof
-        metadata += b'D' + description + eof
-        metadata += b'V' + version + eof
-        metadata += b'A' + author + eof
+        metadata = checksum
+        metadata += datetime.now().strftime("%Y%m%dT%H%M%S").encode('utf8') + eof
+        metadata += title.ljust(24 + 1, eof)  # Left justify and pad with null chars to string length + 1 (terminator)
+        metadata += description.ljust(128 + 1, eof)
+        metadata += version.ljust(16 + 1, eof)
+        metadata += author.ljust(16 + 1, eof)
         metadata += icon
         metadata += splash
 
