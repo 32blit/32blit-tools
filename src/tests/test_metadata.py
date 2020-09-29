@@ -37,6 +37,7 @@ def test_metadata_file():
     temp_yml = tempfile.NamedTemporaryFile('w', suffix='.yml')
     temp_yml.write(f'''title: Rocks & Diamonds
 description: A pulse pounding, rock rollin', diamond hunting adventure
+author: gadgetoid
 splash:
   file: {temp_png.name}
 version: v1.0.0

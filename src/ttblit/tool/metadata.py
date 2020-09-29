@@ -1,6 +1,8 @@
 import argparse
 import pathlib
 import struct
+import binascii
+from datetime import datetime
 
 import yaml
 
@@ -24,7 +26,7 @@ class Metadata(Tool):
         config = open(config_file).read()
         config = yaml.safe_load(config)
 
-        required = ['title', 'description', 'version']
+        required = ['title', 'description', 'version', 'author']
 
         for option in required:
             if option not in config:
@@ -46,21 +48,26 @@ class Metadata(Tool):
     def binary_size(self, bin):
         return struct.unpack('<I', bin[16:20])[0] & 0xffffff
 
+    def checksum(self, bin):
+        return struct.pack('<I', binascii.crc32(bin))
+
     def run(self, args):
         self.working_path = pathlib.Path('.')
-        game_header = bytes('BLIT'.encode('utf-8'))
-        meta_header = bytes('BLITMETA'.encode('utf-8'))
-        eof = bytes('\0'.encode('utf-8'))
+        game_header = 'BLIT'.encode('ascii')
+        meta_header = 'BLITMETA'.encode('ascii')
+        eof = '\0'.encode('ascii')
         has_meta = False
 
         icon = bytes()
         splash = bytes()
+        checksum = bytes(4)
         bin = bytes()
 
         if args.file.is_file():
             bin = open(args.file, 'rb').read()
             if bin.startswith(game_header):
                 binary_size = self.binary_size(bin)
+                checksum = self.checksum(bin[:binary_size])
                 if len(bin) == binary_size:
                     has_meta = False
                 elif len(bin) > binary_size:
@@ -87,22 +94,29 @@ class Metadata(Tool):
         if 'splash' in self.config:
             splash = self.prepare_image_asset('splash', self.config['splash'])
 
-        title = bytes(self.config.get('title').encode('utf-8'))
-        description = bytes(self.config.get('description').encode('utf-8'))
-        version = bytes(self.config.get('version').encode('utf-8'))
+        title = self.config.get('title').encode('ascii')
+        description = self.config.get('description').encode('ascii')
+        version = self.config.get('version').encode('ascii')
+        author = self.config.get('author').encode('ascii')
 
-        if len(title) > 64:
-            raise ValueError('Title should be a maximum of 64 characters!"')
+        if len(title) > 24:
+            raise ValueError('Title should be a maximum of 24 characters!"')
 
-        if len(description) > 1024:
-            raise ValueError('Description should be a maximum of 1024 characters!')
+        if len(description) > 128:
+            raise ValueError('Description should be a maximum of 128 characters!')
 
         if len(version) > 16:
             raise ValueError('Version should be a maximum of 16 characters! eg: "v1.0.2"')
 
-        metadata = title + eof
-        metadata += description + eof
-        metadata += version + eof
+        if len(author) > 16:
+            raise ValueError('Author should be a maximum of 16 characters!')
+
+        metadata = checksum
+        metadata += datetime.now().strftime("%Y%m%dT%H%M%S").encode('ascii') + eof
+        metadata += title.ljust(24 + 1, eof)  # Left justify and pad with null chars to string length + 1 (terminator)
+        metadata += description.ljust(128 + 1, eof)
+        metadata += version.ljust(16 + 1, eof)
+        metadata += author.ljust(16 + 1, eof)
         metadata += icon
         metadata += splash
 
