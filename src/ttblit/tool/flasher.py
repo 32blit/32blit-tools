@@ -19,6 +19,7 @@ class Flasher(Tool):
 
         self.op_save = operations.add_parser('save', help='Save a game/file to your 32Blit')
         self.op_save.add_argument('--file', type=pathlib.Path, required=True, help='File to save')
+        self.op_save.add_argument('--directory', type=str, default='/', help='Target directory')
 
         self.op_flash = operations.add_parser('flash', help='Flash a game to your 32Blit')
         self.op_flash.add_argument('--file', type=pathlib.Path, required=True, help='File to flash')
@@ -71,15 +72,19 @@ class Flasher(Tool):
                 sp.close()
         return _decorated
 
-    def _send_file(self, serial, file, dest):
+    def _send_file(self, serial, file, dest, directory=None):
         sent_byte_count = 0
         chunk_size = 64
         file_name = file.name
         file_size = file.stat().st_size
 
         if dest == 'sd':
-            print(f'Saving {file} ({file_size} bytes) as {file_name}')
-            command = f'32BLSAVE{file_name}\x00{file_size}\x00'
+            if directory is None:
+                directory = '/'
+            else:
+                directory = f'{directory}/'
+            print(f'Saving {file} ({file_size} bytes) as {file_name} in {directory}')
+            command = f'32BLSAVE{directory}{file_name}\x00{file_size}\x00'
         elif dest == 'flash':
             print(f'Flashing {file} ({file_size} bytes)')
             command = f'32BLPROG{file_name}\x00{file_size}\x00'
@@ -98,7 +103,7 @@ class Flasher(Tool):
 
     @serial_command
     def run_save(self, serial, args):
-        self._send_file(serial, args.get('file'), 'sd')
+        self._send_file(serial, args.get('file'), 'sd', directory=args.get('directory', 'games'))
 
     @serial_command
     def run_flash(self, serial, args):
