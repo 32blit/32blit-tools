@@ -3,6 +3,7 @@ import pathlib
 import yaml
 
 from ..core.outputformat import CHeader, CSource, RawBinary
+from ..core.palette import Palette
 from ..core.tool import Tool
 
 
@@ -109,7 +110,7 @@ class Packer(Tool):
                     file_options = {}
 
                 asset_sources.append(
-                    AssetSource(input_files, builders=self.asset_builders, file_options=file_options)
+                    AssetSource(input_files, builders=self.asset_builders, file_options=file_options, working_path=self.working_path)
                 )
 
             self.assets.append(AssetTarget(
@@ -128,9 +129,10 @@ class Packer(Tool):
 class AssetSource():
     supported_options = ('name', 'type')
 
-    def __init__(self, input_files, builders, file_options):
+    def __init__(self, input_files, builders, file_options, working_path):
         self.input_files = input_files
         self.asset_builders = builders
+        self.working_path = working_path
         self.builder_options = {}
         self.type = None
         self.name = None
@@ -161,6 +163,21 @@ class AssetSource():
     def build(self, format, prefix=None, output_file=None):
         builder, input_type = self.type.split('/')
         builder = self.asset_builders[builder]
+
+        # Now we know our target builder, one last iteration through the options
+        # allows some pre-processing stages to remap paths or other idiosyncrasies
+        # of the yml config format.
+        for option_name, option_value in builder.options.items():
+            if option_name in self.builder_options:
+                option_type = builder.options[option_name]
+                if type(option_type) is tuple:
+                    option_type, default_value = option_type
+
+                # Ensure Palette and pathlib.Path type options for this asset builder
+                # are prefixed with the working directory if they are not absolute paths
+                if option_type in (Palette, pathlib.Path):
+                    if not pathlib.Path(self.builder_options[option_name]).is_absolute():
+                        self.builder_options[option_name] = self.working_path / self.builder_options[option_name]
 
         output = []
 
