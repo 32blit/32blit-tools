@@ -54,6 +54,13 @@ Supported formats:
 
 # Changelog
 
+0.0.7
+-----
+
+* Add metadata tool - tags binary with metadata from a .yml file
+* Fix relative paths for packer palette files
+* Add support for subdirectories to `32blit flash save`
+
 0.0.6
 -----
 
