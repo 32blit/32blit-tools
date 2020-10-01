@@ -2,6 +2,7 @@
 __version__ = '0.0.7'
 
 import argparse
+import logging
 import pathlib
 import sys
 
@@ -10,12 +11,14 @@ from .tool import cmake, flasher, metadata, packer
 
 
 def exception_handler(exception_type, exception, traceback):
-    print(f"{type(exception).__name__}: {exception}")
+    sys.stderr.write(f"{type(exception).__name__}: {exception}\n")
+    sys.stderr.flush()
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', action='store_true', help='Enable exception traces')
+    parser.add_argument('-v', '--verbosity', action='count', default=0, help='Output verbosity')
     subparsers = parser.add_subparsers(dest='command', help='Commands')
 
     if len(sys.argv) == 2:
@@ -45,7 +48,16 @@ def main():
 
     args = parser.parse_args()
 
-    if not args.debug:
+    log_format = '%(levelname)s: %(message)s'
+
+    if args.verbosity:
+        log_verbosity = min(args.verbosity, 3) - 1
+        log_level = [logging.WARNING, logging.INFO, logging.DEBUG][log_verbosity]
+        logging.basicConfig(level=log_level, format=log_format)
+
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG, format=log_format)
+    else:
         sys.excepthook = exception_handler
 
     if args.command is None:

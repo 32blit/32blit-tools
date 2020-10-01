@@ -1,3 +1,6 @@
+import logging
+
+
 class Tool():
     options = {}
 
@@ -31,7 +34,7 @@ class Tool():
         if output_file.exists() and not force:
             raise ValueError(f'Refusing to overwrite {output_file} (use force)')
         else:
-            print(f'Writing {output_file}')
+            logging.info(f'Writing {output_file}')
             if type(output_data) is str:
                 open(output_file, 'wb').write(output_data.encode('utf-8'))
             else:

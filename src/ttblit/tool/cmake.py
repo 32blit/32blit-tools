@@ -1,3 +1,4 @@
+import logging
 import pathlib
 
 import yaml
@@ -40,11 +41,11 @@ class CMake(Tool):
             if args.config.is_file():
                 self.working_path = args.config.parent
             else:
-                print(f'Unable to find config at {args.config}')
+                logging.warning(f'Unable to find config at {args.config}')
 
         if args.config is not None:
             self.parse_config(args.config)
-            print(f'Using config at {args.config}')
+            logging.info(f'Using config at {args.config}')
 
         if args.output is not None:
             self.destination_path = args.output
@@ -63,7 +64,7 @@ class CMake(Tool):
             if target.suffix in AssetTarget.output_formats:
                 output_formatter = AssetTarget.output_formats[target.suffix]
             else:
-                print(f'Warning: Unable to guess type of {target}, assuming raw/binary')
+                logging.warning(f'Unable to guess type of {target}, assuming raw/binary')
                 output_formatter = AssetTarget.output_formats['.raw']
 
             if output_formatter.components is None:
@@ -84,7 +85,7 @@ class CMake(Tool):
                 else:
                     input_files = [file_glob]
                 if len(input_files) == 0:
-                    print(f'Warning: Input file(s) not found {self.working_path / file_glob}')
+                    logging.warning(f'Input file(s) not found {self.working_path / file_glob}')
                     continue
 
                 all_inputs += input_files
