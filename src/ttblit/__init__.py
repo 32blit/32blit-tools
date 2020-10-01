@@ -50,10 +50,9 @@ def main():
 
     log_format = '%(levelname)s: %(message)s'
 
-    if args.verbosity:
-        log_verbosity = min(args.verbosity, 3) - 1
-        log_level = [logging.WARNING, logging.INFO, logging.DEBUG][log_verbosity]
-        logging.basicConfig(level=log_level, format=log_format)
+    log_verbosity = min(args.verbosity, 3)
+    log_level = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG][log_verbosity]
+    logging.basicConfig(level=log_level, format=log_format)
 
     if args.debug:
         logging.basicConfig(level=logging.DEBUG, format=log_format)
