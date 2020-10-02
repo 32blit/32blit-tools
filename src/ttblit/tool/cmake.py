@@ -77,7 +77,8 @@ class CMake(Tool):
                 all_inputs += list(self.working_path.glob(str(file)))
 
         if len(all_inputs) == 0:
-            logging.warning('No input assets for metadata')
+            logging.warning(f'No input assets for metadata. Generating empty file {str(args.cmake)}')
+            open(args.cmake, 'w').write(f'# Auto Generated File - DO NOT EDIT!')
         else:
             all_inputs = '\n'.join(f'"{x}"'.replace('\\', '/') for x in all_inputs)
 

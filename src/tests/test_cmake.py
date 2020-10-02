@@ -24,6 +24,18 @@ version: v1.0.0
 
 
 @pytest.fixture
+def test_empty_metadata_file():
+    temp_yml = tempfile.NamedTemporaryFile('w', suffix='.yml')
+    temp_yml.write(f'''title: Rocks & Diamonds
+description: A pulse pounding, rock rollin', diamond hunting adventure
+author: gadgetoid
+version: v1.0.0
+''')
+    temp_yml.flush()
+    return temp_yml
+
+
+@pytest.fixture
 def test_cmake_file():
     temp_cmake = tempfile.NamedTemporaryFile('wb', suffix='.cmake')
     return temp_cmake
@@ -54,3 +66,22 @@ def test_cmake(parsers, test_metadata_file, test_cmake_file):
         '--cmake', test_cmake_file.name])
 
     cmake.run(args)
+
+    assert open(test_cmake_file.name).read().startswith('# Auto Generated File - DO NOT EDIT!')
+
+
+def test_cmake_no_depends(parsers, test_empty_metadata_file, test_cmake_file):
+    from ttblit.tool import cmake
+
+    parser, subparser = parsers
+
+    cmake = cmake.CMake(subparser)
+
+    args = parser.parse_args([
+        'cmake',
+        '--config', test_empty_metadata_file.name,
+        '--cmake', test_cmake_file.name])
+
+    cmake.run(args)
+
+    assert open(test_cmake_file.name).read() == '# Auto Generated File - DO NOT EDIT!'
