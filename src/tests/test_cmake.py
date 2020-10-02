@@ -6,22 +6,6 @@ import pytest
 
 
 @pytest.fixture
-def test_binary_file():
-    temp_bin = tempfile.NamedTemporaryFile('wb', suffix='.bin')
-    temp_bin.write(b'BLIT000000000000\x14\x00\x00\x00')
-    temp_bin.flush()
-    return temp_bin
-
-
-@pytest.fixture
-def test_invalid_binary_file():
-    temp_bin = tempfile.NamedTemporaryFile('wb', suffix='.bin')
-    temp_bin.write(b'BLIT000000000000\x10\x00\x00\x00')
-    temp_bin.flush()
-    return temp_bin
-
-
-@pytest.fixture
 def test_metadata_file():
     temp_png = tempfile.NamedTemporaryFile('wb', suffix='.png')
     temp_png.write(base64.b64decode(b'iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyNpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTQ4IDc5LjE2NDAzNiwgMjAxOS8wOC8xMy0wMTowNjo1NyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIDIxLjAgKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjE5NkU4OENBNTk3NDExRUFCMTgyODFBRDFGMTZDODJGIiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjE5NkU4OENCNTk3NDExRUFCMTgyODFBRDFGMTZDODJGIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6MTk2RTg4Qzg1OTc0MTFFQUIxODI4MUFEMUYxNkM4MkYiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6MTk2RTg4Qzk1OTc0MTFFQUIxODI4MUFEMUYxNkM4MkYiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz4ohDCNAAAACVBMVEUAAAD///8A/wDg4n4DAAAAmklEQVR42uzZMQqAMAxA0er9D+1Wl1ITijTi+6PQ8qYYsTVJUu/Ilj569gAAAABqAtIDM30UAAAAoDrAuwAAAODLK9nCdAQAAACoBHh/FD84AQAAALYDJEnpQTk6MPgCD98LAAAAUAiQXkXT9wIAAADUBEx/qEQBg2fhUQwAAAAAAAAAAHADFnbCKSC8EwIAAABsAkjST7sEGACd4xph9WtahAAAAABJRU5ErkJggg=='))
@@ -39,45 +23,34 @@ version: v1.0.0
     return temp_yml, temp_png
 
 
-def test_metadata_no_args(parsers):
-    from ttblit.tool import metadata
+@pytest.fixture
+def test_cmake_file():
+    temp_cmake = tempfile.NamedTemporaryFile('wb', suffix='.cmake')
+    return temp_cmake
+
+
+def test_cmake_no_args(parsers):
+    from ttblit.tool import cmake
 
     parser, subparser = parsers
 
-    metadata = metadata.Metadata(subparser)
+    cmake = cmake.CMake(subparser)
 
     with pytest.raises(SystemExit):
-        parser.parse_args(['metadata'])
+        parser.parse_args(['cmake'])
 
 
-def test_metadata(parsers, test_metadata_file, test_binary_file):
-    from ttblit.tool import metadata
-
-    test_metadata_file, test_metadata_splash_png = test_metadata_file
-    parser, subparser = parsers
-
-    metadata = metadata.Metadata(subparser)
-
-    args = parser.parse_args([
-        'metadata',
-        '--config', test_metadata_file.name,
-        '--file', test_binary_file.name])
-
-    metadata.run(args)
-
-
-def test_metadata_invalid_bin(parsers, test_metadata_file, test_invalid_binary_file):
-    from ttblit.tool import metadata
+def test_cmake(parsers, test_metadata_file, test_cmake_file):
+    from ttblit.tool import cmake
 
     test_metadata_file, test_metadata_splash_png = test_metadata_file
     parser, subparser = parsers
 
-    metadata = metadata.Metadata(subparser)
+    cmake = cmake.CMake(subparser)
 
     args = parser.parse_args([
-        'metadata',
+        'cmake',
         '--config', test_metadata_file.name,
-        '--file', test_invalid_binary_file.name])
+        '--cmake', test_cmake_file.name])
 
-    with pytest.raises(ValueError):
-        metadata.run(args)
+    cmake.run(args)
