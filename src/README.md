@@ -54,6 +54,16 @@ Supported formats:
 
 # Changelog
 
+0.0.8
+-----
+
+* Add autoreset from game to firmware when running `flash save`
+* Add `flash info` to determine if in game or firmware
+* Add metadata dependency output from cmake tool
+* Fix asset dependency output to include additional files like palette
+* Redirect errors to stderr
+* Quiet! Use -vvvv for info, warnings, errors and debug information.
+
 0.0.7
 -----
 
