@@ -87,7 +87,7 @@ class CMake(Tool):
     )
     ''')
 
-    def run_asset_config(self, args):
+    def run_for_asset_config(self, args):
         self.get_general_options()
 
         all_inputs = []
