@@ -52,6 +52,42 @@ class CMake(Tool):
         else:
             self.destination_path = self.working_path
 
+        if 'title' in self.config and 'description' in self.config:
+            logging.info('Detected metadata config')
+            self.run_for_metadata_config(args)
+        else:
+            logging.info('Detected asset config')
+            self.run_for_asset_config(args)
+
+    def run_for_metadata_config(self, args):
+        all_inputs = []
+
+        if 'splash' in self.config:
+            file = pathlib.Path(self.config['splash']['file'])
+            if file.is_absolute():
+                all_inputs += [file]
+            else:
+                all_inputs += list(self.working_path.glob(str(file)))
+
+        if 'icon' in self.config:
+            file = pathlib.Path(self.config['icon']['file'])
+            if file.is_absolute():
+                all_inputs += [file]
+            else:
+                all_inputs += list(self.working_path.glob(str(file)))
+
+        if len(all_inputs) == 0:
+            logging.warning('No input assets for metadata')
+        else:
+            all_inputs = '\n'.join(f'"{x}"'.replace('\\', '/') for x in all_inputs)
+
+            open(args.cmake, 'w').write(f'''# Auto Generated File - DO NOT EDIT!
+    set(METADATA_DEPENDS
+    {all_inputs}
+    )
+    ''')
+
+    def run_asset_config(self, args):
         self.get_general_options()
 
         all_inputs = []
