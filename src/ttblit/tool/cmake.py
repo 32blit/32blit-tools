@@ -60,16 +60,24 @@ class CMake(Tool):
             self.run_for_asset_config(args)
 
     def run_for_metadata_config(self, args):
-        all_inputs = list(self.working_path.glob(self.config['splash']['file']))
-        all_inputs += list(self.working_path.glob(self.config['icon']['file']))
+        all_inputs = []
 
-        all_inputs = '\n'.join(f'"{x}"'.replace('\\', '/') for x in all_inputs)
+        if 'splash' in self.config:
+            all_inputs += list(self.working_path.glob(self.config['splash']['file']))
 
-        open(args.cmake, 'w').write(f'''# Auto Generated File - DO NOT EDIT!
-set(METADATA_DEPENDS
-{all_inputs}
-)
-''')
+        if 'icon' in self.config:
+            all_inputs += list(self.working_path.glob(self.config['icon']['file']))
+
+        if len(all_inputs) == 0:
+            logging.warning('No input assets for metadata')
+        else:
+            all_inputs = '\n'.join(f'"{x}"'.replace('\\', '/') for x in all_inputs)
+
+            open(args.cmake, 'w').write(f'''# Auto Generated File - DO NOT EDIT!
+    set(METADATA_DEPENDS
+    {all_inputs}
+    )
+    ''')
 
     def run_asset_config(self, args):
         self.get_general_options()
