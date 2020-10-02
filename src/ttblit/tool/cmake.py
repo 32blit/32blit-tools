@@ -61,8 +61,6 @@ class CMake(Tool):
         for target, options in self.config.items():
             target = pathlib.Path(target)
 
-            print(options)
-
             if target.suffix in AssetTarget.output_formats:
                 output_formatter = AssetTarget.output_formats[target.suffix]
             else:
