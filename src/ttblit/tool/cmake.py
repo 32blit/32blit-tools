@@ -14,7 +14,7 @@ class CMake(Tool):
     def __init__(self, parser):
         Tool.__init__(self, parser)
         self.parser.add_argument('--config', type=pathlib.Path, help='Asset config file')
-        self.parser.add_argument('--cmake', type=pathlib.Path, help='Output CMake file')
+        self.parser.add_argument('--cmake', type=pathlib.Path, help='Output CMake file', required=True)
         self.parser.add_argument('--output', type=pathlib.Path, help='Name for output file(s) or root path when using --config')
 
         self.config = {}
@@ -61,6 +61,8 @@ class CMake(Tool):
         for target, options in self.config.items():
             target = pathlib.Path(target)
 
+            print(options)
+
             if target.suffix in AssetTarget.output_formats:
                 output_formatter = AssetTarget.output_formats[target.suffix]
             else:
@@ -78,12 +80,17 @@ class CMake(Tool):
             for key in AssetTarget.supported_options:
                 options.pop(key, None)
 
-            for file_glob, _ in options.items():
+            for file_glob, file_options in options.items():
+                input_files = []
+                # Parse the options for any references to input files
+                for key, value in file_options.items():
+                    if key in ('palette') and type(value) is str:
+                        input_files += list(self.working_path.glob(value))
                 # Treat the input string as a glob, and get an input filelist
                 if type(file_glob) is str:
-                    input_files = list(self.working_path.glob(file_glob))
+                    input_files += list(self.working_path.glob(file_glob))
                 else:
-                    input_files = [file_glob]
+                    input_files += [file_glob]
                 if len(input_files) == 0:
                     logging.warning(f'Input file(s) not found {self.working_path / file_glob}')
                     continue
