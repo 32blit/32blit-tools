@@ -63,10 +63,18 @@ class CMake(Tool):
         all_inputs = []
 
         if 'splash' in self.config:
-            all_inputs += list(self.working_path.glob(self.config['splash']['file']))
+            file = pathlib.Path(self.config['splash']['file'])
+            if file.is_absolute():
+                all_inputs += [file]
+            else:
+                all_inputs += list(self.working_path.glob(str(file)))
 
         if 'icon' in self.config:
-            all_inputs += list(self.working_path.glob(self.config['icon']['file']))
+            file = pathlib.Path(self.config['icon']['file'])
+            if file.is_absolute():
+                all_inputs += [file]
+            else:
+                all_inputs += list(self.working_path.glob(str(file)))
 
         if len(all_inputs) == 0:
             logging.warning('No input assets for metadata')
