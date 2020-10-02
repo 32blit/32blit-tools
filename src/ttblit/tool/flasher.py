@@ -1,7 +1,9 @@
 import logging
 import pathlib
+import time
 
 import serial.tools.list_ports
+from serial.serialutil import SerialException
 from tqdm import tqdm
 
 from ..core.tool import Tool
@@ -81,8 +83,16 @@ class Flasher(Tool):
             raise RuntimeError('Timeout waiting for 32Blit status.')
         return 'game' if response == b'32BL_EXT' else 'firmware'
 
-    def _reset(self, serial):
+    def _reset(self, serial, timeout=5.0):
         serial.write(b'32BL_RST\x00')
+        serial.close()
+        t_start = time.time()
+        while time.time() - t_start < timeout:
+            try:
+                serial.open()
+                break
+            except SerialException:
+                time.sleep(0.1)
 
     def _reset_to_firmware(self, serial):
         if self._get_status(serial) == 'game':
