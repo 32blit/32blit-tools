@@ -1,3 +1,4 @@
+import logging
 import pathlib
 
 import serial.tools.list_ports
@@ -33,7 +34,7 @@ class Flasher(Tool):
         ret = []
         for comport in serial.tools.list_ports.comports():
             if comport.vid == 0x0483 and comport.pid == 0x5740:
-                print(f'Found 32Blit on {comport.device}')
+                logging.info(f'Found 32Blit on {comport.device}')
                 ret.append(comport.device)
 
         if ret:
@@ -50,7 +51,7 @@ class Flasher(Tool):
         for comport in serial.tools.list_ports.comports():
             if comport.device == device:
                 if comport.vid == 0x0483 and comport.pid == 0x5740:
-                    print(f'Found 32Blit on {comport.device}')
+                    logging.info(f'Found 32Blit on {comport.device}')
                     return [device]
         raise RuntimeError(f'Unable to find 32Blit on {device}')
 
@@ -83,10 +84,10 @@ class Flasher(Tool):
                 directory = '/'
             else:
                 directory = f'{directory}/'
-            print(f'Saving {file} ({file_size} bytes) as {file_name} in {directory}')
+            logging.info(f'Saving {file} ({file_size} bytes) as {file_name} in {directory}')
             command = f'32BLSAVE{directory}{file_name}\x00{file_size}\x00'
         elif dest == 'flash':
-            print(f'Flashing {file} ({file_size} bytes)')
+            logging.info(f'Flashing {file} ({file_size} bytes)')
             command = f'32BLPROG{file_name}\x00{file_size}\x00'
 
         serial.reset_output_buffer()
@@ -123,5 +124,5 @@ class Flasher(Tool):
 
     @serial_command
     def run_reset(self, serial, args):
-        print('Resetting your 32Blit...')
+        logging.info('Resetting your 32Blit...')
         serial.write(b'32BL_RST\x00')

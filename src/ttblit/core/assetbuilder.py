@@ -1,3 +1,4 @@
+import logging
 import pathlib
 import re
 
@@ -86,7 +87,7 @@ class AssetBuilder(Tool):
                     else:
                         opts[option_name] = default_value
                 else:
-                    print(f'Ignoring unsupported {self.command} option {option_name}')
+                    logging.info(f'Ignoring unsupported {self.command} option {option_name}')
 
         self.prepare(opts)
 
@@ -102,7 +103,7 @@ class AssetBuilder(Tool):
             for extension in extensions:
                 if self.input_file.name.endswith(extension):
                     self.input_type = input_type
-                    print(f"Guessed type {input_type} for {self.input_file}")
+                    logging.info(f"Guessed type {input_type} for {self.input_file}")
                     return
 
         raise TypeError(f"Unable to identify type of input file {self.input_file}")
@@ -110,14 +111,14 @@ class AssetBuilder(Tool):
     def _guess_format(self):
         if self.output_file is None:
             self.output_format = self.no_output_file_default_format
-            print(f"No --output given, writing to stdout assuming {self.no_output_file_default_format.name}")
+            logging.warning(f"No --output given, writing to stdout assuming {self.no_output_file_default_format.name}")
             return
 
         for format_name, format_class in self.formats.items():
             for extension in format_class.extensions:
                 if self.output_file.name.endswith(extension):
                     self.output_format = format_class
-                    print(f"Guessed output format {format_class.name} for {self.output_file}")
+                    logging.info(f"Guessed output format {format_class.name} for {self.output_file}")
                     return
 
         raise TypeError(f"Unable to identify type of output file {self.output_file}")

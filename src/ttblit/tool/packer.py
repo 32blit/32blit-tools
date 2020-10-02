@@ -1,3 +1,4 @@
+import logging
 import pathlib
 
 import yaml
@@ -58,7 +59,7 @@ class Packer(Tool):
             if args.config.is_file():
                 self.working_path = args.config.parent
             else:
-                print(f'Unable to find config at {args.config}')
+                logging.warning(f'Unable to find config at {args.config}')
 
         if args.output is not None:
             self.destination_path = args.output
@@ -67,7 +68,7 @@ class Packer(Tool):
 
         if args.config is not None:
             self.parse_config(args.config)
-            print(f'Using config at {args.config}')
+            logging.info(f'Using config at {args.config}')
 
         elif args.files is not None and args.output is not None:
             self.filelist_to_config(args.files, args.output)
@@ -77,7 +78,7 @@ class Packer(Tool):
         # Top level of our config is filegroups and general settings
         for target, options in self.config.items():
             output_file = self.working_path / target
-            print(f'Preparing output target {output_file}')
+            logging.info(f'Preparing output target {output_file}')
 
             asset_sources = []
             target_options = {}
@@ -98,7 +99,7 @@ class Packer(Tool):
                 else:
                     input_files = [file_glob]
                 if len(input_files) == 0:
-                    print(f'Warning: Input file(s) not found {self.working_path / file_glob}')
+                    logging.warning(f'Input file(s) not found {self.working_path / file_glob}')
                     continue
 
                 # Rewrite a single string option to `name: option`
@@ -157,7 +158,7 @@ class AssetSource():
             for input_type, suffixes in asset_builder.typemap.items():
                 if file.suffix in suffixes:
                     return f'{command}/{input_type}'
-        print(f'Warning: Unable to guess type, assuming raw/binary {file}')
+        logging.warning(f'Unable to guess type, assuming raw/binary {file}')
         return 'raw/binary'
 
     def build(self, format, prefix=None, output_file=None):
@@ -192,7 +193,7 @@ class AssetSource():
             })
             builder.prepare_options(self.builder_options)
             output.append(builder.build())
-            print(f' - {self.type} {file} -> {builder.symbol_name}')
+            logging.info(f' - {self.type} {file} -> {builder.symbol_name}')
 
         return output
 
@@ -251,5 +252,5 @@ class AssetTarget():
     def guess_output_format(self, file):
         if file.suffix in self.output_formats:
             return self.output_formats[file.suffix]
-        print(f'Warning: Unable to guess type of {file}, assuming raw/binary')
+        logging.warning(f'Unable to guess type of {file}, assuming raw/binary')
         return RawBinary

@@ -1,7 +1,8 @@
 import argparse
+import binascii
+import logging
 import pathlib
 import struct
-import binascii
 from datetime import datetime
 
 import yaml
@@ -76,17 +77,17 @@ class Metadata(Tool):
                         bin = bin[:binary_size]
                     else:
                         raise ValueError(f'Invalid 32blit binary file {args.file}, expected {binary_size} bytes')
-                print(f'Using bin file at {args.file}')
+                logging.info(f'Using bin file at {args.file}')
             else:
                 raise ValueError(f'Invalid 32blit binary file {args.file}')
         else:
-            print(f'Unable to find bin file at {args.file}')
+            logging.warning(f'Unable to find bin file at {args.file}')
 
         if args.config.is_file():
             self.parse_config(args.config)
-            print(f'Using config at {args.config}')
+            logging.info(f'Using config at {args.config}')
         else:
-            print(f'Unable to find metadata config at {args.config}')
+            logging.warning(f'Unable to find metadata config at {args.config}')
 
         if 'icon' in self.config:
             icon = self.prepare_image_asset('icon', self.config['icon'])
@@ -126,10 +127,10 @@ class Metadata(Tool):
 
         if has_meta:
             if not args.force:
-                print(f'Refusing to overwrite metadata in {args.file}')
+                logging.critical(f'Refusing to overwrite metadata in {args.file}')
                 return 1
 
-        print(f'Adding metadata to {args.file}')
+        logging.info(f'Adding metadata to {args.file}')
         bin = bin + metadata
         open(args.file, 'wb').write(bin)
 

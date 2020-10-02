@@ -1,4 +1,5 @@
 import argparse
+import logging
 import pathlib
 import struct
 
@@ -102,7 +103,7 @@ class Palette():
         self.width, self.height = palette.size
         if self.width * self.height > 256:
             raise argparse.ArgumentError(None, f'palette {palette_file} has too many pixels {self.width}x{self.height}={self.width*self.height} (max 256)')
-        print(f'Using palette {palette_file} {self.width}x{self.height}')
+        logging.info(f'Using palette {palette_file} {self.width}x{self.height}')
 
         self.image = palette.convert('RGBA')
 
@@ -111,7 +112,7 @@ class Palette():
             index = self.entries.index((r, g, b, a))
             return index
             # Noisy print
-            # print(f'Re-mapping ({r}, {g}, {b}, {a}) at ({x}x{y}) to ({index})')
+            # logging.info(f'Re-mapping ({r}, {g}, {b}, {a}) at ({x}x{y}) to ({index})')
         # Anything with 0 alpha that's not in the palette might as well be the transparent colour
         elif a == 0 and self.transparent is not None:
             return self.transparent

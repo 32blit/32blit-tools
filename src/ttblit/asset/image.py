@@ -1,4 +1,5 @@
 import io
+import logging
 import struct
 
 from bitstring import BitArray
@@ -46,9 +47,9 @@ class ImageAsset(AssetBuilder):
             r, g, b = self.transparent
             p = self.palette.set_transparent_colour(r, g, b)
             if p is not None:
-                print(f'Found transparent colour ({r},{g},{b}) in palette')
+                logging.info(f'Found transparent colour ({r},{g},{b}) in palette')
             else:
-                print(f'Could not find transparent colour ({r},{g},{b}) in palette')
+                logging.warning(f'Could not find transparent colour ({r},{g},{b}) in palette')
 
     def quantize_image(self, input_data):
         if self.strict and len(self.palette) == 0:
