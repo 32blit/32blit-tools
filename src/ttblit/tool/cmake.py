@@ -116,6 +116,11 @@ class CMake(Tool):
                 options.pop(key, None)
 
             for file_glob, file_options in options.items():
+                # Rewrite a single string option to `name: option`
+                # This handles: `inputfile.bin: filename` entries
+                if type(file_options) is str:
+                    file_options = {'name': file_options}
+
                 input_files = []
                 # Parse the options for any references to input files
                 for key, value in file_options.items():
