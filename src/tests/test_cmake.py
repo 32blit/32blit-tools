@@ -36,6 +36,17 @@ version: v1.0.0
 
 
 @pytest.fixture
+def test_asset_config_file():
+    temp_yml = tempfile.NamedTemporaryFile('w', suffix='.yml')
+    temp_yml.write(f'''assets.cpp:
+  assets/buttons.png: asset_buttons
+''')
+    temp_yml.flush()
+    return temp_yml
+
+
+
+@pytest.fixture
 def test_cmake_file():
     temp_cmake = tempfile.NamedTemporaryFile('wb', suffix='.cmake')
     return temp_cmake
@@ -50,6 +61,21 @@ def test_cmake_no_args(parsers):
 
     with pytest.raises(SystemExit):
         parser.parse_args(['cmake'])
+
+
+def test_cmake_asset(parsers, test_asset_config_file, test_cmake_file):
+    from ttblit.tool import cmake
+
+    parser, subparser = parsers
+
+    cmake = cmake.CMake(subparser)
+
+    args = parser.parse_args([
+        'cmake',
+        '--config', test_asset_config_file.name,
+        '--cmake', test_cmake_file.name])
+
+    cmake.run(args)
 
 
 def test_cmake(parsers, test_metadata_file, test_cmake_file):
