@@ -55,6 +55,7 @@ class Metadata(Tool):
     def run(self, args):
         self.working_path = pathlib.Path('.')
         game_header = 'BLIT'.encode('ascii')
+        reloc_header = 'RELO'.encode('ascii')
         meta_header = 'BLITMETA'.encode('ascii')
         eof = '\0'.encode('ascii')
         has_meta = False
@@ -63,9 +64,14 @@ class Metadata(Tool):
         splash = bytes()
         checksum = bytes(4)
         bin = bytes()
+        reloc = bytes()
 
         if args.file.is_file():
             bin = open(args.file, 'rb').read()
+            if bin.startswith(reloc_header):
+                header_start = bin.index(game_header)
+                reloc = bin[:header_start]
+                bin = bin[header_start:]
             if bin.startswith(game_header):
                 binary_size = self.binary_size(bin)
                 checksum = self.checksum(bin[:binary_size])
@@ -131,7 +137,6 @@ class Metadata(Tool):
                 return 1
 
         logging.info(f'Adding metadata to {args.file}')
-        bin = bin + metadata
-        open(args.file, 'wb').write(bin)
+        open(args.file, 'wb').write(reloc + bin + metadata)
 
         return 0
