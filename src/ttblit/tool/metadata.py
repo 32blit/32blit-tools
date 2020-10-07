@@ -6,9 +6,66 @@ import struct
 from datetime import datetime
 
 import yaml
+from construct import Struct, Optional, Const, PrefixedArray, Prefixed, Int32ul, Int16ul, Bytes, Checksum, PaddedString, GreedyBytes, RawCopy, this, len_
+from construct.core import StreamError
 
 from ..asset.image import ImageAsset
 from ..core.tool import Tool
+
+struct_blit_meta = Struct(
+        'header' / Const(b'BLITMETA'),
+        'data' / Prefixed(Int16ul, Struct(
+            'checksum' / Checksum(
+                Int32ul,
+                lambda data: binascii.crc32(data),
+                this._._.bin.data
+            ),
+            'date' / PaddedString(16, 'ascii'),
+            'title' / PaddedString(25, 'ascii'),
+            'description' / PaddedString(129, 'ascii'),
+            'version' / PaddedString(17, 'ascii'),
+            'author' / PaddedString(17, 'ascii'),
+            'images' / GreedyBytes
+        ))
+)
+
+struct_blit_bin = Struct(
+    'header' / Const(b'BLIT'),
+    'render' / Int32ul,
+    'update' / Int32ul,
+    'init' / Int32ul,
+    'length' / Int32ul,
+    # The length above is actually the _flash_end symbol from startup_user.s
+    # it includes the offset into 0x90000000 (external flash)
+    # we mask out the highest nibble to correct this into the actual bin length
+    # plus subtract 20 bytes for header, symbol and length dwords
+    'bin' / Bytes((this.length & 0x0FFFFFFF) - 20)
+)
+
+struct_blit_relo = Struct(
+    'header' / Const(b'RELO'),
+    'relocs' / PrefixedArray(Int32ul, Struct(
+        'reloc' / Int32ul
+    ))
+)
+
+blit_game = Struct(
+    'relo' / Optional(struct_blit_relo),
+    'bin' / RawCopy(struct_blit_bin),
+    'meta' / Optional(struct_blit_meta)
+)
+
+blit_game_with_meta = Struct(
+    'relo' / Optional(struct_blit_relo),
+    'bin' / RawCopy(struct_blit_bin),
+    'meta' / struct_blit_meta
+)
+
+blit_game_with_meta_and_relo = Struct(
+    'relo' / struct_blit_relo,
+    'bin' / RawCopy(struct_blit_bin),
+    'meta' / struct_blit_meta
+)
 
 
 class Metadata(Tool):
@@ -53,41 +110,14 @@ class Metadata(Tool):
         return struct.pack('<I', binascii.crc32(bin))
 
     def run(self, args):
-        self.working_path = pathlib.Path('.')
-        game_header = 'BLIT'.encode('ascii')
-        reloc_header = 'RELO'.encode('ascii')
-        meta_header = 'BLITMETA'.encode('ascii')
-        eof = '\0'.encode('ascii')
-        has_meta = False
+        if not args.file.is_file():
+            raise ValueError(f'Unable to find bin file at {args.file}')
 
-        icon = bytes()
-        splash = bytes()
-        checksum = bytes(4)
-        bin = bytes()
-        reloc = bytes()
-
-        if args.file.is_file():
-            bin = open(args.file, 'rb').read()
-            if bin.startswith(reloc_header):
-                header_start = bin.index(game_header)
-                reloc = bin[:header_start]
-                bin = bin[header_start:]
-            if bin.startswith(game_header):
-                binary_size = self.binary_size(bin)
-                checksum = self.checksum(bin[:binary_size])
-                if len(bin) == binary_size:
-                    has_meta = False
-                elif len(bin) > binary_size:
-                    if bin[binary_size:binary_size + 8] == meta_header:
-                        has_meta = True
-                        bin = bin[:binary_size]
-                    else:
-                        raise ValueError(f'Invalid 32blit binary file {args.file}, expected {binary_size} bytes')
-                logging.info(f'Using bin file at {args.file}')
-            else:
-                raise ValueError(f'Invalid 32blit binary file {args.file}')
-        else:
-            logging.warning(f'Unable to find bin file at {args.file}')
+        bin = open(args.file, 'rb').read()
+        try:
+            game = blit_game.parse(bin)
+        except StreamError:
+            raise ValueError(f'Invalid 32blit binary file {args.file}')
 
         if args.config.is_file():
             self.parse_config(args.config)
@@ -101,10 +131,10 @@ class Metadata(Tool):
         if 'splash' in self.config:
             splash = self.prepare_image_asset('splash', self.config['splash'])
 
-        title = self.config.get('title').encode('ascii')
-        description = self.config.get('description').encode('ascii')
-        version = self.config.get('version').encode('ascii')
-        author = self.config.get('author').encode('ascii')
+        title = self.config.get('title')
+        description = self.config.get('description')
+        version = self.config.get('version')
+        author = self.config.get('author')
 
         if len(title) > 24:
             raise ValueError('Title should be a maximum of 24 characters!"')
@@ -118,25 +148,31 @@ class Metadata(Tool):
         if len(author) > 16:
             raise ValueError('Author should be a maximum of 16 characters!')
 
-        metadata = checksum
-        metadata += datetime.now().strftime("%Y%m%dT%H%M%S").encode('ascii') + eof
-        metadata += title.ljust(24 + 1, eof)  # Left justify and pad with null chars to string length + 1 (terminator)
-        metadata += description.ljust(128 + 1, eof)
-        metadata += version.ljust(16 + 1, eof)
-        metadata += author.ljust(16 + 1, eof)
-        metadata += icon
-        metadata += splash
-
-        length = struct.pack('H', len(metadata))
-
-        metadata = meta_header + length + metadata
-
-        if has_meta:
+        if game.meta is not None:
             if not args.force:
                 logging.critical(f'Refusing to overwrite metadata in {args.file}')
                 return 1
 
+        game.meta = {
+            'data': {
+                'date': datetime.now().strftime("%Y%m%dT%H%M%S"),
+                'title': title,
+                'description': description,
+                'version': version,
+                'author': author,
+                'images': icon + splash
+            }
+        }
+
+        # Force through a non-optional builder if relo symbols exist
+        # since we might have modified them and want to hit parser errors
+        # if something has messed up
+        if game.relo is not None:
+            bin = blit_game_with_meta_and_relo.build(game)
+        else:
+            bin = blit_game_with_meta.build(game)
+
         logging.info(f'Adding metadata to {args.file}')
-        open(args.file, 'wb').write(reloc + bin + metadata)
+        open(args.file, 'wb').write(bin)
 
         return 0
