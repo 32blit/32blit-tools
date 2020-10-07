@@ -54,6 +54,12 @@ Supported formats:
 
 # Changelog
 
+0.0.9
+-----
+
+* Add support for PIC reloc'd binaries with RELO header
+* Add string arg support for asset filename to cmake tool
+
 0.0.8
 -----
 
