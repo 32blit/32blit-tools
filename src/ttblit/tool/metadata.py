@@ -1,19 +1,58 @@
 import argparse
 import binascii
 import logging
+import math
 import pathlib
 import struct
 from datetime import datetime
 
 import yaml
+from bitstring import BitArray, BitStream
+from PIL import Image
 
-from construct import (Bytes, Checksum, Const, GreedyBytes, Int16ul, Int32ul,
-                       Optional, PaddedString, Prefixed, PrefixedArray,
-                       RawCopy, Struct, this)
+from construct import (Array, Bytes, Checksum, Computed, Const, Int8ul,
+                       Int16ul, Int32ul, Optional, PaddedString, Prefixed,
+                       PrefixedArray, RawCopy, Struct, this)
 from construct.core import StreamError
 
 from ..asset.image import ImageAsset
 from ..core.tool import Tool
+
+
+def compute_bit_length(ctx):
+    """Compute the required bit length for image data.
+    Uses the count of items in the palette to determine how
+    densely we can pack the image data.
+    """
+    return (len(ctx.palette) - 1).bit_length()
+
+
+def compute_data_length(ctx):
+    """Compute the required data length for palette based images.
+    We need this computation here so we can use `math.ceil` and
+    byte-align the result.
+    """
+    return math.ceil((ctx.width * ctx.height * ctx.bit_length) / 8)
+
+
+struct_blit_image = Struct(
+    'header' / Const(b'SPRITEPK'),
+    'size' / Int16ul,
+    'width' / Int16ul,
+    'height' / Int16ul,
+    'rows' / Int16ul,
+    'cols' / Int16ul,
+    'format' / Int8ul,
+    'palette' / PrefixedArray(Int8ul, Struct(
+        'r' / Int8ul,
+        'g' / Int8ul,
+        'b' / Int8ul,
+        'a' / Int8ul
+    )),
+    'bit_length' / Computed(compute_bit_length),
+    'data_length' / Computed(compute_data_length),
+    'data' / Array(this.data_length, Int8ul)
+)
 
 struct_blit_meta = Struct(
     'header' / Const(b'BLITMETA'),
@@ -28,7 +67,8 @@ struct_blit_meta = Struct(
         'description' / PaddedString(129, 'ascii'),
         'version' / PaddedString(17, 'ascii'),
         'author' / PaddedString(17, 'ascii'),
-        'images' / GreedyBytes
+        'icon' / struct_blit_image,
+        'splash' / struct_blit_image
     ))
 )
 
@@ -77,9 +117,10 @@ class Metadata(Tool):
 
     def __init__(self, parser):
         Tool.__init__(self, parser)
-        self.parser.add_argument('--config', required=True, type=pathlib.Path, help='Metadata config file')
+        self.parser.add_argument('--config', type=pathlib.Path, help='Metadata config file')
         self.parser.add_argument('--file', required=True, type=pathlib.Path, help='Input file')
         self.parser.add_argument('--force', action='store_true', help='Force file overwrite')
+        self.parser.add_argument('--dump-images', action='store_true', help='Dump images from metadata')
 
         self.config = {}
 
@@ -106,6 +147,23 @@ class Metadata(Tool):
 
         return asset.to_binary(open(image_file, 'rb').read())
 
+    def packed_to_image(self, image):
+        num_pixels = image.width * image.height
+        image_icon_data = BitArray().join(BitArray(uint=x, length=8) for x in image.data)
+        image_icon_data = BitStream(image_icon_data).readlist(",".join(f"uint:{image.bit_length}" for _ in range(num_pixels)))
+
+        raw_data = bytes()
+        for i in image_icon_data:
+            rgba = image.palette[i]
+            raw_data += bytes([
+                rgba.r,
+                rgba.g,
+                rgba.b,
+                rgba.a,
+            ])
+
+        return Image.frombytes("RGBA", (image.width, image.height), raw_data)
+
     def binary_size(self, bin):
         return struct.unpack('<I', bin[16:20])[0] & 0xffffff
 
@@ -125,6 +183,44 @@ class Metadata(Tool):
         except StreamError:
             raise ValueError(f'Invalid 32blit binary file {args.file}')
 
+        # No config supplied, so dump the game info
+        if args.config is None:
+            print(f"""
+Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
+            if game.relo is not None:
+                print(f"""Relocations: Yes ({len(game.relo.relocs)})""")
+            else:
+                print(f"""Relocations: No""")
+            if game.meta is not None:
+                print(f"""Metadata:    Yes
+
+    Title:       {game.meta.data.title}
+    Description: {game.meta.data.description}
+    Version:     {game.meta.data.version}
+    Author:      {game.meta.data.author}
+""")
+                if game.meta.data.icon is not None:
+                    game_icon = game.meta.data.icon
+                    print(f"""    Icon:        {game_icon.width}x{game_icon.height} ({len(game_icon.palette)} colours)""")
+                    if args.dump_images:
+                        image_icon = self.packed_to_image(game_icon)
+                        image_icon_filename = args.file.with_suffix(".icon.png")
+                        image_icon.save(image_icon_filename)
+                        print(f"    Dumped to:   {image_icon_filename}")
+                if game.meta.data.splash is not None:
+                    game_splash = game.meta.data.splash
+                    print(f"""    Splash:      {game_splash.width}x{game_splash.height} ({len(game_splash.palette)} colours)""")
+                    if args.dump_images:
+                        image_splash = self.packed_to_image(game_splash)
+                        image_splash_filename = args.file.with_suffix(".splash.png")
+                        image_splash.save(image_splash_filename)
+                        print(f"    Dumped to:   {image_splash_filename}")
+                print("")
+            else:
+                print(f"""Metadata:    No
+""")
+            return
+
         if args.config.is_file():
             self.parse_config(args.config)
             logging.info(f'Using config at {args.config}')
@@ -133,9 +229,13 @@ class Metadata(Tool):
 
         if 'icon' in self.config:
             icon = self.prepare_image_asset('icon', self.config['icon'])
+        else:
+            raise ValueError('An 8x8 pixel icon is required!"')
 
         if 'splash' in self.config:
             splash = self.prepare_image_asset('splash', self.config['splash'])
+        else:
+            raise ValueError('A 128x96 pixel splash is required!"')
 
         title = self.config.get('title')
         description = self.config.get('description')
@@ -166,7 +266,8 @@ class Metadata(Tool):
                 'description': description,
                 'version': version,
                 'author': author,
-                'images': icon + splash
+                'icon': struct_blit_image.parse(icon),
+                'splash': struct_blit_image.parse(splash)
             }
         }
 
