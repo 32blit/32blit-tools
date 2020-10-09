@@ -1,4 +1,3 @@
-import argparse
 import base64
 import tempfile
 
@@ -43,7 +42,6 @@ def test_asset_config_file():
 ''')
     temp_yml.flush()
     return temp_yml
-
 
 
 @pytest.fixture

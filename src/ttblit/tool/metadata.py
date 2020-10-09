@@ -6,27 +6,30 @@ import struct
 from datetime import datetime
 
 import yaml
-from construct import Struct, Optional, Const, PrefixedArray, Prefixed, Int32ul, Int16ul, Bytes, Checksum, PaddedString, GreedyBytes, RawCopy, this, len_
+
+from construct import (Bytes, Checksum, Const, GreedyBytes, Int16ul, Int32ul,
+                       Optional, PaddedString, Prefixed, PrefixedArray,
+                       RawCopy, Struct, this)
 from construct.core import StreamError
 
 from ..asset.image import ImageAsset
 from ..core.tool import Tool
 
 struct_blit_meta = Struct(
-        'header' / Const(b'BLITMETA'),
-        'data' / Prefixed(Int16ul, Struct(
-            'checksum' / Checksum(
-                Int32ul,
-                lambda data: binascii.crc32(data),
-                this._._.bin.data
-            ),
-            'date' / PaddedString(16, 'ascii'),
-            'title' / PaddedString(25, 'ascii'),
-            'description' / PaddedString(129, 'ascii'),
-            'version' / PaddedString(17, 'ascii'),
-            'author' / PaddedString(17, 'ascii'),
-            'images' / GreedyBytes
-        ))
+    'header' / Const(b'BLITMETA'),
+    'data' / Prefixed(Int16ul, Struct(
+        'checksum' / Checksum(
+            Int32ul,
+            lambda data: binascii.crc32(data),
+            this._._.bin.data
+        ),
+        'date' / PaddedString(16, 'ascii'),
+        'title' / PaddedString(25, 'ascii'),
+        'description' / PaddedString(129, 'ascii'),
+        'version' / PaddedString(17, 'ascii'),
+        'author' / PaddedString(17, 'ascii'),
+        'images' / GreedyBytes
+    ))
 )
 
 struct_blit_bin = Struct(
@@ -112,6 +115,9 @@ class Metadata(Tool):
     def run(self, args):
         if not args.file.is_file():
             raise ValueError(f'Unable to find bin file at {args.file}')
+
+        icon = b''
+        splash = b''
 
         bin = open(args.file, 'rb').read()
         try:
