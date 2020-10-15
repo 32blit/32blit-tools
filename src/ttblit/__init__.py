@@ -25,7 +25,7 @@ def main():
         file = pathlib.Path(sys.argv[1])
         if file.is_file() and file.exists():
             f = flasher.Flasher(subparsers)
-            f.run_save({'file': file})
+            f.run_save({'file': file, 'directory': '/'})
             return
 
     tools = {}
