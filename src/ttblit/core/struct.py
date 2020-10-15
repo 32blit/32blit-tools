@@ -77,6 +77,20 @@ struct_blit_meta = Struct(
     ))
 )
 
+struct_blit_meta_standalone = Struct(
+    'header' / Const(b'BLITMETA'),
+    'data' / Prefixed(Int16ul, Struct(
+        'checksum' / Int32ul,
+        'date' / PaddedString(16, 'ascii'),
+        'title' / PaddedString(25, 'ascii'),
+        'description' / PaddedString(129, 'ascii'),
+        'version' / PaddedString(17, 'ascii'),
+        'author' / PaddedString(17, 'ascii'),
+        'icon' / struct_blit_image,
+        'splash' / struct_blit_image
+    ))
+)
+
 struct_blit_bin = Struct(
     'header' / Const(b'BLIT'),
     'render' / Int32ul,
