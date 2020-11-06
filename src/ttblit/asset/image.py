@@ -82,13 +82,12 @@ class ImageAsset(AssetBuilder):
         palette_len = len(self.palette)
         palette_size = struct.pack('<B', 0 if palette_len == 256 else palette_len)
 
-        payload_size = struct.pack('<H', len(image_data) + len(palette_data) + 20)
+        payload_size = struct.pack('<I', len(image_data) + len(palette_data) + 20)
         image_size = struct.pack('<HH', *image.size)
 
         data = bytes('SPRITEPK' if self.packed else 'SPRITERW', encoding='utf-8')
         data += payload_size
         data += image_size
-        data += bytes([0x10, 0x00, 0x10, 0x00])  # Rows/cols deprecated
         data += b'\x02'                          # Pixel format
         data += palette_size
         data += palette_data
