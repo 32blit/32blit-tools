@@ -85,7 +85,7 @@ class ImageAsset(AssetBuilder):
 
         palette_size = struct.pack('<B', len(self.palette))
 
-        payload_size = struct.pack('<H', len(image_data))
+        payload_size = struct.pack('<H', len(image_data) + len(palette_data) + 20)
         image_size = struct.pack('<HH', *image.size)
 
         data = bytes('SPRITEPK' if self.packed else 'SPRITERW', encoding='utf-8')
