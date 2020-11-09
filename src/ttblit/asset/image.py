@@ -1,6 +1,5 @@
 import io
 import logging
-import struct
 
 from bitstring import BitArray
 from PIL import Image

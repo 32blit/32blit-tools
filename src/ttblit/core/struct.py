@@ -39,10 +39,10 @@ class PaletteCountAdapter(Adapter):
 
 
 struct_blit_pixel = Struct(
-        'r' / Int8ul,
-        'g' / Int8ul,
-        'b' / Int8ul,
-        'a' / Int8ul
+    'r' / Int8ul,
+    'g' / Int8ul,
+    'b' / Int8ul,
+    'a' / Int8ul
 )
 
 struct_blit_image = Struct(
