@@ -7,7 +7,7 @@ from PIL import Image
 
 from ..core.assetbuilder import AssetBuilder
 from ..core.palette import Colour, Palette, type_palette
-from ..core.struct import struct_blit_image, struct_blit_pixel
+from ..core.struct import struct_blit_image
 
 
 class ImageAsset(AssetBuilder):
@@ -80,7 +80,6 @@ class ImageAsset(AssetBuilder):
 
         return struct_blit_image.build({
             'type': 'PK' if self.packed else 'RW',
-            'size': len(image_data) + (len(self.palette) * 4) + 20,
             'width': image.size[0],
             'height': image.size[1],
             'palette_entries': len(self.palette),

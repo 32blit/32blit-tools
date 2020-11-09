@@ -3,7 +3,8 @@ import binascii
 
 from construct import (Array, Bytes, Checksum, Computed, Const, Int8ul,
                        Int16ul, Int32ul, Optional, PaddedString, Prefixed,
-                       PrefixedArray, RawCopy, Struct, Adapter, this)
+                       PrefixedArray, RawCopy, Struct, Adapter, Rebuild,
+                       this, len_)
 
 
 def compute_bit_length(ctx):
@@ -47,7 +48,7 @@ struct_blit_pixel = Struct(
 struct_blit_image = Struct(
     'header' / Const(b'SPRITE'),
     'type' / PaddedString(2, 'ASCII'),
-    'size' / Int32ul,
+    'size' / Rebuild(Int32ul, len_(this.data) + (this.palette_entries * 4) + 18),
     'width' / Int16ul,
     'height' / Int16ul,
     'format' / Const(0x02, Int8ul),
