@@ -54,6 +54,13 @@ Supported formats:
 
 # Changelog
 
+0.1.0
+-----
+
+* Fix palettes to support 256 colours (count will be 0)
+* Parse metadata and relocations with Construct
+* Breaking: Packed image format has changed!
+
 0.0.9
 -----
 
