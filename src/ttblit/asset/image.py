@@ -71,10 +71,6 @@ class ImageAsset(AssetBuilder):
     def to_binary(self, input_data):
         image = self.quantize_image(input_data)
 
-        # TODO Image format needs rewriting to support more than 255 palette entries, this is a bug!
-        # This fix allows `test_image_png_cli_strict_palette_pal` to pass.
-        self.palette.entries = self.palette.entries[:255]
-
         palette_data = self.palette.tobytes()
 
         if self.packed:
@@ -83,15 +79,15 @@ class ImageAsset(AssetBuilder):
         else:
             image_data = image.tobytes()
 
-        palette_size = struct.pack('<B', len(self.palette))
+        palette_len = len(self.palette)
+        palette_size = struct.pack('<B', 0 if palette_len == 256 else palette_len)
 
-        payload_size = struct.pack('<H', len(image_data))
+        payload_size = struct.pack('<I', len(image_data) + len(palette_data) + 20)
         image_size = struct.pack('<HH', *image.size)
 
         data = bytes('SPRITEPK' if self.packed else 'SPRITERW', encoding='utf-8')
         data += payload_size
         data += image_size
-        data += bytes([0x10, 0x00, 0x10, 0x00])  # Rows/cols deprecated
         data += b'\x02'                          # Pixel format
         data += palette_size
         data += palette_data
