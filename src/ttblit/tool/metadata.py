@@ -1,7 +1,6 @@
 import argparse
 import binascii
 import logging
-import math
 import pathlib
 import struct
 from datetime import datetime
@@ -10,105 +9,13 @@ import yaml
 from bitstring import BitArray, BitStream
 from PIL import Image
 
-from construct import (Array, Bytes, Checksum, Computed, Const, Int8ul,
-                       Int16ul, Int32ul, Optional, PaddedString, Prefixed,
-                       PrefixedArray, RawCopy, Struct, this)
+
 from construct.core import StreamError
 
 from ..asset.image import ImageAsset
 from ..core.tool import Tool
-
-
-def compute_bit_length(ctx):
-    """Compute the required bit length for image data.
-    Uses the count of items in the palette to determine how
-    densely we can pack the image data.
-    """
-    return (len(ctx.palette) - 1).bit_length()
-
-
-def compute_data_length(ctx):
-    """Compute the required data length for palette based images.
-    We need this computation here so we can use `math.ceil` and
-    byte-align the result.
-    """
-    return math.ceil((ctx.width * ctx.height * ctx.bit_length) / 8)
-
-
-struct_blit_image = Struct(
-    'header' / Const(b'SPRITEPK'),
-    'size' / Int16ul,
-    'width' / Int16ul,
-    'height' / Int16ul,
-    'rows' / Int16ul,
-    'cols' / Int16ul,
-    'format' / Int8ul,
-    'palette' / PrefixedArray(Int8ul, Struct(
-        'r' / Int8ul,
-        'g' / Int8ul,
-        'b' / Int8ul,
-        'a' / Int8ul
-    )),
-    'bit_length' / Computed(compute_bit_length),
-    'data_length' / Computed(compute_data_length),
-    'data' / Array(this.data_length, Int8ul)
-)
-
-struct_blit_meta = Struct(
-    'header' / Const(b'BLITMETA'),
-    'data' / Prefixed(Int16ul, Struct(
-        'checksum' / Checksum(
-            Int32ul,
-            lambda data: binascii.crc32(data),
-            this._._.bin.data
-        ),
-        'date' / PaddedString(16, 'ascii'),
-        'title' / PaddedString(25, 'ascii'),
-        'description' / PaddedString(129, 'ascii'),
-        'version' / PaddedString(17, 'ascii'),
-        'author' / PaddedString(17, 'ascii'),
-        'icon' / struct_blit_image,
-        'splash' / struct_blit_image
-    ))
-)
-
-struct_blit_bin = Struct(
-    'header' / Const(b'BLIT'),
-    'render' / Int32ul,
-    'update' / Int32ul,
-    'init' / Int32ul,
-    'length' / Int32ul,
-    # The length above is actually the _flash_end symbol from startup_user.s
-    # it includes the offset into 0x90000000 (external flash)
-    # we mask out the highest nibble to correct this into the actual bin length
-    # plus subtract 20 bytes for header, symbol and length dwords
-    'bin' / Bytes((this.length & 0x0FFFFFFF) - 20)
-)
-
-struct_blit_relo = Struct(
-    'header' / Const(b'RELO'),
-    'relocs' / PrefixedArray(Int32ul, Struct(
-        'reloc' / Int32ul
-    ))
-)
-
-blit_game = Struct(
-    'relo' / Optional(struct_blit_relo),
-    'bin' / RawCopy(struct_blit_bin),
-    'meta' / Optional(struct_blit_meta)
-)
-
-blit_game_with_meta = Struct(
-    'relo' / Optional(struct_blit_relo),
-    'bin' / RawCopy(struct_blit_bin),
-    'meta' / struct_blit_meta
-)
-
-blit_game_with_meta_and_relo = Struct(
-    'relo' / struct_blit_relo,
-    'bin' / RawCopy(struct_blit_bin),
-    'meta' / struct_blit_meta
-)
+from ..core.struct import (struct_blit_image, blit_game,
+                           blit_game_with_meta_and_relo, blit_game_with_meta)
 
 
 class Metadata(Tool):

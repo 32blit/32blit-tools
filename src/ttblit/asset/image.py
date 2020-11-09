@@ -7,6 +7,7 @@ from PIL import Image
 
 from ..core.assetbuilder import AssetBuilder
 from ..core.palette import Colour, Palette, type_palette
+from ..core.struct import struct_blit_image, struct_blit_pixel
 
 
 class ImageAsset(AssetBuilder):
@@ -71,26 +72,18 @@ class ImageAsset(AssetBuilder):
     def to_binary(self, input_data):
         image = self.quantize_image(input_data)
 
-        palette_data = self.palette.tobytes()
-
         if self.packed:
             bit_length = self.palette.bit_length()
             image_data = BitArray().join(BitArray(uint=x, length=bit_length) for x in image.tobytes()).tobytes()
         else:
             image_data = image.tobytes()
 
-        palette_len = len(self.palette)
-        palette_size = struct.pack('<B', 0 if palette_len == 256 else palette_len)
-
-        payload_size = struct.pack('<I', len(image_data) + len(palette_data) + 20)
-        image_size = struct.pack('<HH', *image.size)
-
-        data = bytes('SPRITEPK' if self.packed else 'SPRITERW', encoding='utf-8')
-        data += payload_size
-        data += image_size
-        data += b'\x02'                          # Pixel format
-        data += palette_size
-        data += palette_data
-        data += image_data
-
-        return data
+        return struct_blit_image.build({
+            'type': 'PK' if self.packed else 'RW',
+            'size': len(image_data) + (len(self.palette) * 4) + 20,
+            'width': image.size[0],
+            'height': image.size[1],
+            'palette_entries': len(self.palette),
+            'palette': self.palette.tostruct(),
+            'data': image_data
+        })
