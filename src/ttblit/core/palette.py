@@ -141,6 +141,17 @@ class Palette():
     def tobytes(self):
         return bytes(self.tolist())
 
+    def tostruct(self):
+        result = []
+        for r, g, b, a in self.entries:
+            result.append({
+                'r': r,
+                'g': g,
+                'b': b,
+                'a': a,
+            })
+        return result
+
     def bit_length(self):
         return max(1, len(self.entries) - 1).bit_length()
 
