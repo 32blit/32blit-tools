@@ -171,7 +171,7 @@ class Flasher(Tool):
             size_blocks = (size - 1) // block_size + 1
 
             print(f"""Game at block {offset_blocks}
-    Size: {size_blocks} blocks ({size / 1024:.1f}kB)""")
+    Size:        {size_blocks} blocks ({size / 1024:.1f}kB)""")
 
             if meta is not None:
                 print(f"""    Title:       {meta.data.title}
