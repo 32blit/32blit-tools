@@ -31,7 +31,9 @@ class Flasher(Tool):
         self.op_flash.add_argument('--file', type=pathlib.Path, required=True, help='File to flash')
 
         self.op_delete = operations.add_parser('delete', help='Delete a game/file from your 32Blit')
-        self.op_delete.add_argument('--offset', type=int, help='Flash offset of game to delete')
+        group = self.op_delete.add_mutually_exclusive_group(required=True)
+        group.add_argument('--offset', type=int, help='Flash offset of game to delete')
+        group.add_argument('--block', type=int, help='Flash block of game to delete')
 
         self.op_list = operations.add_parser('list', help='List games/files on your 32Blit')
         self.op_debug = operations.add_parser('debug', help='Enter serial debug mode')
@@ -145,7 +147,12 @@ class Flasher(Tool):
     def run_delete(self, serial, args):
         self._reset_to_firmware(serial)
         serial.write(b'32BLERSE\x00')
-        serial.write(struct.pack("<I", args.get('offset')))
+
+        offset = args.get('offset')
+        if offset is None:
+            offset = args.get('block') * 64 * 1024
+
+        serial.write(struct.pack("<I", offset))
 
     @serial_command
     def run_list(self, serial, args):
