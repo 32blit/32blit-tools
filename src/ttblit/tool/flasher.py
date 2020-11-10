@@ -3,6 +3,7 @@ import pathlib
 import struct
 import time
 
+from construct.core import ConstructError
 import serial.tools.list_ports
 from serial.serialutil import SerialException
 from tqdm import tqdm
@@ -163,7 +164,10 @@ class Flasher(Tool):
             meta = None
             if meta_size:
                 size += meta_size + 10
-                meta = struct_blit_meta_standalone.parse(meta_head + serial.read(meta_size))
+                try:
+                    meta = struct_blit_meta_standalone.parse(meta_head + serial.read(meta_size))
+                except ConstructError:
+                    pass
 
             block_size = 64 * 1024
 
