@@ -76,16 +76,16 @@ class CMake(Tool):
             else:
                 all_inputs += list(self.working_path.glob(str(file)))
 
-        if len(all_inputs) == 0:
-            logging.warning(f'No input assets for metadata. Generating empty file {str(args.cmake)}')
-            open(args.cmake, 'w').write(f'# Auto Generated File - DO NOT EDIT!')
-        else:
-            all_inputs = '\n'.join(f'"{x}"'.replace('\\', '/') for x in all_inputs)
+        all_inputs = '\n'.join(f'"{x}"'.replace('\\', '/') for x in all_inputs)
 
-            open(args.cmake, 'w').write(f'''# Auto Generated File - DO NOT EDIT!
+        open(args.cmake, 'w').write(f'''# Auto Generated File - DO NOT EDIT!
     set(METADATA_DEPENDS
     {all_inputs}
     )
+    set(METADATA_TITLE "{self.config['title']}")
+    set(METADATA_AUTHOR "{self.config['author']}")
+    set(METADATA_DESCRIPTION "{self.config['description']}")
+    set(METADATA_VERSION "{self.config['version']}")
     ''')
 
     def run_for_asset_config(self, args):

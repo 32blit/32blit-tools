@@ -108,4 +108,12 @@ def test_cmake_no_depends(parsers, test_empty_metadata_file, test_cmake_file):
 
     cmake.run(args)
 
-    assert open(test_cmake_file.name).read() == '# Auto Generated File - DO NOT EDIT!'
+    assert open(test_cmake_file.name).read() == f'''# Auto Generated File - DO NOT EDIT!
+    set(METADATA_DEPENDS
+    
+    )
+    set(METADATA_TITLE "Rocks & Diamonds")
+    set(METADATA_AUTHOR "gadgetoid")
+    set(METADATA_DESCRIPTION "A pulse pounding, rock rollin', diamond hunting adventure")
+    set(METADATA_VERSION "v1.0.0")
+    '''
