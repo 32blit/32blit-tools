@@ -1,9 +1,8 @@
 import io
 import struct
 
-from PIL import Image
-
 import freetype
+from PIL import Image
 
 from ..core.assetbuilder import AssetBuilder
 

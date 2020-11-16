@@ -1,23 +1,21 @@
 import argparse
 import binascii
+import io
 import logging
 import pathlib
 import struct
-import io
 from datetime import datetime
 
 import yaml
 from bitstring import BitArray, BitStream
+from construct.core import StreamError
 from PIL import Image
 
-
-from construct.core import StreamError
-
 from ..asset.image import ImageAsset
+from ..core.struct import (blit_game, blit_game_with_meta,
+                           blit_game_with_meta_and_relo, blit_icns,
+                           struct_blit_image)
 from ..core.tool import Tool
-from ..core.struct import (struct_blit_image, blit_game, blit_icns,
-                           blit_game_with_meta_and_relo, blit_game_with_meta)
-
 
 
 class Metadata(Tool):

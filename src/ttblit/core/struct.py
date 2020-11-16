@@ -1,10 +1,10 @@
-import math
 import binascii
+import math
 
-from construct import (Array, Bytes, Checksum, Computed, Const, Int8ul,
-                       Int16ul, Int32ul, Optional, PaddedString, Prefixed,
-                       PrefixedArray, RawCopy, Struct, Adapter, Rebuild,
-                       Int32ub, GreedyBytes, this, len_)
+from construct import (Adapter, Array, Bytes, Checksum, Computed, Const,
+                       GreedyBytes, Int8ul, Int16ul, Int32ub, Int32ul,
+                       Optional, PaddedString, Prefixed, PrefixedArray,
+                       RawCopy, Rebuild, Struct, len_, this)
 
 
 def compute_bit_length(ctx):
