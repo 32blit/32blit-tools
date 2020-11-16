@@ -5,6 +5,12 @@ import pytest
 
 
 @pytest.fixture
+def test_icns_file():
+    temp_icns = tempfile.NamedTemporaryFile('rb+', suffix='.icns')
+    return temp_icns
+
+
+@pytest.fixture
 def test_binary_file():
     temp_bin = tempfile.NamedTemporaryFile('wb', suffix='.bin')
     temp_bin.write(b'BLIT000000000000\x14\x00\x00\x00')
@@ -69,6 +75,27 @@ def test_metadata(parsers, test_metadata_file, test_binary_file):
         '--file', test_binary_file.name])
 
     metadata.run(args)
+
+
+def test_metadata_icns(parsers, test_metadata_file, test_binary_file, test_icns_file):
+    from ttblit.tool import metadata
+
+    test_metadata_file, test_metadata_icon_png, test_metadata_splash_png = test_metadata_file
+    parser, subparser = parsers
+
+    metadata = metadata.Metadata(subparser)
+
+    args = parser.parse_args([
+        'metadata',
+        '--config', test_metadata_file.name,
+        '--file', test_binary_file.name,
+        '--icns', test_icns_file.name,
+        '--force'])
+
+    metadata.run(args)
+
+    test_icns_file.flush()
+    assert test_icns_file.read()[:4] == b'icns'
 
 
 def test_metadata_invalid_bin(parsers, test_metadata_file, test_invalid_binary_file):
