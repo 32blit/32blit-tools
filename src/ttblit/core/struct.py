@@ -1,10 +1,10 @@
-import math
 import binascii
+import math
 
-from construct import (Array, Bytes, Checksum, Computed, Const, Int8ul,
-                       Int16ul, Int32ul, Optional, PaddedString, Prefixed,
-                       PrefixedArray, RawCopy, Struct, Adapter, Rebuild,
-                       this, len_)
+from construct import (Adapter, Array, Bytes, Checksum, Computed, Const,
+                       GreedyBytes, Int8ul, Int16ul, Int32ub, Int32ul,
+                       Optional, PaddedString, Prefixed, PrefixedArray,
+                       RawCopy, Rebuild, Struct, len_, this)
 
 
 def compute_bit_length(ctx):
@@ -113,4 +113,21 @@ blit_game_with_meta_and_relo = Struct(
     'relo' / struct_blit_relo,
     'bin' / RawCopy(struct_blit_bin),
     'meta' / struct_blit_meta
+)
+
+
+def compute_icns_data_length(ctx):
+    """Compute the required data length for palette based images.
+    We need this computation here so we can use `math.ceil` and
+    byte-align the result.
+    """
+    return math.ceil((ctx.width * ctx.height * ctx.bit_length) / 8)
+
+
+blit_icns = Struct(
+    'header' / Const(b'icns'),
+    'size' / Rebuild(Int32ub, len_(this.data) + 16),
+    'type' / Const(b'ic07'),  # 128×128 icon in PNG format
+    'data_length' / Rebuild(Int32ub, len_(this.data) + 8),
+    'data' / Bytes(this.data_length - 8)
 )
