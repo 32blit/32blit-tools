@@ -54,6 +54,12 @@ Supported formats:
 
 # Changelog
 
+0.1.1
+-----
+
+* Export metadata config to CMake
+* Add support for packing metadata splash to icns format for macOS
+
 0.1.0
 -----
 
