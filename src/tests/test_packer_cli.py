@@ -77,7 +77,6 @@ def test_packer_cli_relative_yml(parsers, tools, yml_file_relative_paths, output
     parser, subparser = parsers
 
     packer = packer.Packer(subparser)
-    packer.register_asset_builders(tools)
 
     args = parser.parse_args(['pack', '--force', '--config', yml_file_relative_paths.name, '--output', str(output_dir)])
 

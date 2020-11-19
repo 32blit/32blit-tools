@@ -4,8 +4,10 @@ import logging
 class Tool():
     options = {}
 
-    def __init__(self, parser):
-        self.parser = parser.add_parser(self.command, help=self.help)
+    def __init__(self, parser=None):
+        self.parser = None
+        if parser is not None:
+            self.parser = parser.add_parser(self.command, help=self.help)
 
     def prepare(self, opts):
         for option, option_type in self.options.items():
