@@ -26,7 +26,7 @@ class Metadata(Tool):
         Tool.__init__(self, parser)
         self.parser.add_argument('--config', type=pathlib.Path, help='Metadata config file')
         self.parser.add_argument('--icns', type=pathlib.Path, help='macOS icon output file')
-        self.parser.add_argument('--file', required=True, type=pathlib.Path, help='Input file')
+        self.parser.add_argument('--file', type=pathlib.Path, help='Input file')
         self.parser.add_argument('--force', action='store_true', help='Force file overwrite')
         self.parser.add_argument('--dump-images', action='store_true', help='Dump images from metadata')
 
@@ -103,17 +103,23 @@ class Metadata(Tool):
         return blit_icns.build({'data': image_bytes.read()})
 
     def run(self, args):
-        if not args.file.is_file():
+        if args.file is None and args.config is None:
+            self.parser.error('the following arguments are required: --config and/or --file')
+
+        if args.file and not args.file.is_file():
             raise ValueError(f'Unable to find bin file at {args.file}')
 
         icon = b''
         splash = b''
 
-        bin = open(args.file, 'rb').read()
-        try:
-            game = blit_game.parse(bin)
-        except StreamError:
-            raise ValueError(f'Invalid 32blit binary file {args.file}')
+        game = None
+
+        if args.file:
+            bin = open(args.file, 'rb').read()
+            try:
+                game = blit_game.parse(bin)
+            except StreamError:
+                raise ValueError(f'Invalid 32blit binary file {args.file}')
 
         # No config supplied, so dump the game info
         if args.config is None:
@@ -172,6 +178,10 @@ Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
                     logging.info(f'Saved macOS icon to {args.icns}')
         else:
             raise ValueError('A 128x96 pixel splash is required!"')
+
+
+        if not game:
+            return
 
         title = self.config.get('title')
         description = self.config.get('description')
