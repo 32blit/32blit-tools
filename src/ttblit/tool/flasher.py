@@ -1,12 +1,15 @@
 import logging
 import pathlib
+import struct
 import time
 
+from construct.core import ConstructError
 import serial.tools.list_ports
 from serial.serialutil import SerialException
 from tqdm import tqdm
 
 from ..core.tool import Tool
+from ..core.struct import struct_blit_meta_standalone
 
 
 class Flasher(Tool):
@@ -28,6 +31,10 @@ class Flasher(Tool):
         self.op_flash.add_argument('--file', type=pathlib.Path, required=True, help='File to flash')
 
         self.op_delete = operations.add_parser('delete', help='Delete a game/file from your 32Blit')
+        group = self.op_delete.add_mutually_exclusive_group(required=True)
+        group.add_argument('--offset', type=int, help='Flash offset of game to delete')
+        group.add_argument('--block', type=int, help='Flash block of game to delete')
+
         self.op_list = operations.add_parser('list', help='List games/files on your 32Blit')
         self.op_debug = operations.add_parser('debug', help='Enter serial debug mode')
         self.op_reset = operations.add_parser('reset', help='Reset your 32Blit')
@@ -138,11 +145,53 @@ class Flasher(Tool):
 
     @serial_command
     def run_delete(self, serial, args):
-        pass
+        self._reset_to_firmware(serial)
+        serial.write(b'32BLERSE\x00')
+
+        offset = args.get('offset')
+        if offset is None:
+            offset = args.get('block') * 64 * 1024
+
+        serial.write(struct.pack("<I", offset))
 
     @serial_command
     def run_list(self, serial, args):
-        pass
+        self._reset_to_firmware(serial)
+
+        serial.write(b'32BL__LS\x00')
+        offset_str = serial.read(4)
+
+        while offset_str != '' and offset_str != b'\xff\xff\xff\xff':
+            offset, = struct.unpack('<I', offset_str)
+
+            size, = struct.unpack('<I', serial.read(4))
+            meta_head = serial.read(10)
+            meta_size, = struct.unpack('<H', meta_head[8:])
+
+            meta = None
+            if meta_size:
+                size += meta_size + 10
+                try:
+                    meta = struct_blit_meta_standalone.parse(meta_head + serial.read(meta_size))
+                except ConstructError:
+                    pass
+
+            block_size = 64 * 1024
+
+            offset_blocks = offset // block_size
+            size_blocks = (size - 1) // block_size + 1
+
+            print(f"""Game at block {offset_blocks}
+    Size:        {size_blocks} blocks ({size / 1024:.1f}kB)""")
+
+            if meta is not None:
+                print(f"""    Title:       {meta.data.title}
+    Description: {meta.data.description}
+    Version:     {meta.data.version}
+    Author:      {meta.data.author}
+""")
+
+            offset_str = serial.read(4)
 
     @serial_command
     def run_debug(self, serial, args):
