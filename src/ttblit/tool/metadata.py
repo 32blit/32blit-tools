@@ -103,6 +103,9 @@ class Metadata(Tool):
         return blit_icns.build({'data': image_bytes.read()})
 
     def run(self, args):
+        if args.file is None and args.config is None:
+            self.parser.error('the following arguments are required: --config and/or --file')
+
         if args.file and not args.file.is_file():
             raise ValueError(f'Unable to find bin file at {args.file}')
 

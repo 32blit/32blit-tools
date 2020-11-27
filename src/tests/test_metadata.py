@@ -58,7 +58,8 @@ def test_metadata_no_args(parsers):
     metadata = metadata.Metadata(subparser)
 
     with pytest.raises(SystemExit):
-        parser.parse_args(['metadata'])
+        args = parser.parse_args(['metadata'])
+        metadata.run(args)
 
 
 def test_metadata(parsers, test_metadata_file, test_binary_file):
