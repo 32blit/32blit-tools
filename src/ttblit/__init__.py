@@ -35,13 +35,8 @@ def main():
     tools[map.MapAsset.command] = map.MapAsset(subparsers)
     tools[raw.RawAsset.command] = raw.RawAsset(subparsers)
 
-    _packer = packer.Packer(subparsers)
-
-    # Register the asset tools with the packer
-    _packer.register_asset_builders(tools)
-
     # Add the non-asset tools
-    tools[packer.Packer.command] = _packer
+    tools[packer.Packer.command] = packer.Packer(subparsers)
     tools[cmake.CMake.command] = cmake.CMake(subparsers)
     tools[flasher.Flasher.command] = flasher.Flasher(subparsers)
     tools[metadata.Metadata.command] = metadata.Metadata(subparsers)

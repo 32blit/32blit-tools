@@ -16,7 +16,7 @@ class FontAsset(AssetBuilder):
         'font': ('.ttf')  # possibly other freetype supported formats...
     }
 
-    def __init__(self, parser):
+    def __init__(self, parser=None):
         self.options.update({
             'height': (int, 0),
             'horizontal_spacing': (int, 1),
@@ -33,10 +33,11 @@ class FontAsset(AssetBuilder):
         self.base_char = ord(' ')
         self.num_chars = 96
 
-        self.parser.add_argument('--height', type=int, default=0, help='Font height (calculated from image if not specified)')
-        self.parser.add_argument('--horizontal-spacing', type=int, default=1, help='Additional space between characters for variable-width mode')
-        self.parser.add_argument('--vertical-spacing', type=int, default=1, help='Space between lines')
-        self.parser.add_argument('--space-width', type=int, default=1, help='Width of the space character')
+        if self.parser is not None:
+            self.parser.add_argument('--height', type=int, default=0, help='Font height (calculated from image if not specified)')
+            self.parser.add_argument('--horizontal-spacing', type=int, default=1, help='Additional space between characters for variable-width mode')
+            self.parser.add_argument('--vertical-spacing', type=int, default=1, help='Space between lines')
+            self.parser.add_argument('--space-width', type=int, default=1, help='Width of the space character')
 
     def prepare(self, args):
         AssetBuilder.prepare(self, args)

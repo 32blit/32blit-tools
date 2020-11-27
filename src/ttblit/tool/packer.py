@@ -6,6 +6,7 @@ import yaml
 from ..core.outputformat import CHeader, CSource, RawBinary
 from ..core.palette import Palette
 from ..core.tool import Tool
+from ..asset import font, image, map, raw
 
 
 class Packer(Tool):
@@ -22,13 +23,6 @@ class Packer(Tool):
         self.config = {}
         self.assets = []
         self.general_options = {}
-
-        self.asset_builders = {}
-
-    def register_asset_builders(self, asset_builders):
-        """Register class instances for each asset builder with the packer tool."""
-        for k, v in asset_builders.items():
-            self.asset_builders[k] = v
 
     def parse_config(self, config_file):
         config = open(config_file).read()
@@ -111,7 +105,7 @@ class Packer(Tool):
                     file_options = {}
 
                 asset_sources.append(
-                    AssetSource(input_files, builders=self.asset_builders, file_options=file_options, working_path=self.working_path)
+                    AssetSource(input_files, file_options=file_options, working_path=self.working_path)
                 )
 
             self.assets.append(AssetTarget(
@@ -130,9 +124,15 @@ class Packer(Tool):
 class AssetSource():
     supported_options = ('name', 'type')
 
-    def __init__(self, input_files, builders, file_options, working_path):
+    def __init__(self, input_files, file_options, working_path):
+        self.asset_builders = {
+            image.ImageAsset.command: image.ImageAsset,
+            font.FontAsset.command: font.FontAsset,
+            map.MapAsset.command: map.MapAsset,
+            raw.RawAsset.command: raw.RawAsset
+        }
+
         self.input_files = input_files
-        self.asset_builders = builders
         self.working_path = working_path
         self.builder_options = {}
         self.type = None
@@ -163,7 +163,7 @@ class AssetSource():
 
     def build(self, format, prefix=None, output_file=None):
         builder, input_type = self.type.split('/')
-        builder = self.asset_builders[builder]
+        builder = self.asset_builders[builder]()
 
         # Now we know our target builder, one last iteration through the options
         # allows some pre-processing stages to remap paths or other idiosyncrasies
