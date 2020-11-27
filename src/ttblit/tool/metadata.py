@@ -44,10 +44,12 @@ class Metadata(Tool):
 
         self.config = config
 
-    def prepare_image_asset(self, name, config):
+    def prepare_image_asset(self, name, config, working_path):
         image_file = pathlib.Path(config.get('file', ''))
         config['input_file'] = image_file
         config['output_file'] = image_file.with_suffix('.bin')
+        if not image_file.is_file():
+            image_file = working_path / image_file
         if not image_file.is_file():
             raise ValueError(f'{name} "{image_file}" does not exist!')
         asset = ImageAsset(argparse.ArgumentParser().add_subparsers())
@@ -111,6 +113,7 @@ class Metadata(Tool):
 
         icon = b''
         splash = b''
+        working_path = pathlib.Path('')
 
         game = None
 
@@ -160,18 +163,19 @@ Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
             return
 
         if args.config.is_file():
+            working_path = args.config.parent
             self.parse_config(args.config)
             logging.info(f'Using config at {args.config}')
         else:
             logging.warning(f'Unable to find metadata config at {args.config}')
 
         if 'icon' in self.config:
-            icon = self.prepare_image_asset('icon', self.config['icon'])
+            icon = self.prepare_image_asset('icon', self.config['icon'], working_path)
         else:
             raise ValueError('An 8x8 pixel icon is required!"')
 
         if 'splash' in self.config:
-            splash = self.prepare_image_asset('splash', self.config['splash'])
+            splash = self.prepare_image_asset('splash', self.config['splash'], working_path)
             if args.icns is not None:
                 if not args.icns.is_file() or args.force:
                     open(args.icns, 'wb').write(self.build_icns(self.config['splash']))
