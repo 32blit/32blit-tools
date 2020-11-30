@@ -54,6 +54,14 @@ Supported formats:
 
 # Changelog
 
+0.1.2
+-----
+
+* Flasher: Add list/del commands
+* Packer: Fix bug where asset packer shared class instances and state
+* Metadata: Find images when building from a config not in working directory
+* Metadata: Require only one of --file or --config options
+
 0.1.1
 -----
 
