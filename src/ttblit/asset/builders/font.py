@@ -2,7 +2,6 @@ import io
 import struct
 
 import click
-import freetype
 from PIL import Image
 
 from ..builder import AssetBuilder, AssetTool
@@ -63,6 +62,8 @@ def process_image_font(data, num_chars, height, horizontal_spacing, space_width)
 
 
 def process_ft_font(data, num_chars, base_char, height):
+    import freetype
+
     if height == 0:
         raise TypeError("Height must be specified for font files")
 
