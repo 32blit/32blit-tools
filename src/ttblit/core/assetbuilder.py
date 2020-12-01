@@ -18,7 +18,8 @@ class AssetBuilder(Tool):
         'output_format': parse_output_format,
         'symbol_name': str,
         'force': bool,
-        'prefix': str
+        'prefix': str,
+        'working_path': pathlib.Path
     }
 
     def __init__(self, parser=None):
@@ -42,7 +43,10 @@ class AssetBuilder(Tool):
         Tool.prepare(self, opts)
 
         if self.symbol_name is None:
-            name = '_'.join(self.input_file.parts)
+            if self.working_path is None:
+                name = '_'.join(self.input_file.parts)
+            else:
+                name = '_'.join(self.input_file.relative_to(self.working_path).parts)
             name = name.replace('.', '_')
             name = re.sub('[^0-9A-Za-z_]', '_', name)
             self.symbol_name = name.lower()

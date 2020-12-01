@@ -189,6 +189,7 @@ class AssetSource():
                 'input_type': input_type,
                 'output_format': format,
                 'symbol_name': self.name,
+                'working_path': self.working_path,
                 'prefix': prefix
             })
             builder.prepare_options(self.builder_options)
