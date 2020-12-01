@@ -3,10 +3,10 @@ import pathlib
 
 import yaml
 
+from ..asset import font, image, map, raw
 from ..core.outputformat import CHeader, CSource, RawBinary
 from ..core.palette import Palette
 from ..core.tool import Tool
-from ..asset import font, image, map, raw
 
 
 class Packer(Tool):

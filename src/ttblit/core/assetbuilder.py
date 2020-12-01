@@ -26,13 +26,13 @@ class AssetBuilder(Tool):
         Tool.__init__(self, parser)
 
         if self.parser is not None:
-            self.parser.add_argument('--input_file', type=pathlib.Path, required=True, help=f'Input file')
+            self.parser.add_argument('--input_file', type=pathlib.Path, required=True, help='Input file')
             if(len(self.types) > 1):
-                self.parser.add_argument('--input_type', type=str, default=None, choices=self.types, help=f'Input file type')
+                self.parser.add_argument('--input_type', type=str, default=None, choices=self.types, help='Input file type')
             self.parser.add_argument('--output_file', type=pathlib.Path, default=None)
-            self.parser.add_argument('--output_format', type=str, default=None, choices=self.formats.keys(), help=f'Output file format')
-            self.parser.add_argument('--symbol_name', type=str, default=None, help=f'Output symbol name')
-            self.parser.add_argument('--force', action='store_true', help=f'Force file overwrite')
+            self.parser.add_argument('--output_format', type=str, default=None, choices=self.formats.keys(), help='Output file format')
+            self.parser.add_argument('--symbol_name', type=str, default=None, help='Output symbol name')
+            self.parser.add_argument('--force', action='store_true', help='Force file overwrite')
 
     def prepare(self, opts):
         """Imports a dictionary of options to class variables.

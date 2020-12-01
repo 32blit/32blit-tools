@@ -3,13 +3,13 @@ import pathlib
 import struct
 import time
 
-from construct.core import ConstructError
 import serial.tools.list_ports
+from construct.core import ConstructError
 from serial.serialutil import SerialException
 from tqdm import tqdm
 
-from ..core.tool import Tool
 from ..core.struct import struct_blit_meta_standalone
+from ..core.tool import Tool
 
 
 class Flasher(Tool):

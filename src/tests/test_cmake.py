@@ -25,7 +25,7 @@ version: v1.0.0
 @pytest.fixture
 def test_empty_metadata_file():
     temp_yml = tempfile.NamedTemporaryFile('w', suffix='.yml')
-    temp_yml.write(f'''title: Rocks & Diamonds
+    temp_yml.write('''title: Rocks & Diamonds
 description: A pulse pounding, rock rollin', diamond hunting adventure
 author: gadgetoid
 version: v1.0.0
@@ -37,7 +37,7 @@ version: v1.0.0
 @pytest.fixture
 def test_asset_config_file():
     temp_yml = tempfile.NamedTemporaryFile('w', suffix='.yml')
-    temp_yml.write(f'''assets.cpp:
+    temp_yml.write('''assets.cpp:
   assets/buttons.png: asset_buttons
 ''')
     temp_yml.flush()
@@ -108,12 +108,12 @@ def test_cmake_no_depends(parsers, test_empty_metadata_file, test_cmake_file):
 
     cmake.run(args)
 
-    assert open(test_cmake_file.name).read() == f'''# Auto Generated File - DO NOT EDIT!
-    set(METADATA_DEPENDS
-    
-    )
-    set(METADATA_TITLE "Rocks & Diamonds")
-    set(METADATA_AUTHOR "gadgetoid")
-    set(METADATA_DESCRIPTION "A pulse pounding, rock rollin', diamond hunting adventure")
-    set(METADATA_VERSION "v1.0.0")
-    '''
+    assert open(test_cmake_file.name).read().replace('    ', '') == '''# Auto Generated File - DO NOT EDIT!
+set(METADATA_DEPENDS
+
+)
+set(METADATA_TITLE "Rocks & Diamonds")
+set(METADATA_AUTHOR "gadgetoid")
+set(METADATA_DESCRIPTION "A pulse pounding, rock rollin', diamond hunting adventure")
+set(METADATA_VERSION "v1.0.0")
+'''
