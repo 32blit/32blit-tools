@@ -54,6 +54,11 @@ Supported formats:
 
 # Changelog
 
+0.1.3
+-----
+
+* Packer: Fix asset path handing to be relative to working directory
+
 0.1.2
 -----
 
