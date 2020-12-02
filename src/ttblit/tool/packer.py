@@ -3,10 +3,10 @@ import pathlib
 
 import yaml
 
+from ..asset import font, image, map, raw
 from ..core.outputformat import CHeader, CSource, RawBinary
 from ..core.palette import Palette
 from ..core.tool import Tool
-from ..asset import font, image, map, raw
 
 
 class Packer(Tool):
@@ -189,6 +189,7 @@ class AssetSource():
                 'input_type': input_type,
                 'output_format': format,
                 'symbol_name': self.name,
+                'working_path': self.working_path,
                 'prefix': prefix
             })
             builder.prepare_options(self.builder_options)
