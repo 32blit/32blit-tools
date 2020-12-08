@@ -1,6 +1,5 @@
-import pathlib
-
 from ttblit import __version__
+
 from ..core.tool import Tool
 
 
