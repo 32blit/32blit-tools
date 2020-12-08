@@ -1,12 +1,11 @@
-import logging
 import pathlib
 import struct
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.enums import ENUM_RELOC_TYPE_ARM
-from elftools.elf.relocation import RelocationSection
 
 from ..core.tool import Tool
+
 
 class Relocs(Tool):
     command = 'relocs'
@@ -24,11 +23,11 @@ class Relocs(Tool):
             elffile = ELFFile(f)
 
             # get addresses of GOT values that need patched
-            got_offsets = self.get_flash_addr_offsets( elffile.get_section_by_name('.got'))
+            got_offsets = self.get_flash_addr_offsets(elffile.get_section_by_name('.got'))
 
             # and the init/fini arrays
-            init_offsets = self.get_flash_addr_offsets( elffile.get_section_by_name('.init_array'))
-            fini_offsets = self.get_flash_addr_offsets( elffile.get_section_by_name('.fini_array'))
+            init_offsets = self.get_flash_addr_offsets(elffile.get_section_by_name('.init_array'))
+            fini_offsets = self.get_flash_addr_offsets(elffile.get_section_by_name('.fini_array'))
 
             reloc_offsets = []
 
@@ -65,7 +64,6 @@ class Relocs(Tool):
 
                 # map RAM address back to flash
                 flash_offset = (reloc['r_offset'] - sdata) + sidata
-                #print("{:08X} -> {:08X}".format(reloc['r_offset'], flash_offset))
 
                 assert((flash_offset & 3) == 0)
 
@@ -82,7 +80,6 @@ class Relocs(Tool):
 
                 out_f.write(open(args.bin_file, 'rb').read())
 
-
     def get_flash_addr_offsets(self, section):
         section_data = section.data()
         section_addrs = struct.unpack(f'<{len(section_data) // 4}I', section_data)
@@ -93,6 +90,7 @@ class Relocs(Tool):
             if addr < 0x90000000:
                 continue
 
-            section_offsets.append(section['sh_addr'] + i * 4) # offset to this address in the section
+            # offset to this address in the section
+            section_offsets.append(section['sh_addr'] + i * 4)
 
         return section_offsets
