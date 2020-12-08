@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_version(parsers, capsys):
     from ttblit.tool import version
     from ttblit import __version__
