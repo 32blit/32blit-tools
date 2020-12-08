@@ -7,7 +7,7 @@ import pathlib
 import sys
 
 from .asset import font, image, map, raw
-from .tool import cmake, flasher, metadata, packer
+from .tool import cmake, flasher, metadata, packer, relocs
 
 
 def exception_handler(exception_type, exception, traceback):
@@ -40,6 +40,7 @@ def main():
     tools[cmake.CMake.command] = cmake.CMake(subparsers)
     tools[flasher.Flasher.command] = flasher.Flasher(subparsers)
     tools[metadata.Metadata.command] = metadata.Metadata(subparsers)
+    tools[relocs.Relocs.command] = relocs.Relocs(subparsers)
 
     args = parser.parse_args()
 
