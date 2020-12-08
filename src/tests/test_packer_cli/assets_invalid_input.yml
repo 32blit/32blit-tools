@@ -1,0 +1,4 @@
+assets.cpp:
+  prefix: asset_
+  invalid.blah:
+    name: asset_test
