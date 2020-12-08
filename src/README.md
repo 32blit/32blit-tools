@@ -54,6 +54,11 @@ Supported formats:
 
 # Changelog
 
+0.1.4
+-----
+
+* New: migrated PIC relocs tool into tools
+
 0.1.3
 -----
 
