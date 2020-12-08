@@ -20,7 +20,7 @@ from ..core.tool import Tool
 
 class Metadata(Tool):
     command = 'metadata'
-    help = 'Tag a 32Blit .bin file with metadata'
+    help = 'Tag a 32Blit .blit file with metadata'
 
     def __init__(self, parser):
         Tool.__init__(self, parser)

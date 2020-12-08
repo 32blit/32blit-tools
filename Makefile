@@ -27,7 +27,7 @@ check:
 	@echo "Checking for trailing whitespace"
 	@! grep -IUrn --color "[[:blank:]]$$" --exclude-dir=sphinx --exclude-dir=.tox --exclude-dir=.git --exclude=PKG-INFO
 	@echo "Checking for DOS line-endings"
-	@! grep -IUrn --color "" --exclude-dir=sphinx --exclude-dir=.tox --exclude-dir=.git --exclude=Makefile
+	@! grep -IUrn --color "" --exclude="*.tmx" --exclude-dir=sphinx --exclude-dir=.tox --exclude-dir=.git --exclude=Makefile
 	@echo "Checking src/CHANGELOG.txt"
 	@cat src/CHANGELOG.txt | grep ^${LIBRARY_VERSION}
 	@echo "Checking src/ttblit/__init__.py"

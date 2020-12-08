@@ -1,3 +1,9 @@
+0.2.0
+-----
+
+* New: Version tool: 32blit version
+* Packer: Format support for wildcard asset names
+
 0.1.4
 -----
 
