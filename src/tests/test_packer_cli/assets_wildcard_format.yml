@@ -1,0 +1,4 @@
+assets.cpp:
+  prefix: asset_
+  level_*.tmx:
+    name: "{type}_{filename}"

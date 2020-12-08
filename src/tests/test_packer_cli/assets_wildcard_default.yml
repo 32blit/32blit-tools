@@ -1,0 +1,3 @@
+assets.cpp:
+  prefix: asset_
+  level_*.tmx:

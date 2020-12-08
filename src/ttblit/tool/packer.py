@@ -1,5 +1,6 @@
 import logging
 import pathlib
+import re
 
 import yaml
 
@@ -162,8 +163,8 @@ class AssetSource():
         return 'raw/binary'
 
     def build(self, format, prefix=None, output_file=None):
-        builder, input_type = self.type.split('/')
-        builder = self.asset_builders[builder]()
+        input_type, input_subtype = self.type.split('/')
+        builder = self.asset_builders[input_type]()
 
         # Now we know our target builder, one last iteration through the options
         # allows some pre-processing stages to remap paths or other idiosyncrasies
@@ -183,12 +184,25 @@ class AssetSource():
         output = []
 
         for file in self.input_files:
+            symbol_name = self.name
+            if symbol_name is not None:
+                symbol_name = symbol_name.format(
+                    filename=file.with_suffix('').name,
+                    filepath=file.with_suffix(''),
+                    fullname=file.name,
+                    fullpath=file,
+                    type=input_type,
+                    subtype=input_subtype
+                )
+                symbol_name = symbol_name.replace('.', '_')
+                symbol_name = re.sub('[^0-9A-Za-z_]', '_', symbol_name)
+
             self.builder_options.update({
                 'input_file': file,
                 'output_file': output_file,
-                'input_type': input_type,
+                'input_type': input_subtype,
                 'output_format': format,
-                'symbol_name': self.name,
+                'symbol_name': symbol_name,
                 'working_path': self.working_path,
                 'prefix': prefix
             })

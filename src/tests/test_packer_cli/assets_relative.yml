@@ -1,0 +1,4 @@
+assets.cpp:
+  image.png:
+    palette: palette.act
+    name: asset_test
