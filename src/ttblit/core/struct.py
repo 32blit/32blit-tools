@@ -72,6 +72,9 @@ struct_blit_meta = Struct(
         'description' / PaddedString(129, 'ascii'),
         'version' / PaddedString(17, 'ascii'),
         'author' / PaddedString(17, 'ascii'),
+        Const(b'BLITTYPE'),
+        'category' / PaddedString(17, 'ascii'),
+        'filetypes' / PrefixedArray(Int8ul, PaddedString(5, 'ascii')),
         'icon' / struct_blit_image,
         'splash' / struct_blit_image
     ))
@@ -86,6 +89,9 @@ struct_blit_meta_standalone = Struct(
         'description' / PaddedString(129, 'ascii'),
         'version' / PaddedString(17, 'ascii'),
         'author' / PaddedString(17, 'ascii'),
+        Const(b'BLITTYPE'),
+        'category' / PaddedString(17, 'ascii'),
+        'filetypes' / PrefixedArray(Int8ul, PaddedString(5, 'ascii')),
         'icon' / struct_blit_image,
         'splash' / struct_blit_image
     ))
