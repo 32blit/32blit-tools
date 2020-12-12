@@ -105,9 +105,14 @@ class Packer(Tool):
                 elif file_options is None:
                     file_options = {}
 
-                asset_sources.append(
-                    AssetSource(input_files, file_options=file_options, working_path=self.working_path)
-                )
+                # Handle both an array of options dicts or a single dict
+                if type(file_options) is not list:
+                    file_options = [file_options]
+
+                for file_opts in file_options:
+                    asset_sources.append(
+                        AssetSource(input_files, file_options=file_opts, working_path=self.working_path)
+                    )
 
             self.assets.append(AssetTarget(
                 output_file,
