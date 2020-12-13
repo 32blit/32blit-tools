@@ -1,0 +1,8 @@
+assets.cpp:
+  prefix: asset_
+  image.png:
+    - name: image_packed
+      packed: true
+
+    - name: image_raw
+      packed: false

@@ -109,3 +109,28 @@ def test_packer_cli_invalid_input(parsers, test_resources, output_dir):
     packer.run(args)
 
     assert packer.assets[0].sources[0].type == 'raw/binary'
+
+
+def test_packer_cli_multiple_outputs(parsers, test_resources, output_dir):
+    from ttblit.tool import packer
+
+    parser, subparser = parsers
+
+    packer = packer.Packer(subparser)
+
+    args = parser.parse_args([
+        'pack',
+        '--force',
+        '--config', str(test_resources / 'assets_multi_out.yml'),
+        '--output', output_dir
+    ])
+
+    packer.run(args)
+
+    assert (pathlib.Path(output_dir) / "assets.hpp").exists()
+    assert (pathlib.Path(output_dir) / "assets.cpp").exists()
+
+    hpp = open(pathlib.Path(output_dir) / "assets.hpp", "r").read()
+
+    assert "asset_image_packed" in hpp
+    assert "asset_image_raw" in hpp
