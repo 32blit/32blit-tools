@@ -23,6 +23,9 @@ def compute_data_length(ctx):
     We need this computation here so we can use `math.ceil` and
     byte-align the result.
     """
+    if ctx.type == "RL":
+        return ctx.size - (ctx.palette_entries * 4 + 18) # can't really calc this
+
     return math.ceil((ctx.width * ctx.height * ctx.bit_length) / 8)
 
 

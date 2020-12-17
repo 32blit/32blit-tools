@@ -1,5 +1,6 @@
 import io
 import logging
+from math import ceil
 
 from bitstring import BitArray
 from PIL import Image
@@ -74,12 +75,50 @@ class ImageAsset(AssetBuilder):
 
         if self.packed:
             bit_length = self.palette.bit_length()
-            image_data = BitArray().join(BitArray(uint=x, length=bit_length) for x in image.tobytes()).tobytes()
+
+            break_even = ceil(8 / bit_length) + 1 #ish
+
+            image_data_raw = image.tobytes()
+            image_len = len(image_data_raw)
+            image_bits = BitArray()
+            i = 0
+            while i < image_len:
+                repeat = 0
+                v = image_data_raw[i]
+
+                for j in range(i + 1, image_len):
+                    if image_data_raw[j] != v or repeat == 0xFF:
+                        break
+                        
+                    repeat += 1
+
+                if repeat > break_even:
+                    image_bits.append('0b1')
+                    image_bits.append(bytes([repeat]))
+                    i += repeat
+                else:
+                    image_bits.append('0b0')
+
+                image_bits.append(BitArray(uint=v, length=bit_length))
+                i += 1
+
+            image_data_rl = image_bits.tobytes()
+            image_data_pk = BitArray().join(BitArray(uint=x, length=bit_length) for x in image.tobytes()).tobytes()
+
+            if len(image_data_pk) < len(image_data_rl):
+                image_type = 'PK'
+                image_data = image_data_pk
+            else:
+                image_type = 'RL'
+                image_data = image_data_rl
+
+            print(len(image_data_pk), len(image_data_rl))
         else:
             image_data = image.tobytes()
+            image_type = 'RW'
 
         return struct_blit_image.build({
-            'type': 'PK' if self.packed else 'RW',
+            'type': image_type,
             'width': image.size[0],
             'height': image.size[1],
             'palette_entries': len(self.palette),
