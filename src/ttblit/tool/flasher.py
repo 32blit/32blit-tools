@@ -92,14 +92,17 @@ class Flasher(Tool):
 
     def _reset(self, serial, timeout=5.0):
         serial.write(b'32BL_RST\x00')
+        serial.flush()
         serial.close()
+        time.sleep(0.5)
         t_start = time.time()
         while time.time() - t_start < timeout:
             try:
                 serial.open()
-                break
+                return
             except SerialException:
                 time.sleep(0.1)
+        raise RuntimeError(f"Failed to connect to 32Blit on {serial.port} after reset")
 
     def _reset_to_firmware(self, serial):
         if self._get_status(serial) == 'game':
@@ -130,6 +133,7 @@ class Flasher(Tool):
             while sent_byte_count < file_size:
                 data = file.read(chunk_size)
                 serial.write(data)
+                serial.flush()
                 sent_byte_count += chunk_size
                 progress.update(chunk_size)
 
