@@ -1,3 +1,10 @@
+0.3.0
+-----
+
+* New: RLE Encoding support for spritesheets
+* Flasher: refined shorthands- "32blit flash game.blit" and "32blit game.blit" will flash a game.
+* Flasher: fixed a bug where it would reset an open connection and break during a flash
+
 0.2.0
 -----
 
