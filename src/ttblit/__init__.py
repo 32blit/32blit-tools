@@ -22,11 +22,14 @@ def main():
     subparsers = parser.add_subparsers(dest='command', help='Commands')
 
     if len(sys.argv) == 2:
-        file = pathlib.Path(sys.argv[1])
-        if file.is_file() and file.exists():
-            f = flasher.Flasher(subparsers)
-            f.run_save({'file': file, 'directory': '/'})
-            return
+        path = pathlib.Path(sys.argv[1])
+        if path.suffix == '.blit':
+            sys.argv[1:] = ['flash', 'flash', '--file', str(path)]
+
+    if len(sys.argv) == 3:
+        path = pathlib.Path(sys.argv[2])
+        if sys.argv[1] == 'flash' and path.suffix == '.blit':
+            sys.argv[1:] = ['flash', 'flash', '--file', str(path)]
 
     tools = {}
 
