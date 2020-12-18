@@ -89,7 +89,7 @@ class ImageAsset(AssetBuilder):
                 for j in range(i + 1, image_len):
                     if image_data_raw[j] != v or repeat == 0xFF:
                         break
-                        
+
                     repeat += 1
 
                 if repeat >= break_even:
