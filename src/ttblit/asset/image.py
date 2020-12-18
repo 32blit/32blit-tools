@@ -76,7 +76,7 @@ class ImageAsset(AssetBuilder):
         if self.packed:
             bit_length = self.palette.bit_length()
 
-            break_even = ceil(8 / bit_length) + 1 #ish
+            break_even = ceil(8 / (bit_length + 1))
 
             image_data_raw = image.tobytes()
             image_len = len(image_data_raw)
@@ -92,7 +92,7 @@ class ImageAsset(AssetBuilder):
                         
                     repeat += 1
 
-                if repeat > break_even:
+                if repeat >= break_even:
                     image_bits.append('0b1')
                     image_bits.append(bytes([repeat]))
                     i += repeat
@@ -112,7 +112,6 @@ class ImageAsset(AssetBuilder):
                 image_type = 'RL'
                 image_data = image_data_rl
 
-            print(len(image_data_pk), len(image_data_rl))
         else:
             image_data = image.tobytes()
             image_type = 'RW'
