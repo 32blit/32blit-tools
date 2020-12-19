@@ -24,7 +24,7 @@ def main():
     if len(sys.argv) == 2:
         path = pathlib.Path(sys.argv[1])
         if path.suffix == '.blit':
-            sys.argv[1:] = ['flash', 'flash', '--file', str(path)]
+            sys.argv[1:] = ['flash', 'save', '--file', str(path)]
 
     if len(sys.argv) == 3:
         path = pathlib.Path(sys.argv[2])
