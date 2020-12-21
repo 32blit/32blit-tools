@@ -118,6 +118,11 @@ Supported formats:
 
 # Changelog
 
+0.3.1
+-----
+
+* Fixed "32blit game.blit" to *save* (to SD) instead of *flash* again
+
 0.3.0
 -----
 
