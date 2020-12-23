@@ -23,9 +23,6 @@ class CHeader(OutputFormat):
     name = 'c_header'
     extensions = ('.hpp', '.h')
 
-    def __init__(self):
-        OutputFormat.__init__(self)
-
     def _helper_raw_to_c_source_hex(self, input_data):
         if type(input_data) is str:
             input_data = bytes(input_data, encoding='utf-8')
@@ -50,9 +47,6 @@ class CSource(CHeader):
     name = 'c_source'
     components = ('hpp', 'cpp')
     extensions = ('.cpp', '.c')
-
-    def __init__(self):
-        OutputFormat.__init__(self)
 
     def output_hpp(self, input_data, symbol_name):
         return f'''extern const uint8_t {symbol_name}[];
@@ -83,9 +77,6 @@ const uint32_t {symbol_name}_length = sizeof({symbol_name});'''
 class RawBinary(OutputFormat):
     name = 'raw_binary'
     extensions = ('.raw', '.bin')
-
-    def __init__(self):
-        OutputFormat.__init__(self)
 
     def output(self, input_data, symbol_name):
         return input_data
