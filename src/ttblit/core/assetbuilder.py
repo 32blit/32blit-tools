@@ -7,7 +7,6 @@ from .tool import Tool
 
 
 class AssetBuilder(Tool):
-    formats = OutputFormat.by_name
     no_output_file_default_format = CHeader
 
     options = {
@@ -29,7 +28,7 @@ class AssetBuilder(Tool):
             if(len(self.types) > 1):
                 self.parser.add_argument('--input_type', type=str, default=None, choices=self.types, help='Input file type')
             self.parser.add_argument('--output_file', type=pathlib.Path, default=None)
-            self.parser.add_argument('--output_format', type=str, default=None, choices=self.formats.keys(), help='Output file format')
+            self.parser.add_argument('--output_format', type=str, default=None, choices=OutputFormat.by_name.keys(), help='Output file format')
             self.parser.add_argument('--symbol_name', type=str, default=None, help='Output symbol name')
             self.parser.add_argument('--force', action='store_true', help='Force file overwrite')
 
@@ -58,7 +57,7 @@ class AssetBuilder(Tool):
         elif type(self.output_format) is str:
             self.output_format = parse_output_format(self.output_format)
         elif not issubclass(self.output_format, OutputFormat):
-            raise ValueError(f'Invalid format {self.output_format}, choices {self.formats.keys()}')
+            raise ValueError(f'Invalid format {self.output_format}, choices {OutputFormat.by_name.keys()}')
 
         if self.input_type is None:
             self._guess_type()
@@ -119,11 +118,9 @@ class AssetBuilder(Tool):
             logging.warning(f"No --output given, writing to stdout assuming {self.no_output_file_default_format.name}")
             return
 
-        for format_name, format_class in self.formats.items():
-            for extension in format_class.extensions:
-                if self.output_file.name.endswith(extension):
-                    self.output_format = format_class
-                    logging.info(f"Guessed output format {format_class.name} for {self.output_file}")
-                    return
-
-        raise TypeError(f"Unable to identify type of output file {self.output_file}")
+        try:
+            self.output_format = OutputFormat.by_extension[self.output_file.suffix]
+            logging.info(f"Guessed output format {self.output_format.name} for {self.output_file}")
+            return
+        except KeyError:
+            raise TypeError(f"Unable to identify type of output file {self.output_file}")
