@@ -2,13 +2,12 @@ import logging
 import pathlib
 import re
 
-from .outputformat import (CHeader, OutputFormat, output_formats,
-                           parse_output_format)
+from .outputformat import CHeader, OutputFormat, parse_output_format
 from .tool import Tool
 
 
 class AssetBuilder(Tool):
-    formats = output_formats
+    formats = OutputFormat.by_name
     no_output_file_default_format = CHeader
 
     options = {
