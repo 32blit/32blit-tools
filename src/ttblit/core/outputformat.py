@@ -61,6 +61,7 @@ class CHeader(OutputFormat):
         if header:
             lines.append('#pragma once')
         lines.append(f'#include <{include}>')
+        lines.append('')
         if type(data) is list:
             lines.extend(data)
         else:
