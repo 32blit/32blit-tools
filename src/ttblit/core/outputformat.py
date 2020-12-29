@@ -87,7 +87,7 @@ class CSource(CHeader):
 
     def join(self, ext, filename, data):
         include = filename.with_suffix('.hpp').name if ext == 'cpp' else 'cstdint'
-        return self._boilerplate(data, include=include, header=False)
+        return self._boilerplate(data, include=include, header=(ext != 'cpp'))
 
 
 class RawBinary(OutputFormat):
