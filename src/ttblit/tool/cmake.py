@@ -121,11 +121,17 @@ class CMake(Tool):
                 if type(file_options) is str:
                     file_options = {'name': file_options}
 
+                # Handle both an array of options dicts or a single dict
+                if type(file_options) is not list:
+                    file_options = [file_options]
+
                 input_files = []
                 # Parse the options for any references to input files
-                for key, value in file_options.items():
-                    if key in ('palette') and type(value) is str:
-                        input_files += list(self.working_path.glob(value))
+                for file_opts in file_options:
+                    for key, value in file_opts.items():
+                        if key in ('palette') and type(value) is str:
+                            input_files += list(self.working_path.glob(value))
+
                 # Treat the input string as a glob, and get an input filelist
                 if type(file_glob) is str:
                     input_files += list(self.working_path.glob(file_glob))
