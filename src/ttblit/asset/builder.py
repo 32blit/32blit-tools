@@ -102,7 +102,7 @@ class AssetBuilder(Tool):
 
         output_data = self.to_binary(input_data)
 
-        return self.output_format().output(output_data, self.symbol_name)
+        return self.output_format().fragments(self.symbol_name, output_data)
 
     def _guess_type(self):
         for input_type, extensions in self.typemap.items():

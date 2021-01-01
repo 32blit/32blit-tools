@@ -11,10 +11,12 @@ class OutputFormat():
     def __repr__(self):
         return self.name
 
-    def output(self, input_data, symbol_name):
+    @staticmethod
+    def fragments(symbol, data):
         raise NotImplementedError
 
-    def join(self, ext, filename, data):
+    @staticmethod
+    def join(ext, filename, data):
         raise NotImplementedError
 
 

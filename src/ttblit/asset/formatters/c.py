@@ -12,21 +12,21 @@ class CHeader(OutputFormat):
         width=80,
     )
 
-    def _initializer(self, input_data):
-        if type(input_data) is str:
-            input_data = input_data.encode('utf-8')
-        values = ', '.join(f'0x{c:02x}' for c in input_data)
+    def _initializer(self, data):
+        if type(data) is str:
+            data = data.encode('utf-8')
+        values = ', '.join(f'0x{c:02x}' for c in data)
         return f' = {{\n{self.wrapper.fill(values)}\n}}'
 
-    def _declaration(self, types, symbol_name, data=None):
+    def _declaration(self, types, symbol, data=None):
         return textwrap.dedent('''\
-        {types} uint8_t {symbol_name}[]{initializer};
-        {types} uint32_t {symbol_name}_length{size};
+        {types} uint8_t {symbol}[]{initializer};
+        {types} uint32_t {symbol}_length{size};
         ''').format(
             types=types,
-            symbol_name=symbol_name,
+            symbol=symbol,
             initializer=self._initializer(data) if data else '',
-            size=f' = sizeof({symbol_name})' if data else '',
+            size=f' = sizeof({symbol})' if data else '',
         )
 
     def _boilerplate(self, data, include, header=True):
@@ -41,8 +41,8 @@ class CHeader(OutputFormat):
             lines.append(data)
         return '\n'.join(lines)
 
-    def output(self, input_data, symbol_name):
-        return self._declaration('inline const', symbol_name, input_data)
+    def fragments(self, symbol, data):
+        return self._declaration('inline const', symbol, data)
 
     def join(self, ext, filename, data):
         return self._boilerplate(data, include="cstdint", header=True)
@@ -53,10 +53,10 @@ class CSource(CHeader):
     components = ('hpp', 'cpp')
     extensions = ('.cpp', '.c')
 
-    def output(self, input_data, symbol_name):
+    def fragments(self, symbol, data):
         return {
-            'hpp': self._declaration('extern const', symbol_name),
-            'cpp': self._declaration('const', symbol_name, input_data),
+            'hpp': self._declaration('extern const', symbol),
+            'cpp': self._declaration('const', symbol, data),
         }
 
     def join(self, ext, filename, data):
