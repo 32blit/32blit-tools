@@ -5,7 +5,7 @@ import re
 import yaml
 
 from ..asset.builders import font, image, map, raw
-from ..asset.formatter import CHeader, CSource, RawBinary
+from ..asset.formatter import OutputFormat
 from ..core.palette import Palette
 from ..core.tool import Tool
 
@@ -220,12 +220,6 @@ class AssetSource():
 
 class AssetTarget():
     supported_options = ('prefix', 'type')
-    output_formats = {
-        '.hpp': CHeader,
-        '.cpp': CSource,
-        '.blit': RawBinary,
-        '.raw': RawBinary
-    }
 
     def __init__(self, output_file, sources, target_options):
         self.output_file = output_file
@@ -238,7 +232,7 @@ class AssetTarget():
         if output_format is None:
             output_format = self.guess_output_format(self.output_file)
         else:
-            if type not in self.output_formats.values():
+            if type not in OutputFormat.by_extension.values():
                 raise ValueError(f'Unknown asset output format {output_format}')
         self.output_format = output_format
 
@@ -270,7 +264,8 @@ class AssetTarget():
         return output
 
     def guess_output_format(self, file):
-        if file.suffix in self.output_formats:
-            return self.output_formats[file.suffix]
-        logging.warning(f'Unable to guess type of {file}, assuming raw/binary')
-        return RawBinary
+        try:
+            return OutputFormat.guess(file)
+        except TypeError:
+            logging.warning(f'Unable to guess type of {file}, assuming raw/binary')
+            return OutputFormat.parse('raw_binary')

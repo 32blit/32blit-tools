@@ -1,14 +1,13 @@
 from ..formatter import OutputFormat
 
 
-class RawBinary(OutputFormat):
-    name = 'raw_binary'
-    extensions = ('.raw', '.bin')
+@OutputFormat(extensions=('.raw', '.bin'))
+def raw_binary(symbol, data):
+    return data
 
-    def fragments(self, symbol, data):
-        return data
 
-    def join(self, ext, filename, data):
-        if type(data) is list:
-            data = b''.join(data)
-        return data
+@raw_binary.joiner
+def raw_binary(ext, filename, data):
+    if type(data) is list:
+        data = b''.join(data)
+    return data
