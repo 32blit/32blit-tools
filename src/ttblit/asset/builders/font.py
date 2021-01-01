@@ -39,9 +39,6 @@ class FontAsset(AssetBuilder):
             self.parser.add_argument('--vertical-spacing', type=int, default=1, help='Space between lines')
             self.parser.add_argument('--space-width', type=int, default=1, help='Width of the space character')
 
-    def prepare(self, args):
-        AssetBuilder.prepare(self, args)
-
     def process_image_font(self, input_data):
         # Since we already have bytes, we need to pass PIL an io.BytesIO object
         image = Image.open(io.BytesIO(input_data)).convert('1')
@@ -151,8 +148,6 @@ class FontAsset(AssetBuilder):
             font_data, font_w_data, char_width, char_height = self.process_image_font(input_data)
         elif self.input_type == 'font':
             font_data, font_w_data, char_width, char_height = self.process_ft_font(input_data)
-
-        font_data = bytes(font_data)
 
         head_data = struct.pack('<BBBB', self.num_chars, char_width, char_height, self.vertical_spacing)
 

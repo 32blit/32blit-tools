@@ -5,9 +5,6 @@ class CHeader(OutputFormat):
     name = 'c_header'
     extensions = ('.hpp', '.h')
 
-    def __init__(self):
-        OutputFormat.__init__(self)
-
     def _helper_raw_to_c_source_hex(self, input_data):
         if type(input_data) is str:
             input_data = bytes(input_data, encoding='utf-8')

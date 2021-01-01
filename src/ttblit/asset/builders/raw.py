@@ -10,9 +10,6 @@ class RawAsset(AssetBuilder):
         'csv': ('.csv')
     }
 
-    def prepare(self, args):
-        AssetBuilder.prepare(self, args)
-
     def csv_to_binary(self, input_data, base=10, offset=0):
         try:
             input_data = input_data.decode('utf-8')
