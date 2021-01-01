@@ -1,22 +1,4 @@
-class OutputFormat():
-    name = 'none'
-    components = None
-    extensions = ()
-
-    def __str__(self):
-        return self.name
-
-    def __repr__(self):
-        return self.name
-
-    def build(self, input_data, symbol_name):
-        if self.components is None:
-            return self.output(input_data, symbol_name)
-        else:
-            output_components = {}
-            for extension in self.components:
-                output_components[extension] = getattr(self, f'output_{extension}')(input_data, symbol_name)
-            return output_components
+from ..formatter import OutputFormat
 
 
 class CHeader(OutputFormat):
@@ -78,40 +60,3 @@ const uint32_t {symbol_name}_length = sizeof({symbol_name});'''
 #include <cstdint>
 {data}
 '''
-
-
-class RawBinary(OutputFormat):
-    name = 'raw_binary'
-    extensions = ('.raw', '.bin')
-
-    def __init__(self):
-        OutputFormat.__init__(self)
-
-    def output(self, input_data, symbol_name):
-        return input_data
-
-    def join(self, ext, filename, data):
-        if type(data) is list:
-            data = b''.join(data)
-        return data
-
-
-output_formats = {}
-name = None
-object = None
-
-
-def parse_output_format(value):
-    if type(value) is str:
-        return output_formats.get(value, None)
-    if issubclass(value, OutputFormat):
-        return value
-    return output_formats[value]
-
-
-for name, object in globals().items():
-    try:
-        if issubclass(object, OutputFormat) and not name == 'OutputFormat':
-            output_formats[object.name] = object
-    except TypeError:
-        pass

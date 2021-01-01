@@ -19,7 +19,7 @@ def test_input_file():
 
 
 def test_map_tiled_cli_no_args(parsers):
-    from ttblit.asset import map
+    from ttblit.asset.builders import map
 
     parser, subparser = parsers
 
@@ -30,7 +30,7 @@ def test_map_tiled_cli_no_args(parsers):
 
 
 def test_map_tiled_cli(parsers, test_input_file):
-    from ttblit.asset import map
+    from ttblit.asset.builders import map
 
     parser, subparser = parsers
 

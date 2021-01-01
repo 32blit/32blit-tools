@@ -4,8 +4,8 @@ import re
 
 import yaml
 
-from ..asset import font, image, map, raw
-from ..core.outputformat import CHeader, CSource, RawBinary
+from ..asset.builders import font, image, map, raw
+from ..asset.formatter import CHeader, CSource, RawBinary
 from ..core.palette import Palette
 from ..core.tool import Tool
 

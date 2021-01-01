@@ -1,4 +1,4 @@
-from ..core.assetbuilder import AssetBuilder
+from ..builder import AssetBuilder
 
 
 class RawAsset(AssetBuilder):

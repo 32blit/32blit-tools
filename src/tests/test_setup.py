@@ -29,18 +29,18 @@ def test_flasher_instance(subparser):
 
 
 def test_image_instance(subparser):
-    from ttblit.asset import image
+    from ttblit.asset.builders import image
 
     image.ImageAsset(subparser)
 
 
 def test_raw_instance(subparser):
-    from ttblit.asset import raw
+    from ttblit.asset.builders import raw
 
     raw.RawAsset(subparser)
 
 
 def test_map_instance(subparser):
-    from ttblit.asset import map
+    from ttblit.asset.builders import map
 
     map.MapAsset(subparser)

@@ -11,7 +11,7 @@ def subparser():
 
 
 def test_map_tiled(subparser):
-    from ttblit.asset import map
+    from ttblit.asset.builders import map
 
     map = map.MapAsset(subparser)
 

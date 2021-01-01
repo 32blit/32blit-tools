@@ -2,9 +2,9 @@ import logging
 import pathlib
 import re
 
-from .outputformat import (CHeader, OutputFormat, output_formats,
-                           parse_output_format)
-from .tool import Tool
+from ..core.tool import Tool
+from .formatter import (CHeader, OutputFormat, output_formats,
+                        parse_output_format)
 
 
 class AssetBuilder(Tool):

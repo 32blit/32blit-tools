@@ -11,7 +11,7 @@ from bitstring import BitArray, BitStream
 from construct.core import StreamError
 from PIL import Image
 
-from ..asset.image import ImageAsset
+from ..asset.builders.image import ImageAsset
 from ..core.struct import (blit_game, blit_game_with_meta,
                            blit_game_with_meta_and_relo, blit_icns,
                            struct_blit_image)

@@ -4,7 +4,7 @@ import struct
 import freetype
 from PIL import Image
 
-from ..core.assetbuilder import AssetBuilder
+from ..builder import AssetBuilder
 
 
 class FontAsset(AssetBuilder):
