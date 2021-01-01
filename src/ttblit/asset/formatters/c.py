@@ -53,11 +53,11 @@ class CSource(CHeader):
     components = ('hpp', 'cpp')
     extensions = ('.cpp', '.c')
 
-    def output_hpp(self, input_data, symbol_name):
-        return self._declaration('extern const', symbol_name)
-
-    def output_cpp(self, input_data, symbol_name):
-        return self._declaration('const', symbol_name, input_data)
+    def output(self, input_data, symbol_name):
+        return {
+            'hpp': self._declaration('extern const', symbol_name),
+            'cpp': self._declaration('const', symbol_name, input_data),
+        }
 
     def join(self, ext, filename, data):
         include = filename.with_suffix('.hpp').name if ext == 'cpp' else 'cstdint'

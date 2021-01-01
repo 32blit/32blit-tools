@@ -11,14 +11,11 @@ class OutputFormat():
     def __repr__(self):
         return self.name
 
-    def build(self, input_data, symbol_name):
-        if self.components is None:
-            return self.output(input_data, symbol_name)
-        else:
-            output_components = {}
-            for extension in self.components:
-                output_components[extension] = getattr(self, f'output_{extension}')(input_data, symbol_name)
-            return output_components
+    def output(self, input_data, symbol_name):
+        raise NotImplementedError
+
+    def join(self, ext, filename, data):
+        raise NotImplementedError
 
 
 output_formats = {}
