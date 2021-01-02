@@ -1,7 +1,7 @@
-from ..formatter import OutputFormat
+from ..formatter import AssetFormatter
 
 
-@OutputFormat(extensions=('.raw', '.bin'))
+@AssetFormatter(extensions=('.raw', '.bin'))
 def raw_binary(symbol, data):
     return {None: data}
 

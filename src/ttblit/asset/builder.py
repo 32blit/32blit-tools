@@ -3,7 +3,7 @@ import pathlib
 import re
 
 from ..core.tool import Tool
-from .formatter import OutputFormat
+from .formatter import AssetFormatter
 from .writer import AssetWriter
 
 
@@ -13,7 +13,7 @@ class AssetBuilder(Tool):
         'input_file': pathlib.Path,
         'input_type': str,
         'output_file': pathlib.Path,
-        'output_format': OutputFormat.parse,
+        'output_format': AssetFormatter.parse,
         'symbol_name': str,
         'force': bool,
         'prefix': str,
@@ -28,7 +28,7 @@ class AssetBuilder(Tool):
             if(len(self.types) > 1):
                 self.parser.add_argument('--input_type', type=str, default=None, choices=self.types, help='Input file type')
             self.parser.add_argument('--output_file', type=pathlib.Path, default=None)
-            self.parser.add_argument('--output_format', type=str, default=None, choices=OutputFormat.names(), help='Output file format')
+            self.parser.add_argument('--output_format', type=str, default=None, choices=AssetFormatter.names(), help='Output file format')
             self.parser.add_argument('--symbol_name', type=str, default=None, help='Output symbol name')
             self.parser.add_argument('--force', action='store_true', help='Force file overwrite')
 

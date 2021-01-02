@@ -3,7 +3,7 @@ import pkgutil
 from . import formatters
 
 
-class OutputFormat():
+class AssetFormatter():
     _by_name = {}
     _by_extension = {}
 

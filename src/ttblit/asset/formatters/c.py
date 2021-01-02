@@ -1,6 +1,6 @@
 import textwrap
 
-from ..formatter import OutputFormat
+from ..formatter import AssetFormatter
 
 wrapper = textwrap.TextWrapper(
     initial_indent='    ', subsequent_indent='    ', width=80
@@ -36,7 +36,7 @@ def c_boilerplate(data, include, header=True):
     return '\n'.join(lines)
 
 
-@OutputFormat(extensions=('.hpp', '.h'))
+@AssetFormatter(extensions=('.hpp', '.h'))
 def c_header(symbol, data):
     return {None: c_declaration('inline const', symbol, data)}
 
@@ -46,7 +46,7 @@ def c_header(path, fragments):
     return {None: c_boilerplate(fragments[None], include="cstdint", header=True)}
 
 
-@OutputFormat(components=('hpp', 'cpp'), extensions=('.cpp', '.c'))
+@AssetFormatter(components=('hpp', 'cpp'), extensions=('.cpp', '.c'))
 def c_source(symbol, data):
     return {
         'hpp': c_declaration('extern const', symbol),

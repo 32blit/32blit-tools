@@ -1,6 +1,6 @@
 import logging
 
-from .formatter import OutputFormat
+from .formatter import AssetFormatter
 
 
 class AssetWriter:
@@ -27,13 +27,13 @@ class AssetWriter:
         if value is None:
             if path is None:
                 logging.warning(f"No output filename, writing to stdout assuming {default}")
-                return OutputFormat.parse(default)
+                return AssetFormatter.parse(default)
             else:
-                fmt = OutputFormat.guess(path)
+                fmt = AssetFormatter.guess(path)
                 logging.info(f"Guessed output format {fmt} for {path}")
                 return fmt
         else:
-            return OutputFormat.parse(value)
+            return AssetFormatter.parse(value)
 
     def write(self, fmt=None, path=None, force=False, report=True, sort=None):
         fmt = self._get_format(fmt, path)

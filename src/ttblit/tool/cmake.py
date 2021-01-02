@@ -3,7 +3,7 @@ import pathlib
 
 import yaml
 
-from ..asset.formatter import OutputFormat
+from ..asset.formatter import AssetFormatter
 from ..core.tool import Tool
 
 
@@ -99,10 +99,10 @@ class CMake(Tool):
             target = pathlib.Path(target)
 
             try:
-                output_formatter = OutputFormat.guess(target)
+                output_formatter = AssetFormatter.guess(target)
             except TypeError:
                 logging.warning(f'Unable to guess type of {target}, assuming raw/binary')
-                output_formatter = OutputFormat.parse('raw_binary')
+                output_formatter = AssetFormatter.parse('raw_binary')
 
             if output_formatter.components is None:
                 all_outputs.append(self.destination_path / target.name)
