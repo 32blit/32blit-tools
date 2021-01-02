@@ -8,7 +8,7 @@ class OutputFormat():
     _by_extension = {}
 
     def __init__(self, components=None, extensions=None):
-        self.components = components
+        self.components = components if components else (None, )
         self.extensions = extensions
 
     def __call__(self, fragment_func):

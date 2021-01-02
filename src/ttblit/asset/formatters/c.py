@@ -41,12 +41,12 @@ def c_boilerplate(data, include, header=True):
 
 @OutputFormat(extensions=('.hpp', '.h'))
 def c_header(symbol, data):
-    return c_declaration('inline const', symbol, data)
+    return {None: c_declaration('inline const', symbol, data)}
 
 
 @c_header.joiner
-def c_header(ext, filename, data):
-    return c_boilerplate(data, include="cstdint", header=True)
+def c_header(path, fragments):
+    return {None: c_boilerplate(fragments[None], include="cstdint", header=True)}
 
 
 @OutputFormat(components=('hpp', 'cpp'), extensions=('.cpp', '.c'))
@@ -58,7 +58,9 @@ def c_source(symbol, data):
 
 
 @c_source.joiner
-def c_source(ext, filename, data):
-    include = filename.with_suffix('.hpp').name if ext == 'cpp' else 'cstdint'
-    return c_boilerplate(data, include=include, header=(ext != 'cpp'))
-
+def c_source(path, fragments):
+    include = path.with_suffix('.hpp').name
+    return {
+        'hpp': c_boilerplate(fragments['hpp'], include='cstdint', header=True),
+        'cpp': c_boilerplate(fragments['cpp'], include=include, header=False),
+    }
