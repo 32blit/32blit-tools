@@ -117,3 +117,21 @@ set(METADATA_AUTHOR "gadgetoid")
 set(METADATA_DESCRIPTION "A pulse pounding, rock rollin', diamond hunting adventure")
 set(METADATA_VERSION "v1.0.0")
 '''
+
+
+def test_cmake_multiple_outputs(parsers, test_resources, test_cmake_file):
+    from ttblit.tool import cmake
+
+    parser, subparser = parsers
+
+    cmake = cmake.CMake(subparser)
+
+    args = parser.parse_args([
+        'cmake',
+        '--config', str(test_resources / 'assets_multi_out.yml'),
+        '--cmake', test_cmake_file.name
+    ])
+
+    cmake.run(args)
+
+    assert open(test_cmake_file.name).read().startswith('# Auto Generated File - DO NOT EDIT!')
