@@ -5,7 +5,6 @@ import yaml
 
 from ..asset.formatter import OutputFormat
 from ..core.tool import Tool
-from ..tool.packer import AssetTarget
 
 
 class CMake(Tool):
@@ -113,7 +112,7 @@ class CMake(Tool):
 
             # Strip high-level options from the dict
             # Leaving just file source globs
-            for key in AssetTarget.supported_options:
+            for key in ('prefix', 'type'):
                 options.pop(key, None)
 
             for file_glob, file_options in options.items():

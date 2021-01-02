@@ -5,7 +5,7 @@ import re
 import yaml
 
 from ..asset.builders import font, image, map, raw
-from ..asset.formatter import OutputFormat
+from ..asset.writer import AssetWriter
 from ..core.palette import Palette
 from ..core.tool import Tool
 
@@ -22,7 +22,7 @@ class Packer(Tool):
         self.parser.add_argument('--force', action='store_true', help='Force file overwrite')
 
         self.config = {}
-        self.assets = []
+        self.targets = []
         self.general_options = {}
 
     def parse_config(self, config_file):
@@ -79,12 +79,12 @@ class Packer(Tool):
             target_options = {}
 
             for key, value in options.items():
-                if key in AssetTarget.supported_options:
+                if key in ('prefix', 'type'):
                     target_options[key] = value
 
             # Strip high-level options from the dict
             # Leaving just file source globs
-            for key, value in target_options.items():
+            for key in target_options:
                 options.pop(key)
 
             for file_glob, file_options in options.items():
@@ -114,7 +114,7 @@ class Packer(Tool):
                         AssetSource(input_files, file_options=file_opts, working_path=self.working_path)
                     )
 
-            self.assets.append(AssetTarget(
+            self.targets.append((
                 output_file,
                 asset_sources,
                 target_options
@@ -122,9 +122,13 @@ class Packer(Tool):
 
         self.destination_path.mkdir(parents=True, exist_ok=True)
 
-        for target in self.assets:
-            output = target.build()
-            self.output(output, self.destination_path / target.output_file.name, target.output_format, force=args.force)
+        for path, sources, options in self.targets:
+            aw = AssetWriter()
+            for source in sources:
+                for asset in source.build(output_file=path, prefix=options.get('prefix')):
+                    aw.add_asset(*asset)
+
+            aw.write(options.get('type'), self.destination_path / path.name, force=args.force)
 
 
 class AssetSource():
@@ -167,7 +171,7 @@ class AssetSource():
         logging.warning(f'Unable to guess type, assuming raw/binary {file}')
         return 'raw/binary'
 
-    def build(self, format, prefix=None, output_file=None):
+    def build(self, prefix=None, output_file=None):
         input_type, input_subtype = self.type.split('/')
         builder = self.asset_builders[input_type]()
 
@@ -185,8 +189,6 @@ class AssetSource():
                 if option_type in (Palette, pathlib.Path):
                     if not pathlib.Path(self.builder_options[option_name]).is_absolute():
                         self.builder_options[option_name] = self.working_path / self.builder_options[option_name]
-
-        output = []
 
         for file in self.input_files:
             symbol_name = self.name
@@ -206,66 +208,10 @@ class AssetSource():
                 'input_file': file,
                 'output_file': output_file,
                 'input_type': input_subtype,
-                'output_format': format,
                 'symbol_name': symbol_name,
                 'working_path': self.working_path,
                 'prefix': prefix
             })
             builder.prepare_options(self.builder_options)
-            output.append(builder.build())
+            yield builder.build()
             logging.info(f' - {self.type} {file} -> {builder.symbol_name}')
-
-        return output
-
-
-class AssetTarget():
-    supported_options = ('prefix', 'type')
-
-    def __init__(self, output_file, sources, target_options):
-        self.output_file = output_file
-        self.sources = sources
-        self.parse_target_options(target_options)
-
-    def parse_target_options(self, target_options):
-        self.prefix = target_options.get('prefix')
-        output_format = target_options.get('type')
-        if output_format is None:
-            output_format = self.guess_output_format(self.output_file)
-        else:
-            if type not in OutputFormat.by_extension.values():
-                raise ValueError(f'Unknown asset output format {output_format}')
-        self.output_format = output_format
-
-    def build(self):
-        # TODO I hate this code, but because we're dealing with multiple input files
-        # the output can potentially be spread across multiple files with multiple snippets
-        # We need to gather each input files declarations/definitions (or otherwise) into
-        # the right output file.
-        output = []
-
-        # If the output_format deals with multiple files, switch to a dict and prep the files
-        if self.output_format.components is not None:
-            output = {}
-            for ext in self.output_format.components:
-                output[ext] = []
-
-        # Iterate through all the sources (input files) and build them
-        for source in self.sources:
-            data = source.build(format=self.output_format, output_file=self.output_file, prefix=self.prefix)
-            for snippet in data:
-                if self.output_format.components is not None:
-                    # If there are multiple output files, collect all the snippets into their respective outputs
-                    for ext, content in snippet.items():
-                        output[ext].append(content)
-                else:
-                    # If it's a single file format just append the snippet to the list
-                    output.append(snippet)
-
-        return output
-
-    def guess_output_format(self, file):
-        try:
-            return OutputFormat.guess(file)
-        except TypeError:
-            logging.warning(f'Unable to guess type of {file}, assuming raw/binary')
-            return OutputFormat.parse('raw_binary')

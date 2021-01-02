@@ -108,7 +108,7 @@ def test_packer_cli_invalid_input(parsers, test_resources, output_dir):
 
     packer.run(args)
 
-    assert packer.assets[0].sources[0].type == 'raw/binary'
+    assert packer.targets[0][1][0].type == 'raw/binary'
 
 
 def test_packer_cli_multiple_outputs(parsers, test_resources, output_dir):
