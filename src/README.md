@@ -118,6 +118,12 @@ Supported formats:
 
 # Changelog
 
+0.3.2
+-----
+
+* Allow use of user-specified serial port if VID/PID are empty
+* Support handling multiple sets of options in CMake tool
+
 0.3.1
 -----
 
