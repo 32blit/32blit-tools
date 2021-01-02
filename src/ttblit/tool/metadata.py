@@ -80,8 +80,10 @@ class Metadata(Tool):
     def checksum(self, bin):
         return struct.pack('<I', binascii.crc32(bin))
 
-    def build_icns(self, config):
+    def build_icns(self, config, working_path):
         image_file = pathlib.Path(config.get('file', ''))
+        if not image_file.is_file():
+            image_file = working_path / image_file
         if not image_file.is_file():
             raise ValueError(f'splash "{image_file}" does not exist!')
 
@@ -183,7 +185,7 @@ Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
             splash = self.prepare_image_asset('splash', self.config['splash'], working_path)
             if args.icns is not None:
                 if not args.icns.is_file() or args.force:
-                    open(args.icns, 'wb').write(self.build_icns(self.config['splash']))
+                    open(args.icns, 'wb').write(self.build_icns(self.config['splash'], working_path))
                     logging.info(f'Saved macOS icon to {args.icns}')
         else:
             raise ValueError('A 128x96 pixel splash is required!"')
