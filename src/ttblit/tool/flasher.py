@@ -63,6 +63,10 @@ class Flasher(Tool):
                 if comport.vid == 0x0483 and comport.pid == 0x5740:
                     logging.info(f'Found 32Blit on {comport.device}')
                     return [device]
+                # if the user asked for a port with no vid/pid assume they know what they're doing
+                elif comport.vid is None and comport.pid is None:
+                    logging.info(f'Using unidentified port {comport.device}')
+                    return [device]    
         raise RuntimeError(f'Unable to find 32Blit on {device}')
 
     def run(self, args):
