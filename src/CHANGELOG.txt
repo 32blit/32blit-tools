@@ -1,3 +1,11 @@
+0.4.0
+-----
+
+* Breaks metadata compatibility with previous versions!
+* Add URL field for GitHub URL
+* Add Category field to categorise games/apps
+* Add file associations field to identify supported filetypes
+
 0.3.2
 -----
 
