@@ -80,8 +80,10 @@ class Metadata(Tool):
     def checksum(self, bin):
         return struct.pack('<I', binascii.crc32(bin))
 
-    def build_icns(self, config):
+    def build_icns(self, config, working_path):
         image_file = pathlib.Path(config.get('file', ''))
+        if not image_file.is_file():
+            image_file = working_path / image_file
         if not image_file.is_file():
             raise ValueError(f'splash "{image_file}" does not exist!')
 
@@ -139,7 +141,12 @@ Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
     Description: {game.meta.data.description}
     Version:     {game.meta.data.version}
     Author:      {game.meta.data.author}
-""")
+    Category:    {game.meta.data.category}
+    URL:         {game.meta.data.url}""")
+                if len(game.meta.data.filetypes) > 0:
+                    print("    Filetypes:   ")
+                    for filetype in game.meta.data.filetypes:
+                        print(f"        {filetype}")
                 if game.meta.data.icon is not None:
                     game_icon = game.meta.data.icon
                     print(f"""    Icon:        {game_icon.width}x{game_icon.height} ({len(game_icon.palette)} colours)""")
@@ -178,7 +185,7 @@ Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
             splash = self.prepare_image_asset('splash', self.config['splash'], working_path)
             if args.icns is not None:
                 if not args.icns.is_file() or args.force:
-                    open(args.icns, 'wb').write(self.build_icns(self.config['splash']))
+                    open(args.icns, 'wb').write(self.build_icns(self.config['splash'], working_path))
                     logging.info(f'Saved macOS icon to {args.icns}')
         else:
             raise ValueError('A 128x96 pixel splash is required!"')
@@ -187,9 +194,23 @@ Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
             return
 
         title = self.config.get('title')
-        description = self.config.get('description')
+        description = self.config.get('description', '')
         version = self.config.get('version')
         author = self.config.get('author')
+        url = self.config.get('url', '')
+        category = self.config.get('category', 'none')
+        filetypes = self.config.get('filetypes', [])
+        if type(filetypes) is str:
+            filetypes = filetypes.split(' ')
+
+        if title is None:
+            raise ValueError('Title is required!')
+
+        if version is None:
+            raise ValueError('Version is required!')
+
+        if author is None:
+            raise ValueError('Author is required!')
 
         if len(title) > 24:
             raise ValueError('Title should be a maximum of 24 characters!"')
@@ -203,6 +224,17 @@ Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
         if len(author) > 16:
             raise ValueError('Author should be a maximum of 16 characters!')
 
+        if len(category) > 16:
+            raise ValueError('Category should be a maximum of 16 characters!')
+
+        if len(url) > 128:
+            raise ValueError('URL should be a maximum of 128 characters!')
+
+        if len(filetypes) > 0:
+            for filetype in filetypes:
+                if len(filetype) > 4:
+                    raise ValueError('Filetype should be a maximum of 4 characters! (Hint, don\'t include the .)')
+
         if game.meta is not None:
             if not args.force:
                 logging.critical(f'Refusing to overwrite metadata in {args.file}')
@@ -215,6 +247,9 @@ Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
                 'description': description,
                 'version': version,
                 'author': author,
+                'category': category,
+                'filetypes': filetypes,
+                'url': url,
                 'icon': struct_blit_image.parse(icon),
                 'splash': struct_blit_image.parse(splash)
             }
