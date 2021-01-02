@@ -32,10 +32,7 @@ def c_boilerplate(data, include, header=True):
         lines.append('#pragma once')
     lines.append(f'#include <{include}>')
     lines.append('')
-    if type(data) is list:
-        lines.extend(data)
-    else:
-        lines.append(data)
+    lines.extend(data)
     return '\n'.join(lines)
 
 

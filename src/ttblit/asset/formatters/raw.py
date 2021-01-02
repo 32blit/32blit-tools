@@ -8,6 +8,4 @@ def raw_binary(symbol, data):
 
 @raw_binary.joiner
 def raw_binary(path, data):
-    if type(data) is list:
-        data = b''.join(data)
-    return {None: data}
+    return {None: b''.join(data)}
