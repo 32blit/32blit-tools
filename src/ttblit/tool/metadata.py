@@ -139,9 +139,10 @@ Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
     Description: {game.meta.data.description}
     Version:     {game.meta.data.version}
     Author:      {game.meta.data.author}
-    Category:    {game.meta.data.category}""")
+    Category:    {game.meta.data.category}
+    URL:         {game.meta.data.url}""")
                 if len(game.meta.data.filetypes) > 0:
-                    print(f"    Filetypes:   ")
+                    print("    Filetypes:   ")
                     for filetype in game.meta.data.filetypes:
                         print(f"        {filetype}")
                 if game.meta.data.icon is not None:
@@ -194,6 +195,7 @@ Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
         description = self.config.get('description', '')
         version = self.config.get('version')
         author = self.config.get('author')
+        url = self.config.get('url', '')
         category = self.config.get('category', 'none')
         filetypes = self.config.get('filetypes', [])
         if type(filetypes) is str:
@@ -223,6 +225,9 @@ Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
         if len(category) > 16:
             raise ValueError('Category should be a maximum of 16 characters!')
 
+        if len(url) > 128:
+            raise ValueError('URL should be a maximum of 128 characters!')
+
         if len(filetypes) > 0:
             for filetype in filetypes:
                 if len(filetype) > 4:
@@ -242,6 +247,7 @@ Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
                 'author': author,
                 'category': category,
                 'filetypes': filetypes,
+                'url': url,
                 'icon': struct_blit_image.parse(icon),
                 'splash': struct_blit_image.parse(splash)
             }
