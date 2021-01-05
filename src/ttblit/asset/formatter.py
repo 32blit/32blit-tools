@@ -1,3 +1,4 @@
+import importlib
 import pkgutil
 
 from . import formatters
@@ -65,4 +66,4 @@ class AssetFormatter():
 for loader, module_name, is_pkg in pkgutil.walk_packages(formatters.__path__, formatters.__name__ + '.'):
     # We don't need to import anything from the modules. We just need to load them.
     # This will cause the decorators to run, which registers the formatters.
-    module = loader.find_module(module_name).load_module(module_name)
+    importlib.import_module(module_name, formatters.__name__)
