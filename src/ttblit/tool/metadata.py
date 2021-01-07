@@ -46,12 +46,12 @@ class Metadata(Tool):
 
     def prepare_image_asset(self, name, config, working_path):
         image_file = pathlib.Path(config.get('file', ''))
-        config['input_file'] = image_file
-        config['output_file'] = image_file.with_suffix('.bin')
         if not image_file.is_file():
             image_file = working_path / image_file
         if not image_file.is_file():
             raise ValueError(f'{name} "{image_file}" does not exist!')
+        config['input_file'] = image_file
+        config['output_file'] = image_file.with_suffix('.bin')
         asset = ImageAsset(argparse.ArgumentParser().add_subparsers())
         asset.prepare(config)
 
