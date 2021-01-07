@@ -2,7 +2,7 @@ import logging
 import pathlib
 import re
 
-from ..asset.builder import AssetBuilder
+from ..asset.builder import AssetTool
 from ..asset.writer import AssetWriter
 from ..core.palette import Palette
 from ..core.tool import Tool
@@ -108,14 +108,14 @@ class AssetSource():
         if self.type is None:
             # Glob files all have the same suffix, so we only care about the first one
             try:
-                self.type = AssetBuilder.guess_builder(self.input_files[0])
+                self.type = AssetTool.guess_builder(self.input_files[0])
             except TypeError:
                 logging.warning(f'Unable to guess type, assuming raw/binary {self.input_files[0]}.')
                 self.type = 'raw/binary'
 
     def build(self, prefix=None, output_file=None):
         input_type, input_subtype = self.type.split('/')
-        builder = AssetBuilder._by_name[input_type]()
+        builder = AssetTool._by_name[input_type]()
 
         # Now we know our target builder, one last iteration through the options
         # allows some pre-processing stages to remap paths or other idiosyncrasies

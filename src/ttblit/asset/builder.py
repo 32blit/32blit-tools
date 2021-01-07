@@ -10,7 +10,53 @@ from .formatter import AssetFormatter
 from .writer import AssetWriter
 
 
-class AssetBuilder(Tool):
+class AssetBuilder:
+
+    _by_name = {}
+    _by_extension = {}
+
+    def __init__(self, typemap):
+        self.typemap = typemap
+
+    def __call__(self, build_func):
+        self.name = build_func.__name__
+        self.build = build_func
+        self._by_name[self.name] = self
+        for subtype, extensions in self.typemap.items():
+            for ext, auto in extensions.items():
+                if auto:
+                    if ext in self._by_extension:
+                        raise KeyError(f'An automatic handler for {ext} has already been registered ({self._by_extension[ext]}).')
+                    self._by_extension[ext] = f'{self.name}/{subtype}'
+        return self
+
+    def __repr__(self):
+        return self.name
+
+    @staticmethod
+    def build(self, data, subtype, **kwargs):
+        raise NotImplementedError
+
+    def from_file(self, path, subtype, **kwargs):
+        if subtype is None:
+            subtype = self.guess_subtype(path)
+        elif subtype not in self.typemap.keys():
+            raise ValueError(f'Invalid subtype {subtype}, choices {self.typemap.keys()}')
+        return self.build(path.read_bytes(), subtype, **kwargs)
+
+    def guess_subtype(self, path):
+        for input_type, extensions in self.typemap.items():
+            if path.suffix in extensions:
+                return input_type
+        raise TypeError(f"Unable to identify type of input file {path.name}.")
+
+
+class AssetTool(Tool):
+
+    builder = None
+
+    _by_name = {}
+    _by_extension = {}
 
     options = {
         'input_file': pathlib.Path,
@@ -23,17 +69,12 @@ class AssetBuilder(Tool):
         'working_path': pathlib.Path
     }
 
-    _by_name = {}
-    _by_extension = {}
-
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls):
         super().__init_subclass__()
         cls._by_name[cls.command] = cls
-        for type_, extensions in cls.typemap.items():
+        for type_, extensions in cls.builder.typemap.items():
             for ext, auto in extensions.items():
                 if auto:
-                    if ext in cls._by_extension:
-                        raise KeyError(f'An automatic handler for {ext} has already been registered ({cls._by_extension[ext]}).')
                     cls._by_extension[ext] = f'{cls.command}/{type_}'
 
     def __init__(self, parser=None):
@@ -41,8 +82,8 @@ class AssetBuilder(Tool):
 
         if self.parser is not None:
             self.parser.add_argument('--input_file', type=pathlib.Path, required=True, help='Input file')
-            if(len(self.typemap.keys()) > 1):
-                self.parser.add_argument('--input_type', type=str, default=None, choices=self.typemap.keys(), help='Input file type')
+            if(self.builder and len(self.builder.typemap.keys()) > 1):
+                self.parser.add_argument('--input_type', type=str, default=None, choices=self.builder.typemap.keys(), help='Input file type')
             self.parser.add_argument('--output_file', type=pathlib.Path, default=None)
             self.parser.add_argument('--output_format', type=str, default=None, choices=AssetFormatter.names(), help='Output file format')
             self.parser.add_argument('--symbol_name', type=str, default=None, help='Output symbol name')
@@ -73,10 +114,10 @@ class AssetBuilder(Tool):
             self.symbol_name = self.prefix + self.symbol_name
 
         if self.input_type is None:
-            self.input_type = self.guess_type(self.input_file)
+            self.input_type = self.builder.guess_subtype(self.input_file)
             logging.info(f"Guessed type {self.input_type} for {self.input_file}.")
-        elif self.input_type not in self.typemap.keys():
-            raise ValueError(f'Invalid type {self.input_type}, choices {self.typemap.keys()}')
+        elif self.input_type not in self.builder.typemap.keys():
+            raise ValueError(f'Invalid type {self.input_type}, choices {self.builder.typemap.keys()}')
 
     def run(self, args):
         self.prepare_options(vars(args))
@@ -109,22 +150,14 @@ class AssetBuilder(Tool):
         self.prepare(opts)
 
     def build(self):
-        input_data = open(self.input_file, 'rb').read()
-        return self.symbol_name, self.to_binary(input_data)
-
-    @classmethod
-    def guess_type(cls, path):
-        for input_type, extensions in cls.typemap.items():
-            if path.suffix in extensions:
-                return input_type
-        raise TypeError(f"Unable to identify type of input file {path.name}.")
+        return self.symbol_name, self.to_binary()
 
     @classmethod
     def guess_builder(cls, path):
         try:
             return cls._by_extension[path.suffix]
         except KeyError:
-            raise TypeError(f"Unable to identify a builder for {path.name}.")
+            raise TypeError('Could not find a builder for {path}.')
 
 
 # Load all the implementations dynamically.

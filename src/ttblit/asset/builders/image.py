@@ -5,18 +5,36 @@ from PIL import Image
 
 from ...core.palette import Colour, Palette, type_palette
 from ...core.struct import struct_blit_image
-from ..builder import AssetBuilder
+from ..builder import AssetBuilder, AssetTool
+
+image_typemap = {
+    'image': {
+        '.png': True,
+        '.gif': True,
+    }
+}
 
 
-class ImageAsset(AssetBuilder):
+@AssetBuilder(typemap=image_typemap)
+def image(data, subtype, palette, transparent, strict, packed):
+    # Since we already have bytes, we need to pass PIL an io.BytesIO object
+    image = Image.open(io.BytesIO(data)).convert('RGBA')
+    image = palette.quantize_image(image, transparent=transparent, strict=strict)
+    return struct_blit_image.build({
+        'type': None if packed else 'RW',  # None means let the compressor decide
+        'data': {
+            'width': image.size[0],
+            'height': image.size[1],
+            'palette': palette.tostruct(),
+            'pixels': image.tobytes(),
+        },
+    })
+
+
+class ImageAsset(AssetTool):
     command = 'image'
     help = 'Convert images/sprites for 32Blit'
-    typemap = {
-        'image': {
-            '.png': True,
-            '.gif': True,
-        }
-    }
+    builder = image
 
     def __init__(self, parser=None):
         self.options.update({
@@ -26,7 +44,7 @@ class ImageAsset(AssetBuilder):
             'strict': (bool, False)
         })
 
-        AssetBuilder.__init__(self, parser)
+        super().__init__(parser)
 
         self.palette = None
         self.transparent = None
@@ -40,7 +58,7 @@ class ImageAsset(AssetBuilder):
             self.parser.add_argument('--strict', action='store_true', help='Reject colours not in the palette')
 
     def prepare(self, args):
-        AssetBuilder.prepare(self, args)
+        super().prepare(args)
 
         if type(self.packed) is not bool:
             self.packed = self.packed == 'yes'
@@ -53,16 +71,8 @@ class ImageAsset(AssetBuilder):
             else:
                 logging.warning(f'Could not find transparent colour ({r},{g},{b}) in palette')
 
-    def to_binary(self, input_data):
-        # Since we already have bytes, we need to pass PIL an io.BytesIO object
-        image = Image.open(io.BytesIO(input_data)).convert('RGBA')
-        image = self.palette.quantize_image(image, transparent=self.transparent, strict=self.strict)
-        return struct_blit_image.build({
-            'type': None if self.packed else 'RW',    # None means let the compressor decide
-            'data': {
-                'width': image.size[0],
-                'height': image.size[1],
-                'palette': self.palette.tostruct(),
-                'pixels': image.tobytes(),
-            },
-        })
+    def to_binary(self):
+        return self.builder.from_file(
+            self.input_file, self.input_type,
+            palette=self.palette, transparent=self.transparent, strict=self.strict, packed=self.packed
+        )

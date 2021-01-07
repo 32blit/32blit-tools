@@ -41,7 +41,7 @@ class Metadata(Tool):
         asset = ImageAsset(argparse.ArgumentParser().add_subparsers())
         asset.prepare(config)
 
-        return asset.to_binary(open(image_file, 'rb').read())
+        return asset.to_binary()
 
     def blit_image_to_pil(self, image):
         data = b''.join(struct_blit_pixel.build(image.data.palette[i]) for i in image.data.pixels)
