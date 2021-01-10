@@ -1,9 +1,8 @@
 import logging
 import pathlib
 
-from ..asset.builder import AssetTool, make_symbol_name
+from ..asset.builder import AssetBuilder, make_symbol_name
 from ..asset.writer import AssetWriter
-from ..core.palette import Palette
 from ..core.tool import Tool
 
 
@@ -86,28 +85,24 @@ class Packer(Tool):
         if typestr is None:
             # Glob files all have the same suffix, so we only care about the first one
             try:
-                typestr = AssetTool.guess_builder(input_files[0])
+                typestr = AssetBuilder.guess_builder(input_files[0])
             except TypeError:
                 logging.warning(f'Unable to guess type, assuming raw/binary {input_files[0]}.')
                 typestr = 'raw/binary'
 
         input_type, input_subtype = typestr.split('/')
-        builder = AssetTool._by_name[input_type]
+        builder = AssetBuilder._by_name[input_type]
 
         # Now we know our target builder, one last iteration through the options
         # allows some pre-processing stages to remap paths or other idiosyncrasies
         # of the yml config format.
-        for option_name, option_value in builder.options.items():
-            if option_name in builder_options:
-                option_type = builder.options[option_name]
-                if type(option_type) is tuple:
-                    option_type, default_value = option_type
-
-                # Ensure Palette and pathlib.Path type options for this asset builder
-                # are prefixed with the working directory if they are not absolute paths
-                if option_type in (Palette, pathlib.Path):
-                    if not pathlib.Path(builder_options[option_name]).is_absolute():
-                        builder_options[option_name] = working_path / builder_options[option_name]
+        # Currently the only option we need to do this on is 'palette' for images.
+        for option in ['palette']:
+            try:
+                if not pathlib.Path(builder_options[option]).is_absolute():
+                    builder_options[option] = working_path / builder_options[option]
+            except KeyError:
+                pass
 
         # Pop invalid options.
         # This is already done for targets, but not for sources, where they have no effect.
@@ -124,5 +119,5 @@ class Packer(Tool):
                 input_type=input_type, input_subtype=input_subtype, prefix=prefix
             )
 
-            yield symbol_name, builder.builder.from_file(file, input_subtype, **builder_options)
+            yield symbol_name, builder.from_file(file, input_subtype, **builder_options)
             logging.info(f' - {typestr} {file} -> {symbol_name}')

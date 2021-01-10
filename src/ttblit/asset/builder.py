@@ -77,13 +77,17 @@ class AssetBuilder:
                 return input_type
         raise TypeError(f"Unable to identify type of input file {path.name}.")
 
+    @classmethod
+    def guess_builder(cls, path):
+        try:
+            return cls._by_extension[path.suffix]
+        except KeyError:
+            raise TypeError('Could not find a builder for {path}.')
+
 
 class AssetTool(Tool):
 
     builder = None
-
-    _by_name = {}
-    _by_extension = {}
 
     options = {
         'input_file': pathlib.Path,
@@ -95,14 +99,6 @@ class AssetTool(Tool):
         'prefix': str,
         'working_path': pathlib.Path
     }
-
-    def __init_subclass__(cls):
-        super().__init_subclass__()
-        cls._by_name[cls.command] = cls
-        for type_, extensions in cls.builder.typemap.items():
-            for ext, auto in extensions.items():
-                if auto:
-                    cls._by_extension[ext] = f'{cls.command}/{type_}'
 
     def __init__(self, parser=None):
         Tool.__init__(self, parser)
@@ -171,13 +167,6 @@ class AssetTool(Tool):
 
     def build(self):
         return self.symbol_name, self.to_binary()
-
-    @classmethod
-    def guess_builder(cls, path):
-        try:
-            return cls._by_extension[path.suffix]
-        except KeyError:
-            raise TypeError('Could not find a builder for {path}.')
 
 
 # Load all the implementations dynamically.
