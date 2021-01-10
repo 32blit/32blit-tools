@@ -117,12 +117,11 @@ class Palette():
         elif a == 0 and self.transparent is not None:
             return self.transparent
         elif not strict:
-            # Set this as the transparent colour if we don't have one
-            if a == 0 and self.transparent is None:
-                self.transparent = len(self.entries) - 1
-
             if len(self.entries) < 256:
                 self.entries.append((r, g, b, a))
+                if a == 0:
+                    # Set this as the transparent colour - if we had one we'd have returned it already.
+                    self.transparent = len(self.entries) - 1
                 return len(self.entries) - 1
             else:
                 raise TypeError('Out of palette entries')
