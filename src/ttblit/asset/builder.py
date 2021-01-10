@@ -136,37 +136,10 @@ class AssetTool(Tool):
         )
 
     def run(self, args):
-        self.prepare_options(vars(args))
+        self.prepare(vars(args))
         aw = AssetWriter()
-        aw.add_asset(*self.build())
+        aw.add_asset(self.symbol_name, self.to_binary())
         aw.write(self.output_format, self.output_file, self.force, report=False)
-
-    def prepare_options(self, opts):
-        """Imports a dictionary of options to class variables.
-
-        Used for external callers which don't invoke `run` on this class.
-
-        Converts all options into their correct types via the specified validators.
-
-        """
-        if self.options is not None and opts is not None:
-            for option_name, option_value in opts.items():
-                if option_name in self.options:
-                    option_type = self.options[option_name]
-                    default_value = None
-                    if type(option_type) is tuple:
-                        option_type, default_value = option_type
-                    if option_value is not None:
-                        opts[option_name] = option_type(option_value)
-                    else:
-                        opts[option_name] = default_value
-                else:
-                    logging.info(f'Ignoring unsupported {self.command} option {option_name}')
-
-        self.prepare(opts)
-
-    def build(self):
-        return self.symbol_name, self.to_binary()
 
 
 # Load all the implementations dynamically.
