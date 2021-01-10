@@ -1,8 +1,7 @@
 import logging
 import pathlib
-import re
 
-from ..asset.builder import AssetTool
+from ..asset.builder import AssetTool, make_symbol_name
 from ..asset.writer import AssetWriter
 from ..core.palette import Palette
 from ..core.tool import Tool
@@ -115,7 +114,7 @@ class AssetSource():
 
     def build(self, prefix=None, output_file=None):
         input_type, input_subtype = self.type.split('/')
-        builder = AssetTool._by_name[input_type]()
+        builder = AssetTool._by_name[input_type]
 
         # Now we know our target builder, one last iteration through the options
         # allows some pre-processing stages to remap paths or other idiosyncrasies
@@ -133,27 +132,10 @@ class AssetSource():
                         self.builder_options[option_name] = self.working_path / self.builder_options[option_name]
 
         for file in self.input_files:
-            symbol_name = self.name
-            if symbol_name is not None:
-                symbol_name = symbol_name.format(
-                    filename=file.with_suffix('').name,
-                    filepath=file.with_suffix(''),
-                    fullname=file.name,
-                    fullpath=file,
-                    type=input_type,
-                    subtype=input_subtype
-                )
-                symbol_name = symbol_name.replace('.', '_')
-                symbol_name = re.sub('[^0-9A-Za-z_]', '_', symbol_name)
+            symbol_name = make_symbol_name(
+                base=self.name, working_path=self.working_path, input_file=file, input_type=input_type,
+                input_subtype=input_subtype, prefix=prefix
+            )
 
-            self.builder_options.update({
-                'input_file': file,
-                'output_file': output_file,
-                'input_type': input_subtype,
-                'symbol_name': symbol_name,
-                'working_path': self.working_path,
-                'prefix': prefix
-            })
-            builder.prepare_options(self.builder_options)
-            yield builder.build()
-            logging.info(f' - {self.type} {file} -> {builder.symbol_name}')
+            yield symbol_name, builder.builder.from_file(file, input_subtype, **self.builder_options)
+            logging.info(f' - {self.type} {file} -> {symbol_name}')

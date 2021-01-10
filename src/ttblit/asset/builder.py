@@ -10,6 +10,33 @@ from .formatter import AssetFormatter
 from .writer import AssetWriter
 
 
+def make_symbol_name(base=None, working_path=None, input_file=None, input_type=None, input_subtype=None, prefix=None):
+    if base is None:
+        if input_file is None:
+            raise NameError("No base name or input file provided.")
+        if working_path is None:
+            name = '_'.join(input_file.parts)
+        else:
+            name = '_'.join(input_file.relative_to(working_path).parts)
+    else:
+        name = base.format(
+            filename=input_file.with_suffix('').name,
+            filepath=input_file.with_suffix(''),
+            fullname=input_file.name,
+            fullpath=input_file,
+            type=input_type,
+            subtype=input_subtype
+        )
+    name = name.replace('.', '_')
+    name = re.sub('[^0-9A-Za-z_]', '_', name)
+    name = name.lower()
+
+    if type(prefix) is str:
+        name = prefix + name
+
+    return name
+
+
 class AssetBuilder:
 
     _by_name = {}
@@ -101,23 +128,16 @@ class AssetTool(Tool):
                 option_type, default_value = option_type
             setattr(self, option, opts.get(option, default_value))
 
-        if self.symbol_name is None:
-            if self.working_path is None:
-                name = '_'.join(self.input_file.parts)
-            else:
-                name = '_'.join(self.input_file.relative_to(self.working_path).parts)
-            name = name.replace('.', '_')
-            name = re.sub('[^0-9A-Za-z_]', '_', name)
-            self.symbol_name = name.lower()
-
-        if type(self.prefix) is str:
-            self.symbol_name = self.prefix + self.symbol_name
-
         if self.input_type is None:
             self.input_type = self.builder.guess_subtype(self.input_file)
             logging.info(f"Guessed type {self.input_type} for {self.input_file}.")
         elif self.input_type not in self.builder.typemap.keys():
             raise ValueError(f'Invalid type {self.input_type}, choices {self.builder.typemap.keys()}')
+
+        self.symbol_name = make_symbol_name(
+            base=self.symbol_name, working_path=self.working_path, input_file=self.input_file,
+            input_type=self.builder.name, input_subtype=self.input_type, prefix=self.prefix
+        )
 
     def run(self, args):
         self.prepare_options(vars(args))

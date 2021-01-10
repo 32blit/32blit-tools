@@ -9,7 +9,7 @@ from datetime import datetime
 from construct.core import StreamError
 from PIL import Image
 
-from ..asset.builders.image import ImageAsset
+from ..asset.builder import AssetBuilder
 from ..core.struct import (blit_game, blit_game_with_meta,
                            blit_game_with_meta_and_relo, blit_icns,
                            struct_blit_image, struct_blit_pixel)
@@ -36,12 +36,7 @@ class Metadata(Tool):
             image_file = working_path / image_file
         if not image_file.is_file():
             raise ValueError(f'{name} "{image_file}" does not exist!')
-        config['input_file'] = image_file
-        config['output_file'] = image_file.with_suffix('.bin')
-        asset = ImageAsset(argparse.ArgumentParser().add_subparsers())
-        asset.prepare(config)
-
-        return asset.to_binary()
+        return AssetBuilder._by_name['image'].from_file(image_file, None)
 
     def blit_image_to_pil(self, image):
         data = b''.join(struct_blit_pixel.build(image.data.palette[i]) for i in image.data.pixels)

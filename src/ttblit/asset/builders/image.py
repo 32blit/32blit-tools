@@ -16,7 +16,18 @@ image_typemap = {
 
 
 @AssetBuilder(typemap=image_typemap)
-def image(data, subtype, palette, transparent, strict, packed):
+def image(data, subtype, palette=None, transparent=None, strict=False, packed=True):
+    if palette is None:
+        palette = Palette()
+    else:
+        palette = Palette(palette)
+    if transparent is not None:
+        transparent = Colour(transparent)
+        p = palette.set_transparent_colour(*transparent)
+        if p is not None:
+            logging.info(f'Found transparent {transparent} in palette')
+        else:
+            logging.warning(f'Could not find transparent {transparent} in palette')
     # Since we already have bytes, we need to pass PIL an io.BytesIO object
     image = Image.open(io.BytesIO(data)).convert('RGBA')
     image = palette.quantize_image(image, transparent=transparent, strict=strict)
