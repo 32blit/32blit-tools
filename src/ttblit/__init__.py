@@ -6,8 +6,7 @@ import logging
 import pathlib
 import sys
 
-from .asset.builders import font, image, map, raw
-from .tool import cmake, flasher, metadata, packer, relocs, version
+from .core.tool import Tool
 
 
 def exception_handler(exception_type, exception, traceback):
@@ -33,18 +32,8 @@ def main():
 
     tools = {}
 
-    tools[image.ImageAsset.command] = image.ImageAsset(subparsers)
-    tools[font.FontAsset.command] = font.FontAsset(subparsers)
-    tools[map.MapAsset.command] = map.MapAsset(subparsers)
-    tools[raw.RawAsset.command] = raw.RawAsset(subparsers)
-
-    # Add the non-asset tools
-    tools[packer.Packer.command] = packer.Packer(subparsers)
-    tools[cmake.CMake.command] = cmake.CMake(subparsers)
-    tools[flasher.Flasher.command] = flasher.Flasher(subparsers)
-    tools[metadata.Metadata.command] = metadata.Metadata(subparsers)
-    tools[relocs.Relocs.command] = relocs.Relocs(subparsers)
-    tools[version.Version.command] = version.Version(subparsers)
+    for command, cls in Tool._by_command.items():
+        tools[command] = cls(subparsers)
 
     args = parser.parse_args()
 

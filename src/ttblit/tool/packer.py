@@ -2,7 +2,7 @@ import logging
 import pathlib
 import re
 
-from ..asset.builders import font, image, map, raw
+from ..asset.builder import AssetBuilder
 from ..asset.writer import AssetWriter
 from ..core.palette import Palette
 from ..core.tool import Tool
@@ -90,13 +90,6 @@ class AssetSource():
     supported_options = ('name', 'type')
 
     def __init__(self, input_files, file_options, working_path):
-        self.asset_builders = {
-            image.ImageAsset.command: image.ImageAsset,
-            font.FontAsset.command: font.FontAsset,
-            map.MapAsset.command: map.MapAsset,
-            raw.RawAsset.command: raw.RawAsset
-        }
-
         self.input_files = input_files
         self.working_path = working_path
         self.builder_options = {}
@@ -114,21 +107,15 @@ class AssetSource():
 
         if self.type is None:
             # Glob files all have the same suffix, so we only care about the first one
-            self.type = self.guess_type(self.input_files[0])
-
-    def guess_type(self, file):
-        # We need a high-level guess type that can query the types each builder supports
-        # and dispatch our builds to the right one
-        for command, asset_builder in self.asset_builders.items():
-            for input_type, suffixes in asset_builder.typemap.items():
-                if file.suffix in suffixes:
-                    return f'{command}/{input_type}'
-        logging.warning(f'Unable to guess type, assuming raw/binary {file}')
-        return 'raw/binary'
+            try:
+                self.type = AssetBuilder.guess_builder(self.input_files[0])
+            except TypeError:
+                logging.warning(f'Unable to guess type, assuming raw/binary {self.input_files[0]}.')
+                self.type = 'raw/binary'
 
     def build(self, prefix=None, output_file=None):
         input_type, input_subtype = self.type.split('/')
-        builder = self.asset_builders[input_type]()
+        builder = AssetBuilder._by_name[input_type]()
 
         # Now we know our target builder, one last iteration through the options
         # allows some pre-processing stages to remap paths or other idiosyncrasies

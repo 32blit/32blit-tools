@@ -11,9 +11,11 @@ from ..builder import AssetBuilder
 class ImageAsset(AssetBuilder):
     command = 'image'
     help = 'Convert images/sprites for 32Blit'
-    types = ['image']
     typemap = {
-        'image': ('.png', '.gif')
+        'image': {
+            '.png': True,
+            '.gif': True,
+        }
     }
 
     def __init__(self, parser=None):

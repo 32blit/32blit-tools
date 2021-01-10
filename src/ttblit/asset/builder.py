@@ -1,8 +1,11 @@
+import importlib
 import logging
 import pathlib
+import pkgutil
 import re
 
 from ..core.tool import Tool
+from . import builders
 from .formatter import AssetFormatter
 from .writer import AssetWriter
 
@@ -20,13 +23,26 @@ class AssetBuilder(Tool):
         'working_path': pathlib.Path
     }
 
+    _by_name = {}
+    _by_extension = {}
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__()
+        cls._by_name[cls.command] = cls
+        for type_, extensions in cls.typemap.items():
+            for ext, auto in extensions.items():
+                if auto:
+                    if ext in cls._by_extension:
+                        raise KeyError(f'An automatic handler for {ext} has already been registered ({cls._by_extension[ext]}).')
+                    cls._by_extension[ext] = f'{cls.command}/{type_}'
+
     def __init__(self, parser=None):
         Tool.__init__(self, parser)
 
         if self.parser is not None:
             self.parser.add_argument('--input_file', type=pathlib.Path, required=True, help='Input file')
-            if(len(self.types) > 1):
-                self.parser.add_argument('--input_type', type=str, default=None, choices=self.types, help='Input file type')
+            if(len(self.typemap.keys()) > 1):
+                self.parser.add_argument('--input_type', type=str, default=None, choices=self.typemap.keys(), help='Input file type')
             self.parser.add_argument('--output_file', type=pathlib.Path, default=None)
             self.parser.add_argument('--output_format', type=str, default=None, choices=AssetFormatter.names(), help='Output file format')
             self.parser.add_argument('--symbol_name', type=str, default=None, help='Output symbol name')
@@ -57,9 +73,10 @@ class AssetBuilder(Tool):
             self.symbol_name = self.prefix + self.symbol_name
 
         if self.input_type is None:
-            self._guess_type()
-        elif self.input_type not in self.types:
-            raise ValueError(f'Invalid type {self.input_type}, choices {self.types}')
+            self.input_type = self.guess_type(self.input_file)
+            logging.info(f"Guessed type {self.input_type} for {self.input_file}.")
+        elif self.input_type not in self.typemap.keys():
+            raise ValueError(f'Invalid type {self.input_type}, choices {self.typemap.keys()}')
 
     def run(self, args):
         self.prepare_options(vars(args))
@@ -95,12 +112,23 @@ class AssetBuilder(Tool):
         input_data = open(self.input_file, 'rb').read()
         return self.symbol_name, self.to_binary(input_data)
 
-    def _guess_type(self):
-        for input_type, extensions in self.typemap.items():
-            for extension in extensions:
-                if self.input_file.name.endswith(extension):
-                    self.input_type = input_type
-                    logging.info(f"Guessed type {input_type} for {self.input_file}")
-                    return
+    @classmethod
+    def guess_type(cls, path):
+        for input_type, extensions in cls.typemap.items():
+            if path.suffix in extensions:
+                return input_type
+        raise TypeError(f"Unable to identify type of input file {path.name}.")
 
-        raise TypeError(f"Unable to identify type of input file {self.input_file}")
+    @classmethod
+    def guess_builder(cls, path):
+        try:
+            return cls._by_extension[path.suffix]
+        except KeyError:
+            raise TypeError(f"Unable to identify a builder for {path.name}.")
+
+
+# Load all the implementations dynamically.
+for loader, module_name, is_pkg in pkgutil.walk_packages(builders.__path__, builders.__name__ + '.'):
+    # We don't need to import anything from the modules. We just need to load them.
+    # This will cause the decorators to run, which registers the builders.
+    importlib.import_module(module_name, builders.__name__)

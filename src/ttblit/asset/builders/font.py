@@ -10,10 +10,15 @@ from ..builder import AssetBuilder
 class FontAsset(AssetBuilder):
     command = 'font'
     help = 'Convert fonts for 32Blit'
-    types = ['image', 'font']
     typemap = {
-        'image': ('.png', '.gif'),
-        'font': ('.ttf')  # possibly other freetype supported formats...
+        'image': {
+            '.png': False,
+            '.gif': False,
+        },
+        'font': {
+            # possibly other freetype supported formats...
+            '.ttf': True,
+        }
     }
 
     def __init__(self, parser=None):

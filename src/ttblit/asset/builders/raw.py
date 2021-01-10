@@ -4,10 +4,14 @@ from ..builder import AssetBuilder
 class RawAsset(AssetBuilder):
     command = 'raw'
     help = 'Convert raw/binary or csv data for 32Blit'
-    types = ['binary', 'csv']
     typemap = {
-        'binary': ('.bin', '.raw'),
-        'csv': ('.csv')
+        'binary': {
+            '.bin': True,
+            '.raw': True,
+        },
+        'csv': {
+            '.csv': True
+        }
     }
 
     def csv_to_list(self, input_data, base):
