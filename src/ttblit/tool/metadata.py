@@ -1,4 +1,3 @@
-import argparse
 import binascii
 import io
 import logging

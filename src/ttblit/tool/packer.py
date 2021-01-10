@@ -64,9 +64,7 @@ class Packer(Tool):
                     file_options = [file_options]
 
                 for file_opts in file_options:
-                    asset_sources.append(
-                        AssetSource(input_files, file_options=file_opts, working_path=self.working_path)
-                    )
+                    asset_sources.append((input_files, file_opts))
 
             self.targets.append((
                 output_file,
@@ -78,49 +76,29 @@ class Packer(Tool):
 
         for path, sources, options in self.targets:
             aw = AssetWriter()
-            for source in sources:
-                for asset in source.build(output_file=path, prefix=options.get('prefix')):
+            for input_files, file_opts in sources:
+                for asset in self.build_assets(input_files, self.working_path, file_opts, prefix=options.get('prefix')):
                     aw.add_asset(*asset)
 
             aw.write(options.get('type'), self.destination_path / path.name, force=args.force)
 
-
-class AssetSource():
-    supported_options = ('name', 'type')
-
-    def __init__(self, input_files, file_options, working_path):
-        self.input_files = input_files
-        self.working_path = working_path
-        self.builder_options = {}
-        self.type = None
-        self.name = None
-        self.parse_source_options(file_options)
-
-    def parse_source_options(self, opts):
-        for option, value in opts.items():
-            if option not in self.supported_options:
-                # These options are passed into the Map/Image/Raw builder
-                self.builder_options[option] = value
-            else:
-                setattr(self, option, value)
-
-        if self.type is None:
+    def build_assets(self, input_files, working_path, builder_options, typestr=None, prefix=None):
+        if typestr is None:
             # Glob files all have the same suffix, so we only care about the first one
             try:
-                self.type = AssetTool.guess_builder(self.input_files[0])
+                typestr = AssetTool.guess_builder(input_files[0])
             except TypeError:
-                logging.warning(f'Unable to guess type, assuming raw/binary {self.input_files[0]}.')
-                self.type = 'raw/binary'
+                logging.warning(f'Unable to guess type, assuming raw/binary {input_files[0]}.')
+                typestr = 'raw/binary'
 
-    def build(self, prefix=None, output_file=None):
-        input_type, input_subtype = self.type.split('/')
+        input_type, input_subtype = typestr.split('/')
         builder = AssetTool._by_name[input_type]
 
         # Now we know our target builder, one last iteration through the options
         # allows some pre-processing stages to remap paths or other idiosyncrasies
         # of the yml config format.
         for option_name, option_value in builder.options.items():
-            if option_name in self.builder_options:
+            if option_name in builder_options:
                 option_type = builder.options[option_name]
                 if type(option_type) is tuple:
                     option_type, default_value = option_type
@@ -128,14 +106,23 @@ class AssetSource():
                 # Ensure Palette and pathlib.Path type options for this asset builder
                 # are prefixed with the working directory if they are not absolute paths
                 if option_type in (Palette, pathlib.Path):
-                    if not pathlib.Path(self.builder_options[option_name]).is_absolute():
-                        self.builder_options[option_name] = self.working_path / self.builder_options[option_name]
+                    if not pathlib.Path(builder_options[option_name]).is_absolute():
+                        builder_options[option_name] = working_path / builder_options[option_name]
 
-        for file in self.input_files:
+        # Pop invalid options.
+        # This is already done for targets, but not for sources, where they have no effect.
+        # This should be a fatal error, but it can't be while the examples are broken.
+        # TODO: Fix this in examples.
+        base = builder_options.pop('name', None)
+        subtype = builder_options.pop('type', None)
+        if subtype is not None:
+            logging.warning("You can't specify the type of an input file. Ignored.")
+
+        for file in input_files:
             symbol_name = make_symbol_name(
-                base=self.name, working_path=self.working_path, input_file=file, input_type=input_type,
-                input_subtype=input_subtype, prefix=prefix
+                base=base, working_path=working_path, input_file=file,
+                input_type=input_type, input_subtype=input_subtype, prefix=prefix
             )
 
-            yield symbol_name, builder.builder.from_file(file, input_subtype, **self.builder_options)
-            logging.info(f' - {self.type} {file} -> {symbol_name}')
+            yield symbol_name, builder.builder.from_file(file, input_subtype, **builder_options)
+            logging.info(f' - {typestr} {file} -> {symbol_name}')
