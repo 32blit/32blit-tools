@@ -5,9 +5,9 @@ from math import ceil
 from bitstring import BitArray
 from PIL import Image
 
-from ..core.assetbuilder import AssetBuilder
-from ..core.palette import Colour, Palette, type_palette
-from ..core.struct import struct_blit_image
+from ...core.palette import Colour, Palette, type_palette
+from ...core.struct import struct_blit_image
+from ..builder import AssetBuilder
 
 
 class ImageAsset(AssetBuilder):

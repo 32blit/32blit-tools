@@ -11,7 +11,7 @@ def subparser():
 
 
 def test_raw_csv_to_binary(subparser):
-    from ttblit.asset import raw
+    from ttblit.asset.builders import raw
 
     raw = raw.RawAsset(subparser)
 

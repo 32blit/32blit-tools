@@ -1,4 +1,4 @@
-from ..core.assetbuilder import AssetBuilder
+from ..builder import AssetBuilder
 
 
 class RawAsset(AssetBuilder):
@@ -9,9 +9,6 @@ class RawAsset(AssetBuilder):
         'binary': ('.bin', '.raw'),
         'csv': ('.csv')
     }
-
-    def prepare(self, args):
-        AssetBuilder.prepare(self, args)
 
     def csv_to_binary(self, input_data, base=10, offset=0):
         try:

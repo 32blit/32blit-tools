@@ -13,7 +13,7 @@ def test_input_file():
 
 
 def test_image_png_cli_no_args(parsers):
-    from ttblit.asset import image
+    from ttblit.asset.builders import image
 
     parser, subparser = parsers
 
@@ -24,7 +24,7 @@ def test_image_png_cli_no_args(parsers):
 
 
 def test_image_png_cli(parsers, test_input_file):
-    from ttblit.asset import image
+    from ttblit.asset.builders import image
 
     parser, subparser = parsers
 
@@ -36,7 +36,7 @@ def test_image_png_cli(parsers, test_input_file):
 
 
 def test_image_png_cli_unpacked(parsers, test_input_file):
-    from ttblit.asset import image
+    from ttblit.asset.builders import image
 
     parser, subparser = parsers
 
@@ -48,7 +48,7 @@ def test_image_png_cli_unpacked(parsers, test_input_file):
 
 
 def test_image_png_cli_packed(parsers, test_input_file):
-    from ttblit.asset import image
+    from ttblit.asset.builders import image
 
     parser, subparser = parsers
 
@@ -60,7 +60,7 @@ def test_image_png_cli_packed(parsers, test_input_file):
 
 
 def test_image_png_cli_strict_palette_act(parsers, test_input_file):
-    from ttblit.asset import image
+    from ttblit.asset.builders import image
 
     parser, subparser = parsers
 
@@ -79,7 +79,7 @@ def test_image_png_cli_strict_palette_act(parsers, test_input_file):
 
 
 def test_image_png_cli_strict_palette_pal(parsers, test_input_file):
-    from ttblit.asset import image
+    from ttblit.asset.builders import image
 
     parser, subparser = parsers
 
@@ -96,7 +96,7 @@ def test_image_png_cli_strict_palette_pal(parsers, test_input_file):
 
 
 def test_image_png_cli_strict_palette_pal_missing(parsers, test_input_file):
-    from ttblit.asset import image
+    from ttblit.asset.builders import image
 
     parser, subparser = parsers
 
@@ -113,7 +113,7 @@ def test_image_png_cli_strict_palette_pal_missing(parsers, test_input_file):
 
 
 def test_image_png_cli_strict_nopalette(parsers, test_input_file):
-    from ttblit.asset import image
+    from ttblit.asset.builders import image
 
     parser, subparser = parsers
 
@@ -126,7 +126,7 @@ def test_image_png_cli_strict_nopalette(parsers, test_input_file):
 
 
 def test_image_png_cli_strict_palette_pal_transparent(parsers, test_input_file):
-    from ttblit.asset import image
+    from ttblit.asset.builders import image
 
     parser, subparser = parsers
 
@@ -161,7 +161,7 @@ def test_image_png_cli_strict_palette_pal_transparent(parsers, test_input_file):
 
 
 def test_image_png_cli_packed_blank(parsers):
-    from ttblit.asset import image
+    from ttblit.asset.builders import image
 
     parser, subparser = parsers
 
@@ -178,7 +178,7 @@ def test_image_png_cli_packed_blank(parsers):
 
 
 def test_image_png_cli_packed_multi_transparent(parsers):
-    from ttblit.asset import image
+    from ttblit.asset.builders import image
 
     parser, subparser = parsers
 

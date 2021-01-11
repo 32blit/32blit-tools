@@ -2,20 +2,18 @@ import logging
 import pathlib
 import re
 
-from .outputformat import (CHeader, OutputFormat, output_formats,
-                           parse_output_format)
-from .tool import Tool
+from ..core.tool import Tool
+from .formatter import AssetFormatter
+from .writer import AssetWriter
 
 
 class AssetBuilder(Tool):
-    formats = output_formats
-    no_output_file_default_format = CHeader
 
     options = {
         'input_file': pathlib.Path,
         'input_type': str,
         'output_file': pathlib.Path,
-        'output_format': parse_output_format,
+        'output_format': AssetFormatter.parse,
         'symbol_name': str,
         'force': bool,
         'prefix': str,
@@ -30,7 +28,7 @@ class AssetBuilder(Tool):
             if(len(self.types) > 1):
                 self.parser.add_argument('--input_type', type=str, default=None, choices=self.types, help='Input file type')
             self.parser.add_argument('--output_file', type=pathlib.Path, default=None)
-            self.parser.add_argument('--output_format', type=str, default=None, choices=self.formats.keys(), help='Output file format')
+            self.parser.add_argument('--output_format', type=str, default=None, choices=AssetFormatter.names(), help='Output file format')
             self.parser.add_argument('--symbol_name', type=str, default=None, help='Output symbol name')
             self.parser.add_argument('--force', action='store_true', help='Force file overwrite')
 
@@ -54,13 +52,6 @@ class AssetBuilder(Tool):
         if type(self.prefix) is str:
             self.symbol_name = self.prefix + self.symbol_name
 
-        if self.output_format is None:
-            self._guess_format()
-        elif type(self.output_format) is str:
-            self.output_format = parse_output_format(self.output_format)
-        elif not issubclass(self.output_format, OutputFormat):
-            raise ValueError(f'Invalid format {self.output_format}, choices {self.formats.keys()}')
-
         if self.input_type is None:
             self._guess_type()
         elif self.input_type not in self.types:
@@ -68,10 +59,9 @@ class AssetBuilder(Tool):
 
     def run(self, args):
         self.prepare_options(vars(args))
-
-        output_data = self.build()
-
-        self.output(output_data, self.output_file, self.output_format, self.force)
+        aw = AssetWriter()
+        aw.add_asset(*self.build())
+        aw.write(self.output_format, self.output_file, self.force, report=False)
 
     def prepare_options(self, opts):
         """Imports a dictionary of options to class variables.
@@ -99,10 +89,7 @@ class AssetBuilder(Tool):
 
     def build(self):
         input_data = open(self.input_file, 'rb').read()
-
-        output_data = self.to_binary(input_data)
-
-        return self.output_format().build(output_data, self.symbol_name)
+        return self.symbol_name, self.to_binary(input_data)
 
     def _guess_type(self):
         for input_type, extensions in self.typemap.items():
@@ -113,18 +100,3 @@ class AssetBuilder(Tool):
                     return
 
         raise TypeError(f"Unable to identify type of input file {self.input_file}")
-
-    def _guess_format(self):
-        if self.output_file is None:
-            self.output_format = self.no_output_file_default_format
-            logging.warning(f"No --output given, writing to stdout assuming {self.no_output_file_default_format.name}")
-            return
-
-        for format_name, format_class in self.formats.items():
-            for extension in format_class.extensions:
-                if self.output_file.name.endswith(extension):
-                    self.output_format = format_class
-                    logging.info(f"Guessed output format {format_class.name} for {self.output_file}")
-                    return
-
-        raise TypeError(f"Unable to identify type of output file {self.output_file}")

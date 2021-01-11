@@ -6,7 +6,7 @@ import logging
 import pathlib
 import sys
 
-from .asset import font, image, map, raw
+from .asset.builders import font, image, map, raw
 from .tool import cmake, flasher, metadata, packer, relocs, version
 
 
