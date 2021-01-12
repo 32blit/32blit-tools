@@ -23,7 +23,6 @@ class Packer(Tool):
 
         self.config = {}
         self.targets = []
-        self.general_options = {}
 
     def parse_config(self, config_file):
         config = open(config_file).read()
@@ -38,14 +37,6 @@ class Packer(Tool):
             config[file] = {}
 
         self.config = {f'{output}': config}
-
-    def get_general_options(self):
-        for key, value in self.config.items():
-            if key in ():
-                self.general_options[key] = value
-
-        for key, value in self.general_options.items():
-            self.config.items.pop(key)
 
     def run(self, args):
         self.working_path = pathlib.Path('.')
@@ -67,8 +58,6 @@ class Packer(Tool):
 
         elif args.files is not None and args.output is not None:
             self.filelist_to_config(args.files, args.output)
-
-        self.get_general_options()
 
         # Top level of our config is filegroups and general settings
         for target, options in self.config.items():
