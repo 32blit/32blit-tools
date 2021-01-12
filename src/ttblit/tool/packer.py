@@ -46,18 +46,16 @@ class Packer(Tool):
                 self.working_path = args.config.parent
             else:
                 logging.warning(f'Unable to find config at {args.config}')
-
-        if args.output is not None:
-            self.destination_path = args.output
-        else:
-            self.destination_path = self.working_path
-
-        if args.config is not None:
             self.parse_config(args.config)
             logging.info(f'Using config at {args.config}')
 
         elif args.files is not None and args.output is not None:
             self.filelist_to_config(args.files, args.output)
+
+        if args.output is not None:
+            self.destination_path = args.output
+        else:
+            self.destination_path = self.working_path
 
         # Top level of our config is filegroups and general settings
         for target, options in self.config.items():

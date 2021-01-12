@@ -34,8 +34,6 @@ class CMake(Tool):
                 self.working_path = args.config.parent
             else:
                 logging.warning(f'Unable to find config at {args.config}')
-
-        if args.config is not None:
             self.parse_config(args.config)
             logging.info(f'Using config at {args.config}')
 
