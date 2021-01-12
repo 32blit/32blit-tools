@@ -1,5 +1,6 @@
 import logging
 import pathlib
+import textwrap
 
 import yaml
 
@@ -76,17 +77,25 @@ class CMake(Tool):
             else:
                 all_inputs += list(self.working_path.glob(str(file)))
 
-        all_inputs = '\n'.join(f'"{x}"'.replace('\\', '/') for x in all_inputs)
+        all_inputs = '\n    '.join(f'"{x}"'.replace('\\', '/') for x in all_inputs)
 
-        open(args.cmake, 'w').write(f'''# Auto Generated File - DO NOT EDIT!
-    set(METADATA_DEPENDS
-    {all_inputs}
-    )
-    set(METADATA_TITLE "{self.config['title']}")
-    set(METADATA_AUTHOR "{self.config['author']}")
-    set(METADATA_DESCRIPTION "{self.config['description']}")
-    set(METADATA_VERSION "{self.config['version']}")
-    ''')
+        result = textwrap.dedent(
+            '''\
+            # Auto Generated File - DO NOT EDIT!
+            set(METADATA_DEPENDS
+                {inputs}
+            )
+            set(METADATA_TITLE "{config[title]}")
+            set(METADATA_AUTHOR "{config[author]}")
+            set(METADATA_DESCRIPTION "{config[description]}")
+            set(METADATA_VERSION "{config[version]}")
+            '''
+        ).format(
+            inputs=all_inputs,
+            config=self.config,
+        )
+
+        args.cmake.write_text(result)
 
     def run_for_asset_config(self, args):
         self.get_general_options()
@@ -143,15 +152,23 @@ class CMake(Tool):
 
                 all_inputs += input_files
 
-        all_inputs = '\n'.join(f'"{x}"'.replace('\\', '/') for x in all_inputs)
-        all_outputs = '\n'.join(f'"{x}"'.replace('\\', '/') for x in all_outputs)
+        all_inputs = '\n    '.join(f'"{x}"'.replace('\\', '/') for x in all_inputs)
+        all_outputs = '\n    '.join(f'"{x}"'.replace('\\', '/') for x in all_outputs)
 
-        open(args.cmake, 'w').write(f'''# Auto Generated File - DO NOT EDIT!
-set(ASSET_DEPENDS
-{all_inputs}
-)
+        result = textwrap.dedent(
+            '''\
+            # Auto Generated File - DO NOT EDIT!
+            set(ASSET_DEPENDS
+                {inputs}
+            )
 
-set(ASSET_OUTPUTS
-{all_outputs}
-)
-''')
+            set(ASSET_OUTPUTS
+                {outputs}
+            )
+            '''
+        ).format(
+            inputs=all_inputs,
+            outputs=all_outputs,
+        )
+
+        args.cmake.write_text(result)

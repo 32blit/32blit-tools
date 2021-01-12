@@ -15,10 +15,12 @@ def c_initializer(data):
 
 
 def c_declaration(types, symbol, data=None):
-    return textwrap.dedent('''\
-    {types} uint8_t {symbol}[]{initializer};
-    {types} uint32_t {symbol}_length{size};
-    ''').format(
+    return textwrap.dedent(
+        '''\
+        {types} uint8_t {symbol}[]{initializer};
+        {types} uint32_t {symbol}_length{size};
+        '''
+    ).format(
         types=types,
         symbol=symbol,
         initializer=c_initializer(data) if data else '',
