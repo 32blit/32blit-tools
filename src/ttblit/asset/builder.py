@@ -38,7 +38,11 @@ class AssetBuilder(Tool):
         Requires options to already be in their correct types.
 
         """
-        Tool.prepare(self, opts)
+        for option, option_type in self.options.items():
+            default_value = None
+            if type(option_type) is tuple:
+                option_type, default_value = option_type
+            setattr(self, option, opts.get(option, default_value))
 
         if self.symbol_name is None:
             if self.working_path is None:
