@@ -2,8 +2,6 @@ import logging
 import pathlib
 import textwrap
 
-import yaml
-
 from ..asset.formatter import AssetFormatter
 from ..core.tool import Tool
 
@@ -20,27 +18,8 @@ class CMake(Tool):
 
         self.config = {}
 
-    def parse_config(self, config_file):
-        config = open(config_file).read()
-        config = yaml.safe_load(config)
-
-        self.config = config
-
     def run(self, args):
-        self.working_path = pathlib.Path('.')
-
-        if args.config is not None:
-            if args.config.is_file():
-                self.working_path = args.config.parent
-            else:
-                logging.warning(f'Unable to find config at {args.config}')
-            self.parse_config(args.config)
-            logging.info(f'Using config at {args.config}')
-
-        if args.output is not None:
-            self.destination_path = args.output
-        else:
-            self.destination_path = self.working_path
+        self.setup_for_config(args.config, args.output)
 
         if 'title' in self.config and 'description' in self.config:
             logging.info('Detected metadata config')

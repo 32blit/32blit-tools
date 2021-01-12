@@ -2,8 +2,6 @@ import logging
 import pathlib
 import re
 
-import yaml
-
 from ..asset.builders import font, image, map, raw
 from ..asset.writer import AssetWriter
 from ..core.palette import Palette
@@ -24,38 +22,8 @@ class Packer(Tool):
         self.config = {}
         self.targets = []
 
-    def parse_config(self, config_file):
-        config = open(config_file).read()
-        config = yaml.safe_load(config)
-
-        self.config = config
-
-    def filelist_to_config(self, filelist, output):
-        config = {}
-
-        for file in filelist:
-            config[file] = {}
-
-        self.config = {f'{output}': config}
-
     def run(self, args):
-        self.working_path = pathlib.Path('.')
-
-        if args.config is not None:
-            if args.config.is_file():
-                self.working_path = args.config.parent
-            else:
-                logging.warning(f'Unable to find config at {args.config}')
-            self.parse_config(args.config)
-            logging.info(f'Using config at {args.config}')
-
-        elif args.files is not None and args.output is not None:
-            self.filelist_to_config(args.files, args.output)
-
-        if args.output is not None:
-            self.destination_path = args.output
-        else:
-            self.destination_path = self.working_path
+        self.setup_for_config(args.config, args.output, args.files)
 
         # Top level of our config is filegroups and general settings
         for target, options in self.config.items():
