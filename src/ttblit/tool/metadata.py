@@ -114,45 +114,38 @@ class Metadata(Tool):
 
         # No config supplied, so dump the game info
         if args.config is None:
-            print(f"""
-Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
+            print(f'\nParsed:      {args.file.name} ({game.bin.length:,} bytes)')
             if game.relo is not None:
-                print(f"""Relocations: Yes ({len(game.relo.relocs)})""")
+                print(f'Relocations: Yes ({len(game.relo.relocs)})')
             else:
-                print("""Relocations: No""")
+                print('Relocations: No')
             if game.meta is not None:
-                print(f"""Metadata:    Yes
-
-    Title:       {game.meta.data.title}
-    Description: {game.meta.data.description}
-    Version:     {game.meta.data.version}
-    Author:      {game.meta.data.author}
-    Category:    {game.meta.data.category}
-    URL:         {game.meta.data.url}""")
+                print('Metadata:    Yes')
+                for field in ['title', 'description', 'version', 'author', 'category', 'url']:
+                    print(f'{field.title()+":":13s}{getattr(game.meta.data, field)}')
                 if len(game.meta.data.filetypes) > 0:
-                    print("    Filetypes:   ")
+                    print('    Filetypes:   ')
                     for filetype in game.meta.data.filetypes:
-                        print(f"        {filetype}")
+                        print('       ', filetype)
                 if game.meta.data.icon is not None:
                     game_icon = game.meta.data.icon
-                    print(f"""    Icon:        {game_icon.width}x{game_icon.height} ({len(game_icon.palette)} colours)""")
+                    print(f'    Icon:        {game_icon.width}x{game_icon.height} ({len(game_icon.palette)} colours)')
                     if args.dump_images:
                         image_icon = self.packed_to_image(game_icon)
                         image_icon_filename = args.file.with_suffix(".icon.png")
                         image_icon.save(image_icon_filename)
-                        print(f"    Dumped to:   {image_icon_filename}")
+                        print(f'    Dumped to:   {image_icon_filename}')
                 if game.meta.data.splash is not None:
                     game_splash = game.meta.data.splash
-                    print(f"""    Splash:      {game_splash.width}x{game_splash.height} ({len(game_splash.palette)} colours)""")
+                    print(f'    Splash:      {game_splash.width}x{game_splash.height} ({len(game_splash.palette)} colours)')
                     if args.dump_images:
                         image_splash = self.packed_to_image(game_splash)
-                        image_splash_filename = args.file.with_suffix(".splash.png")
+                        image_splash_filename = args.file.with_suffix('.splash.png')
                         image_splash.save(image_splash_filename)
-                        print(f"    Dumped to:   {image_splash_filename}")
-                print("")
+                        print(f'    Dumped to:   {image_splash_filename}')
             else:
-                print("""Metadata:    No
-""")
+                print('Metadata:    No')
+            print('')
             return
 
         self.setup_for_config(args.config, None)
