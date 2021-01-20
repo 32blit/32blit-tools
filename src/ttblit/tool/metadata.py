@@ -6,7 +6,6 @@ import pathlib
 import struct
 from datetime import datetime
 
-import yaml
 from bitstring import BitArray, BitStream
 from construct.core import StreamError
 from PIL import Image
@@ -31,18 +30,6 @@ class Metadata(Tool):
         self.parser.add_argument('--dump-images', action='store_true', help='Dump images from metadata')
 
         self.config = {}
-
-    def parse_config(self, config_file):
-        config = open(config_file).read()
-        config = yaml.safe_load(config)
-
-        required = ['title', 'description', 'version', 'author']
-
-        for option in required:
-            if option not in config:
-                raise ValueError(f'Missing required option "{option}" from {config_file}')
-
-        self.config = config
 
     def prepare_image_asset(self, name, config, working_path):
         image_file = pathlib.Path(config.get('file', ''))
@@ -115,7 +102,6 @@ class Metadata(Tool):
 
         icon = b''
         splash = b''
-        working_path = pathlib.Path('')
 
         game = None
 
@@ -169,23 +155,18 @@ Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
 """)
             return
 
-        if args.config.is_file():
-            working_path = args.config.parent
-            self.parse_config(args.config)
-            logging.info(f'Using config at {args.config}')
-        else:
-            logging.warning(f'Unable to find metadata config at {args.config}')
+        self.setup_for_config(args.config, None)
 
         if 'icon' in self.config:
-            icon = self.prepare_image_asset('icon', self.config['icon'], working_path)
+            icon = self.prepare_image_asset('icon', self.config['icon'], self.working_path)
         else:
             raise ValueError('An 8x8 pixel icon is required!"')
 
         if 'splash' in self.config:
-            splash = self.prepare_image_asset('splash', self.config['splash'], working_path)
+            splash = self.prepare_image_asset('splash', self.config['splash'], self.working_path)
             if args.icns is not None:
                 if not args.icns.is_file() or args.force:
-                    open(args.icns, 'wb').write(self.build_icns(self.config['splash'], working_path))
+                    open(args.icns, 'wb').write(self.build_icns(self.config['splash'], self.working_path))
                     logging.info(f'Saved macOS icon to {args.icns}')
         else:
             raise ValueError('A 128x96 pixel splash is required!"')
@@ -193,10 +174,10 @@ Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
         if not game:
             return
 
-        title = self.config.get('title')
+        title = self.config.get('title', None)
         description = self.config.get('description', '')
-        version = self.config.get('version')
-        author = self.config.get('author')
+        version = self.config.get('version', None)
+        author = self.config.get('author', None)
         url = self.config.get('url', '')
         category = self.config.get('category', 'none')
         filetypes = self.config.get('filetypes', [])
