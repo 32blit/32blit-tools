@@ -6,14 +6,14 @@ import pathlib
 import struct
 from datetime import datetime
 
-from bitstring import BitArray, BitStream
+from bitstring import Bits, ConstBitStream
 from construct.core import StreamError
 from PIL import Image
 
 from ..asset.builders.image import ImageAsset
 from ..core.struct import (blit_game, blit_game_with_meta,
                            blit_game_with_meta_and_relo, blit_icns,
-                           struct_blit_image)
+                           struct_blit_image, struct_blit_pixel)
 from ..core.tool import Tool
 
 
@@ -45,20 +45,22 @@ class Metadata(Tool):
         return asset.to_binary(open(image_file, 'rb').read())
 
     def packed_to_image(self, image):
-        num_pixels = image.width * image.height
-        image_icon_data = BitArray().join(BitArray(uint=x, length=8) for x in image.data)
-        image_icon_data = BitStream(image_icon_data).readlist(",".join(f"uint:{image.bit_length}" for _ in range(num_pixels)))
-
-        raw_data = bytes()
-        for i in image_icon_data:
-            rgba = image.palette[i]
-            raw_data += bytes([
-                rgba.r,
-                rgba.g,
-                rgba.b,
-                rgba.a,
-            ])
-
+        bits = Bits(bytes=image.data)
+        if image.type == 'RL':
+            num_pixels = image.width * image.height
+            stream = ConstBitStream(bits)
+            result = []
+            while len(result) < num_pixels:
+                t = stream.read(1)
+                if t:
+                    count = stream.read(8).uint + 1
+                else:
+                    count = 1
+                pixel = struct_blit_pixel.build(image.palette[stream.read(image.bit_length).uint])
+                result.extend([pixel] * count)
+            raw_data = b''.join(result)
+        else:
+            raw_data = b''.join(struct_blit_pixel.build(image.palette[i.uint]) for i in bits.cut(image.bit_length))
         return Image.frombytes("RGBA", (image.width, image.height), raw_data)
 
     def binary_size(self, bin):
