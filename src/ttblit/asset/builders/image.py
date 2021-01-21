@@ -90,25 +90,10 @@ class ImageAsset(AssetBuilder):
             else:
                 logging.warning(f'Could not find transparent colour ({r},{g},{b}) in palette')
 
-    def quantize_image(self, input_data):
-        if self.strict and len(self.palette) == 0:
-            raise TypeError("Attempting to enforce strict colours with an empty palette, did you really want to do this?")
+    def to_binary(self, input_data):
         # Since we already have bytes, we need to pass PIL an io.BytesIO object
         image = Image.open(io.BytesIO(input_data)).convert('RGBA')
-        w, h = image.size
-        output_image = Image.new('P', (w, h))
-        for y in range(h):
-            for x in range(w):
-                r, g, b, a = image.getpixel((x, y))
-                if self.transparent is not None and (r, g, b) == tuple(self.transparent):
-                    a = 0x00
-                index = self.palette.get_entry(r, g, b, a, strict=self.strict)
-                output_image.putpixel((x, y), index)
-
-        return output_image
-
-    def to_binary(self, input_data):
-        image = self.quantize_image(input_data)
+        image = self.palette.quantize_image(image, transparent=self.transparent, strict=self.strict)
 
         if self.packed:
             bit_length = self.palette.bit_length()

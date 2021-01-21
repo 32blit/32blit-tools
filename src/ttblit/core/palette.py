@@ -107,6 +107,21 @@ class Palette():
 
         self.image = palette.convert('RGBA')
 
+    def quantize_image(self, image, transparent=None, strict=False):
+        if strict and len(self) == 0:
+            raise TypeError("Attempting to enforce strict colours with an empty palette, did you really want to do this?")
+        w, h = image.size
+        output_image = Image.new('P', (w, h))
+        for y in range(h):
+            for x in range(w):
+                r, g, b, a = image.getpixel((x, y))
+                if transparent is not None and (r, g, b) == tuple(transparent):
+                    a = 0x00
+                index = self.get_entry(r, g, b, a, strict=strict)
+                output_image.putpixel((x, y), index)
+
+        return output_image
+
     def get_entry(self, r, g, b, a, remap_transparent=True, strict=False):
         if (r, g, b, a) in self.entries:
             index = self.entries.index((r, g, b, a))
