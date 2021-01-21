@@ -6,7 +6,6 @@ import pathlib
 import struct
 from datetime import datetime
 
-from bitstring import Bits, ConstBitStream
 from construct.core import StreamError
 from PIL import Image
 
@@ -44,24 +43,9 @@ class Metadata(Tool):
 
         return asset.to_binary(open(image_file, 'rb').read())
 
-    def packed_to_image(self, image):
-        bits = Bits(bytes=image.data)
-        if image.type == 'RL':
-            num_pixels = image.width * image.height
-            stream = ConstBitStream(bits)
-            result = []
-            while len(result) < num_pixels:
-                t = stream.read(1)
-                if t:
-                    count = stream.read(8).uint + 1
-                else:
-                    count = 1
-                pixel = struct_blit_pixel.build(image.palette[stream.read(image.bit_length).uint])
-                result.extend([pixel] * count)
-            raw_data = b''.join(result)
-        else:
-            raw_data = b''.join(struct_blit_pixel.build(image.palette[i.uint]) for i in bits.cut(image.bit_length))
-        return Image.frombytes("RGBA", (image.width, image.height), raw_data)
+    def blit_image_to_pil(self, image):
+        data = b''.join(struct_blit_pixel.build(image.data.palette[i]) for i in image.data.pixels)
+        return Image.frombytes("RGBA", (image.data.width, image.data.height), data)
 
     def binary_size(self, bin):
         return struct.unpack('<I', bin[16:20])[0] & 0xffffff
@@ -131,17 +115,17 @@ class Metadata(Tool):
                         print('       ', filetype)
                 if game.meta.data.icon is not None:
                     game_icon = game.meta.data.icon
-                    print(f'    Icon:        {game_icon.width}x{game_icon.height} ({len(game_icon.palette)} colours)')
+                    print(f'    Icon:        {game_icon.data.width}x{game_icon.data.height} ({len(game_icon.data.palette)} colours) ({game_icon.type})')
                     if args.dump_images:
-                        image_icon = self.packed_to_image(game_icon)
+                        image_icon = self.blit_image_to_pil(game_icon)
                         image_icon_filename = args.file.with_suffix(".icon.png")
                         image_icon.save(image_icon_filename)
                         print(f'    Dumped to:   {image_icon_filename}')
                 if game.meta.data.splash is not None:
                     game_splash = game.meta.data.splash
-                    print(f'    Splash:      {game_splash.width}x{game_splash.height} ({len(game_splash.palette)} colours)')
+                    print(f'    Splash:      {game_splash.data.width}x{game_splash.data.height} ({len(game_splash.data.palette)} colours) ({game_splash.type})')
                     if args.dump_images:
-                        image_splash = self.packed_to_image(game_splash)
+                        image_splash = self.blit_image_to_pil(game_splash)
                         image_splash_filename = args.file.with_suffix('.splash.png')
                         image_splash.save(image_splash_filename)
                         print(f'    Dumped to:   {image_splash_filename}')
