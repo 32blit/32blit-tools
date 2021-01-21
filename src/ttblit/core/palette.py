@@ -166,9 +166,6 @@ class Palette():
             })
         return result
 
-    def bit_length(self):
-        return max(1, len(self.entries) - 1).bit_length()
-
     def __len__(self):
         return len(self.entries)
 
