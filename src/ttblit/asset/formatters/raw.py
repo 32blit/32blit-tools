@@ -7,5 +7,5 @@ def raw_binary(symbol, data):
 
 
 @raw_binary.joiner
-def raw_binary(path, data):
-    return {None: b''.join(data)}
+def raw_binary(path, fragments):
+    return {None: b''.join(fragments[None])}

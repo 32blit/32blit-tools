@@ -10,6 +10,43 @@ from ...core.struct import struct_blit_image
 from ..builder import AssetBuilder
 
 
+def repetitions(seq):
+    """Input: sequence of values, Output: sequence of (value, repeat count)."""
+    i = iter(seq)
+    prev = next(i)
+    count = 1
+    for v in i:
+        if v == prev:
+            count += 1
+        else:
+            yield prev, count
+            prev = v
+            count = 1
+    yield prev, count
+
+
+def rle(data, bit_length):
+    """Input: data bytes, bit length, Output: RLE'd bytes"""
+    # TODO: This could be made more efficient by encoding the run-length
+    # as count-n, ie 0 means a run of n, where n = break_even. Then we
+    # can encode longer runs up to 255+n. But this needs changes in the
+    # blit engine.
+    break_even = ceil(8 / (bit_length + 1))
+    bits = BitArray()
+
+    for value, count in repetitions(data):
+        while count > break_even:
+            chunk = min(count, 0x100)
+            bits.append('0b1')
+            bits.append(bytes([chunk - 1]))
+            count -= chunk
+            bits.append(BitArray(uint=value, length=bit_length))
+        for x in range(count):
+            bits.append('0b0')
+            bits.append(BitArray(uint=value, length=bit_length))
+    return bits.tobytes()
+
+
 class ImageAsset(AssetBuilder):
     command = 'image'
     help = 'Convert images/sprites for 32Blit'
@@ -75,34 +112,7 @@ class ImageAsset(AssetBuilder):
 
         if self.packed:
             bit_length = self.palette.bit_length()
-
-            break_even = ceil(8 / (bit_length + 1))
-
-            image_data_raw = image.tobytes()
-            image_len = len(image_data_raw)
-            image_bits = BitArray()
-            i = 0
-            while i < image_len:
-                repeat = 0
-                v = image_data_raw[i]
-
-                for j in range(i + 1, image_len):
-                    if image_data_raw[j] != v or repeat == 0xFF:
-                        break
-
-                    repeat += 1
-
-                if repeat >= break_even:
-                    image_bits.append('0b1')
-                    image_bits.append(bytes([repeat]))
-                    i += repeat
-                else:
-                    image_bits.append('0b0')
-
-                image_bits.append(BitArray(uint=v, length=bit_length))
-                i += 1
-
-            image_data_rl = image_bits.tobytes()
+            image_data_rl = rle(image.tobytes(), bit_length)
             image_data_pk = BitArray().join(BitArray(uint=x, length=bit_length) for x in image.tobytes()).tobytes()
 
             if len(image_data_pk) < len(image_data_rl):

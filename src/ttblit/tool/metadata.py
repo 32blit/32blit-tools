@@ -6,15 +6,14 @@ import pathlib
 import struct
 from datetime import datetime
 
-import yaml
-from bitstring import BitArray, BitStream
+from bitstring import Bits, ConstBitStream
 from construct.core import StreamError
 from PIL import Image
 
 from ..asset.builders.image import ImageAsset
 from ..core.struct import (blit_game, blit_game_with_meta,
                            blit_game_with_meta_and_relo, blit_icns,
-                           struct_blit_image)
+                           struct_blit_image, struct_blit_pixel)
 from ..core.tool import Tool
 
 
@@ -32,46 +31,36 @@ class Metadata(Tool):
 
         self.config = {}
 
-    def parse_config(self, config_file):
-        config = open(config_file).read()
-        config = yaml.safe_load(config)
-
-        required = ['title', 'description', 'version', 'author']
-
-        for option in required:
-            if option not in config:
-                raise ValueError(f'Missing required option "{option}" from {config_file}')
-
-        self.config = config
-
     def prepare_image_asset(self, name, config, working_path):
         image_file = pathlib.Path(config.get('file', ''))
-        config['input_file'] = image_file
-        config['output_file'] = image_file.with_suffix('.bin')
         if not image_file.is_file():
             image_file = working_path / image_file
         if not image_file.is_file():
             raise ValueError(f'{name} "{image_file}" does not exist!')
+        config['input_file'] = image_file
+        config['output_file'] = image_file.with_suffix('.bin')
         asset = ImageAsset(argparse.ArgumentParser().add_subparsers())
         asset.prepare(config)
 
         return asset.to_binary(open(image_file, 'rb').read())
 
     def packed_to_image(self, image):
-        num_pixels = image.width * image.height
-        image_icon_data = BitArray().join(BitArray(uint=x, length=8) for x in image.data)
-        image_icon_data = BitStream(image_icon_data).readlist(",".join(f"uint:{image.bit_length}" for _ in range(num_pixels)))
-
-        raw_data = bytes()
-        for i in image_icon_data:
-            rgba = image.palette[i]
-            raw_data += bytes([
-                rgba.r,
-                rgba.g,
-                rgba.b,
-                rgba.a,
-            ])
-
+        bits = Bits(bytes=image.data)
+        if image.type == 'RL':
+            num_pixels = image.width * image.height
+            stream = ConstBitStream(bits)
+            result = []
+            while len(result) < num_pixels:
+                t = stream.read(1)
+                if t:
+                    count = stream.read(8).uint + 1
+                else:
+                    count = 1
+                pixel = struct_blit_pixel.build(image.palette[stream.read(image.bit_length).uint])
+                result.extend([pixel] * count)
+            raw_data = b''.join(result)
+        else:
+            raw_data = b''.join(struct_blit_pixel.build(image.palette[i.uint]) for i in bits.cut(image.bit_length))
         return Image.frombytes("RGBA", (image.width, image.height), raw_data)
 
     def binary_size(self, bin):
@@ -115,7 +104,6 @@ class Metadata(Tool):
 
         icon = b''
         splash = b''
-        working_path = pathlib.Path('')
 
         game = None
 
@@ -128,64 +116,52 @@ class Metadata(Tool):
 
         # No config supplied, so dump the game info
         if args.config is None:
-            print(f"""
-Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
+            print(f'\nParsed:      {args.file.name} ({game.bin.length:,} bytes)')
             if game.relo is not None:
-                print(f"""Relocations: Yes ({len(game.relo.relocs)})""")
+                print(f'Relocations: Yes ({len(game.relo.relocs)})')
             else:
-                print("""Relocations: No""")
+                print('Relocations: No')
             if game.meta is not None:
-                print(f"""Metadata:    Yes
-
-    Title:       {game.meta.data.title}
-    Description: {game.meta.data.description}
-    Version:     {game.meta.data.version}
-    Author:      {game.meta.data.author}
-    Category:    {game.meta.data.category}
-    URL:         {game.meta.data.url}""")
+                print('Metadata:    Yes')
+                for field in ['title', 'description', 'version', 'author', 'category', 'url']:
+                    print(f'{field.title()+":":13s}{getattr(game.meta.data, field)}')
                 if len(game.meta.data.filetypes) > 0:
-                    print("    Filetypes:   ")
+                    print('    Filetypes:   ')
                     for filetype in game.meta.data.filetypes:
-                        print(f"        {filetype}")
+                        print('       ', filetype)
                 if game.meta.data.icon is not None:
                     game_icon = game.meta.data.icon
-                    print(f"""    Icon:        {game_icon.width}x{game_icon.height} ({len(game_icon.palette)} colours)""")
+                    print(f'    Icon:        {game_icon.width}x{game_icon.height} ({len(game_icon.palette)} colours)')
                     if args.dump_images:
                         image_icon = self.packed_to_image(game_icon)
                         image_icon_filename = args.file.with_suffix(".icon.png")
                         image_icon.save(image_icon_filename)
-                        print(f"    Dumped to:   {image_icon_filename}")
+                        print(f'    Dumped to:   {image_icon_filename}')
                 if game.meta.data.splash is not None:
                     game_splash = game.meta.data.splash
-                    print(f"""    Splash:      {game_splash.width}x{game_splash.height} ({len(game_splash.palette)} colours)""")
+                    print(f'    Splash:      {game_splash.width}x{game_splash.height} ({len(game_splash.palette)} colours)')
                     if args.dump_images:
                         image_splash = self.packed_to_image(game_splash)
-                        image_splash_filename = args.file.with_suffix(".splash.png")
+                        image_splash_filename = args.file.with_suffix('.splash.png')
                         image_splash.save(image_splash_filename)
-                        print(f"    Dumped to:   {image_splash_filename}")
-                print("")
+                        print(f'    Dumped to:   {image_splash_filename}')
             else:
-                print("""Metadata:    No
-""")
+                print('Metadata:    No')
+            print('')
             return
 
-        if args.config.is_file():
-            working_path = args.config.parent
-            self.parse_config(args.config)
-            logging.info(f'Using config at {args.config}')
-        else:
-            logging.warning(f'Unable to find metadata config at {args.config}')
+        self.setup_for_config(args.config, None)
 
         if 'icon' in self.config:
-            icon = self.prepare_image_asset('icon', self.config['icon'], working_path)
+            icon = self.prepare_image_asset('icon', self.config['icon'], self.working_path)
         else:
             raise ValueError('An 8x8 pixel icon is required!"')
 
         if 'splash' in self.config:
-            splash = self.prepare_image_asset('splash', self.config['splash'], working_path)
+            splash = self.prepare_image_asset('splash', self.config['splash'], self.working_path)
             if args.icns is not None:
                 if not args.icns.is_file() or args.force:
-                    open(args.icns, 'wb').write(self.build_icns(self.config['splash'], working_path))
+                    open(args.icns, 'wb').write(self.build_icns(self.config['splash'], self.working_path))
                     logging.info(f'Saved macOS icon to {args.icns}')
         else:
             raise ValueError('A 128x96 pixel splash is required!"')
@@ -193,10 +169,10 @@ Parsed:      {args.file.name} ({game.bin.length:,} bytes)""")
         if not game:
             return
 
-        title = self.config.get('title')
+        title = self.config.get('title', None)
         description = self.config.get('description', '')
-        version = self.config.get('version')
-        author = self.config.get('author')
+        version = self.config.get('version', None)
+        author = self.config.get('author', None)
         url = self.config.get('url', '')
         category = self.config.get('category', 'none')
         filetypes = self.config.get('filetypes', [])
