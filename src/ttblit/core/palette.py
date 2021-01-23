@@ -18,13 +18,16 @@ class Colour():
     def __getitem__(self, index):
         return [self.r, self.g, self.b][index]
 
+    def __repr__(self):
+        return f'Colour{self.r, self.g, self.b}'
+
 
 class Palette():
     def __init__(self, palette_file=None):
         self.transparent = None
         self.entries = []
 
-        if type(palette_file) is Palette:
+        if isinstance(palette_file, Palette):
             self.transparent = palette_file.transparent
             self.entries = palette_file.entries
             return
@@ -143,28 +146,11 @@ class Palette():
         else:
             raise TypeError(f'Colour {r}, {g}, {b}, {a} does not exist in palette!')
 
-    def tolist(self):
-        result = []
-        for r, g, b, a in self.entries:
-            result.append(r)
-            result.append(g)
-            result.append(b)
-            result.append(a)
-        return result
-
-    def tobytes(self):
-        return bytes(self.tolist())
-
     def tostruct(self):
-        result = []
-        for r, g, b, a in self.entries:
-            result.append({
-                'r': r,
-                'g': g,
-                'b': b,
-                'a': a,
-            })
-        return result
+        return [dict(zip('rgba', c)) for c in self.entries]
+
+    def __iter__(self):
+        return iter(self.entries)
 
     def __len__(self):
         return len(self.entries)
@@ -177,7 +163,7 @@ def type_palette(palette_file):
     # Only used as a type in argparse.
     # This wrapper around Palette traps errors and
     # raises in a way that's visible to the user
-    if type(palette_file) is Palette:
+    if isinstance(palette_file, Palette):
         return palette_file
 
     try:
