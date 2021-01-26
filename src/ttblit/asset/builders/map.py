@@ -44,7 +44,7 @@ class MapAsset(RawAsset):
             layers = len(layer_data)
 
             map_data = bytes('MTMX', encoding='utf-8')
-            map_data += struct.pack('<HHH', width, height, layers)
+            map_data += struct.pack('<BHHH', self.empty_tile, width, height, layers)
             map_data += b''.join(layer_data)
 
             return map_data

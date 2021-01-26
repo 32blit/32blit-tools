@@ -46,7 +46,7 @@ def test_map_tiled_struct(subparser):
 </map>
 ''')
     # Tile indexes 1, 2, 3, 4 will be remapped -1 to 0, 1, 2, 3
-    assert output == struct.pack('4sHHH4B', b'MTMX', 4, 1, 1, 0, 1, 2, 3)
+    assert output == struct.pack('<4sBHHH4B', b'MTMX', 0, 4, 1, 1, 0, 1, 2, 3)
 
 
 def test_map_empty_tiled_remap_empty(subparser):
