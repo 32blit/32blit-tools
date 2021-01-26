@@ -29,11 +29,13 @@ class MapAsset(RawAsset):
     def tiled_to_binary(self, input_data):
         from xml.etree import ElementTree as ET
         root = ET.fromstring(input_data)
-        layers = root.findall('layer/data')
+        layers = root.findall('layer')
         map_data = root.find('map')
         layer_data = []
+        # Sort layers by ID (since .tmx files can have them in arbitrary orders)
+        layers.sort(key=lambda l: int(l.get('id')))
         for layer_csv in layers:
-            layer = self.csv_to_list(layer_csv.text, 10)
+            layer = self.csv_to_list(layer_csv.find('data').text, 10)
             # Shift 1-indexed tiles to 0-indexed, and remap empty tile (0) to specified index
             layer = [self.empty_tile if i == 0 else i - 1 for i in layer]
             layer_data.append(bytes(layer))
