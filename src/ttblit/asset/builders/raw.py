@@ -10,12 +10,11 @@ class RawAsset(AssetBuilder):
         'csv': ('.csv')
     }
 
-    def csv_to_binary(self, input_data, base=10, offset=0):
-        try:
+    def csv_to_list(self, input_data, base):
+        if type(input_data) == bytes:
             input_data = input_data.decode('utf-8')
-        except AttributeError:
-            pass
 
+        # Strip leading/trailing whitespace
         input_data = input_data.strip()
 
         # Replace '1, 2, 3' to '1,2,3', might as well do it here
@@ -29,11 +28,12 @@ class RawAsset(AssetBuilder):
 
         # Flatten our rows/cols 2d array into a 1d array of bytes
         # Might as well do the int conversion here, to save another loop
-        input_data = [(int(col, base) + offset) for row in input_data for col in row if col != '']
+        return [int(col, base) for row in input_data for col in row if col != '']
 
-        return bytes(input_data)
+    def csv_to_binary(self, input_data, base):
+        return bytes(self.csv_to_list(input_data, base))
 
     def to_binary(self, input_data):
         if self.input_type == 'csv':
-            input_data = self.csv_to_binary(input_data, base=10)
+            input_data = bytes(self.csv_to_list(input_data, base=10))
         return input_data
