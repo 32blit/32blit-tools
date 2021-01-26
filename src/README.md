@@ -118,6 +118,17 @@ Supported formats:
 
 # Changelog
 
+0.5.0
+-----
+
+* Significant code refactor and fixes by @Ali1234
+* Metadata dump fixed to support RL images
+* Bugfix to incorrect transparent colour being selected
+* Configurable empty_tile for .tmx maps - specifies a tile ID for unset/empty tiles to be remapped to
+* Optional struct output type for .tmx maps with width, height layer count and empty_tile
+* .tmx map layers are now sorted
+* Should not break compatibility, but use 0.4.x if you don't need the new features
+
 0.4.0
 -----
 
