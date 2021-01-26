@@ -1,32 +1,12 @@
 import binascii
 import math
 
-from construct import (Adapter, Array, Bytes, Checksum, Computed, Const,
-                       Int8ul, Int16ul, Int32ub, Int32ul, Optional,
-                       PaddedString, Prefixed, PrefixedArray, RawCopy, Rebuild,
-                       Struct, len_, this)
+from construct import (Adapter, Bytes, Checksum, Const, GreedyBytes, Int8ul,
+                       Int16ul, Int32ub, Int32ul, Optional, PaddedString,
+                       Prefixed, PrefixedArray, RawCopy, Rebuild, Struct, len_,
+                       this)
 
-
-def compute_bit_length(ctx):
-    """Compute the required bit length for image data.
-    Uses the count of items in the palette to determine how
-    densely we can pack the image data.
-    """
-    if ctx.type == "RW":
-        return 8
-    else:
-        return max(1, (ctx.palette_entries - 1).bit_length())
-
-
-def compute_data_length(ctx):
-    """Compute the required data length for palette based images.
-    We need this computation here so we can use `math.ceil` and
-    byte-align the result.
-    """
-    if ctx.type == "RL":
-        return ctx.size - (ctx.palette_entries * 4 + 18)  # can't really calc this
-
-    return math.ceil((ctx.width * ctx.height * ctx.bit_length) / 8)
+from .compression import ImageCompressor
 
 
 class PaletteCountAdapter(Adapter):
@@ -41,6 +21,18 @@ class PaletteCountAdapter(Adapter):
         return obj
 
 
+class ImageSizeAdapter(Adapter):
+    """
+    Adds the header and type size to the size field.
+    The size field itself is already counted.
+    """
+    def _decode(self, obj, context, path):
+        return obj - 8
+
+    def _encode(self, obj, context, path):
+        return obj + 8
+
+
 struct_blit_pixel = Struct(
     'r' / Int8ul,
     'g' / Int8ul,
@@ -48,19 +40,19 @@ struct_blit_pixel = Struct(
     'a' / Int8ul
 )
 
-struct_blit_image = Struct(
+struct_blit_image_compressed = Struct(
     'header' / Const(b'SPRITE'),
     'type' / PaddedString(2, 'ASCII'),
-    'size' / Rebuild(Int32ul, len_(this.data) + (this.palette_entries * 4) + 18),
-    'width' / Int16ul,
-    'height' / Int16ul,
-    'format' / Const(0x02, Int8ul),
-    'palette_entries' / PaletteCountAdapter(Int8ul),
-    'palette' / Array(this.palette_entries, struct_blit_pixel),
-    'bit_length' / Computed(compute_bit_length),
-    'data_length' / Computed(compute_data_length),
-    'data' / Array(this.data_length, Int8ul)
+    'data' / Prefixed(ImageSizeAdapter(Int32ul), Struct(
+        'width' / Int16ul,
+        'height' / Int16ul,
+        'format' / Const(0x02, Int8ul),
+        'palette' / PrefixedArray(PaletteCountAdapter(Int8ul), struct_blit_pixel),
+        'pixels' / GreedyBytes,
+    ), includelength=True)
 )
+
+struct_blit_image = ImageCompressor(struct_blit_image_compressed)
 
 struct_blit_meta = Struct(
     'header' / Const(b'BLITMETA'),

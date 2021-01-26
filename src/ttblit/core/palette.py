@@ -24,7 +24,7 @@ class Palette():
         self.transparent = None
         self.entries = []
 
-        if type(palette_file) is Palette:
+        if isinstance(palette_file, Palette):
             self.transparent = palette_file.transparent
             self.entries = palette_file.entries
             return
@@ -107,6 +107,21 @@ class Palette():
 
         self.image = palette.convert('RGBA')
 
+    def quantize_image(self, image, transparent=None, strict=False):
+        if strict and len(self) == 0:
+            raise TypeError("Attempting to enforce strict colours with an empty palette, did you really want to do this?")
+        w, h = image.size
+        output_image = Image.new('P', (w, h))
+        for y in range(h):
+            for x in range(w):
+                r, g, b, a = image.getpixel((x, y))
+                if transparent is not None and (r, g, b) == tuple(transparent):
+                    a = 0x00
+                index = self.get_entry(r, g, b, a, strict=strict)
+                output_image.putpixel((x, y), index)
+
+        return output_image
+
     def get_entry(self, r, g, b, a, remap_transparent=True, strict=False):
         if (r, g, b, a) in self.entries:
             index = self.entries.index((r, g, b, a))
@@ -128,31 +143,11 @@ class Palette():
         else:
             raise TypeError(f'Colour {r}, {g}, {b}, {a} does not exist in palette!')
 
-    def tolist(self):
-        result = []
-        for r, g, b, a in self.entries:
-            result.append(r)
-            result.append(g)
-            result.append(b)
-            result.append(a)
-        return result
-
-    def tobytes(self):
-        return bytes(self.tolist())
-
     def tostruct(self):
-        result = []
-        for r, g, b, a in self.entries:
-            result.append({
-                'r': r,
-                'g': g,
-                'b': b,
-                'a': a,
-            })
-        return result
+        return [dict(zip('rgba', c)) for c in self.entries]
 
-    def bit_length(self):
-        return max(1, len(self.entries) - 1).bit_length()
+    def __iter__(self):
+        return iter(self.entries)
 
     def __len__(self):
         return len(self.entries)
@@ -165,7 +160,7 @@ def type_palette(palette_file):
     # Only used as a type in argparse.
     # This wrapper around Palette traps errors and
     # raises in a way that's visible to the user
-    if type(palette_file) is Palette:
+    if isinstance(palette_file, Palette):
         return palette_file
 
     try:
