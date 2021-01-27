@@ -76,19 +76,21 @@ class Packer(Tool):
         for path, sources, options in self.targets:
             aw = AssetWriter()
             for input_files, file_opts in sources:
-                for asset in self.build_assets(input_files, self.working_path, file_opts, prefix=options.get('prefix')):
+                for asset in self.build_assets(input_files, self.working_path, prefix=options.get('prefix'), **file_opts):
                     aw.add_asset(*asset)
 
             aw.write(options.get('type'), self.destination_path / path.name, force=args.force)
 
-    def build_assets(self, input_files, working_path, builder_options, typestr=None, prefix=None):
-        if typestr is None:
+    def build_assets(self, input_files, working_path, name=None, type=None, prefix=None, **builder_options):
+        if type is None:
             # Glob files all have the same suffix, so we only care about the first one
             try:
                 typestr = AssetBuilder.guess_builder(input_files[0])
             except TypeError:
                 logging.warning(f'Unable to guess type, assuming raw/binary {input_files[0]}.')
                 typestr = 'raw/binary'
+        else:
+            typestr = type
 
         input_type, input_subtype = typestr.split('/')
         builder = AssetBuilder._by_name[input_type]
@@ -104,18 +106,9 @@ class Packer(Tool):
             except KeyError:
                 pass
 
-        # Pop invalid options.
-        # This is already done for targets, but not for sources, where they have no effect.
-        # This should be a fatal error, but it can't be while the examples are broken.
-        # TODO: Fix this in examples.
-        base = builder_options.pop('name', None)
-        subtype = builder_options.pop('type', None)
-        if subtype is not None:
-            logging.warning("You can't specify the type of an input file. Ignored.")
-
         for file in input_files:
             symbol_name = make_symbol_name(
-                base=base, working_path=working_path, input_file=file,
+                base=name, working_path=working_path, input_file=file,
                 input_type=input_type, input_subtype=input_subtype, prefix=prefix
             )
 

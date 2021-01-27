@@ -126,7 +126,7 @@ def process_ft_font(data, num_chars, base_char, height):
 
 
 @AssetBuilder(typemap=font_typemap)
-def font(data, subtype, num_chars=96, base_char=ord(' '), height=0, horizontal_spacing=1, vertical_spacing=1, space_width=3, **kwargs):
+def font(data, subtype, num_chars=96, base_char=ord(' '), height=0, horizontal_spacing=1, vertical_spacing=1, space_width=3):
     if subtype == 'image':
         font_data, font_w_data, char_width, char_height = process_image_font(
             data, num_chars, height, horizontal_spacing, space_width
