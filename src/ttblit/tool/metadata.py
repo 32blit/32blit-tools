@@ -5,6 +5,7 @@ import pathlib
 import struct
 from datetime import datetime
 
+import click
 from construct.core import StreamError
 from PIL import Image
 
@@ -12,22 +13,10 @@ from ..asset.builder import AssetBuilder
 from ..core.struct import (blit_game, blit_game_with_meta,
                            blit_game_with_meta_and_relo, blit_icns,
                            struct_blit_image, struct_blit_pixel)
-from ..core.tool import Tool
+from ..core.yamlloader import YamlLoader
 
 
-class Metadata(Tool):
-    command = 'metadata'
-    help = 'Tag a 32Blit .blit file with metadata'
-
-    def __init__(self, parser):
-        Tool.__init__(self, parser)
-        self.parser.add_argument('--config', type=pathlib.Path, help='Metadata config file')
-        self.parser.add_argument('--icns', type=pathlib.Path, help='macOS icon output file')
-        self.parser.add_argument('--file', type=pathlib.Path, help='Input file')
-        self.parser.add_argument('--force', action='store_true', help='Force file overwrite')
-        self.parser.add_argument('--dump-images', action='store_true', help='Dump images from metadata')
-
-        self.config = {}
+class Metadata(YamlLoader):
 
     def prepare_image_asset(self, name, config, working_path):
         image_file = pathlib.Path(config.get('file', ''))
@@ -73,28 +62,28 @@ class Metadata(Tool):
 
         return blit_icns.build({'data': image_bytes.read()})
 
-    def run(self, args):
-        if args.file is None and args.config is None:
-            self.parser.error('the following arguments are required: --config and/or --file')
+    def run(self, config, icns, file, force, dump_images):
+        if file is None and config is None:
+            raise click.UsageError('the following arguments are required: --config and/or --file')
 
-        if args.file and not args.file.is_file():
-            raise ValueError(f'Unable to find bin file at {args.file}')
+        if file and not file.is_file():
+            raise ValueError(f'Unable to find bin file at {file}')
 
         icon = b''
         splash = b''
 
         game = None
 
-        if args.file:
-            bin = open(args.file, 'rb').read()
+        if file:
+            bin = open(file, 'rb').read()
             try:
                 game = blit_game.parse(bin)
             except StreamError:
-                raise ValueError(f'Invalid 32blit binary file {args.file}')
+                raise ValueError(f'Invalid 32blit binary file {file}')
 
         # No config supplied, so dump the game info
-        if args.config is None:
-            print(f'\nParsed:      {args.file.name} ({game.bin.length:,} bytes)')
+        if config is None:
+            print(f'\nParsed:      {file.name} ({game.bin.length:,} bytes)')
             if game.relo is not None:
                 print(f'Relocations: Yes ({len(game.relo.relocs)})')
             else:
@@ -110,17 +99,17 @@ class Metadata(Tool):
                 if game.meta.data.icon is not None:
                     game_icon = game.meta.data.icon
                     print(f'    Icon:        {game_icon.data.width}x{game_icon.data.height} ({len(game_icon.data.palette)} colours) ({game_icon.type})')
-                    if args.dump_images:
+                    if dump_images:
                         image_icon = self.blit_image_to_pil(game_icon)
-                        image_icon_filename = args.file.with_suffix(".icon.png")
+                        image_icon_filename = file.with_suffix(".icon.png")
                         image_icon.save(image_icon_filename)
                         print(f'    Dumped to:   {image_icon_filename}')
                 if game.meta.data.splash is not None:
                     game_splash = game.meta.data.splash
                     print(f'    Splash:      {game_splash.data.width}x{game_splash.data.height} ({len(game_splash.data.palette)} colours) ({game_splash.type})')
-                    if args.dump_images:
+                    if dump_images:
                         image_splash = self.blit_image_to_pil(game_splash)
-                        image_splash_filename = args.file.with_suffix('.splash.png')
+                        image_splash_filename = file.with_suffix('.splash.png')
                         image_splash.save(image_splash_filename)
                         print(f'    Dumped to:   {image_splash_filename}')
             else:
@@ -128,7 +117,7 @@ class Metadata(Tool):
             print('')
             return
 
-        self.setup_for_config(args.config, None)
+        self.setup_for_config(config, None)
 
         if 'icon' in self.config:
             icon = self.prepare_image_asset('icon', self.config['icon'], self.working_path)
@@ -137,10 +126,10 @@ class Metadata(Tool):
 
         if 'splash' in self.config:
             splash = self.prepare_image_asset('splash', self.config['splash'], self.working_path)
-            if args.icns is not None:
-                if not args.icns.is_file() or args.force:
-                    open(args.icns, 'wb').write(self.build_icns(self.config['splash'], self.working_path))
-                    logging.info(f'Saved macOS icon to {args.icns}')
+            if icns is not None:
+                if not icns.is_file() or force:
+                    open(icns, 'wb').write(self.build_icns(self.config['splash'], self.working_path))
+                    logging.info(f'Saved macOS icon to {icns}')
         else:
             raise ValueError('A 128x96 pixel splash is required!"')
 
@@ -190,8 +179,8 @@ class Metadata(Tool):
                     raise ValueError('Filetype should be a maximum of 4 characters! (Hint, don\'t include the .)')
 
         if game.meta is not None:
-            if not args.force:
-                logging.critical(f'Refusing to overwrite metadata in {args.file}')
+            if not force:
+                logging.critical(f'Refusing to overwrite metadata in {file}')
                 return 1
 
         game.meta = {
@@ -217,7 +206,17 @@ class Metadata(Tool):
         else:
             bin = blit_game_with_meta.build(game)
 
-        logging.info(f'Adding metadata to {args.file}')
-        open(args.file, 'wb').write(bin)
+        logging.info(f'Adding metadata to {file}')
+        open(file, 'wb').write(bin)
 
         return 0
+
+
+@click.command('metadata', help='Tag a 32Blit .blit file with metadata')
+@click.option('--config', type=pathlib.Path, help='Metadata config file')
+@click.option('--icns', type=pathlib.Path, help='macOS icon output file')
+@click.option('--file', type=pathlib.Path, help='Input file')
+@click.option('--force', is_flag=True, help='Force file overwrite')
+@click.option('--dump-images', is_flag=True, help='Dump images from metadata')
+def metadata_cli(config, icns, file, force, dump_images):
+    Metadata().run(config, icns, file, force, dump_images)

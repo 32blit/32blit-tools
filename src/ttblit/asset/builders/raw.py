@@ -40,12 +40,6 @@ def raw(data, subtype):
         return data
 
 
-class RawAsset(AssetTool):
-    command = 'raw'
-    help = 'Convert raw/binary or csv data for 32Blit'
-    builder = raw
-
-    def to_binary(self):
-        return self.builder.from_file(
-            self.input_file, self.input_type
-        )
+@AssetTool(raw, 'Convert raw/binary or csv data for 32Blit')
+def raw_cli(input_file, input_type):
+    return raw.from_file(input_file, input_type)

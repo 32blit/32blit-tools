@@ -1,6 +1,7 @@
 import io
 import struct
 
+import click
 import freetype
 from PIL import Image
 
@@ -148,38 +149,10 @@ def font(data, subtype, num_chars=96, base_char=ord(' '), height=0, horizontal_s
     return data
 
 
-class FontAsset(AssetTool):
-    command = 'font'
-    help = 'Convert fonts for 32Blit'
-    builder = font
-
-    def __init__(self, parser=None):
-        self.options.update({
-            'height': (int, 0),
-            'horizontal_spacing': (int, 1),
-            'vertical_spacing': (int, 1),
-            'space_width': (int, 3)
-        })
-
-        super().__init__(parser)
-
-        self.height = 0
-        self.horizontal_spacing = 1
-        self.vertical_spacing = 1
-        self.space_width = 3
-        self.base_char = ord(' ')
-        self.num_chars = 96
-
-        if self.parser is not None:
-            self.parser.add_argument('--height', type=int, default=0, help='Font height (calculated from image if not specified)')
-            self.parser.add_argument('--horizontal-spacing', type=int, default=1, help='Additional space between characters for variable-width mode')
-            self.parser.add_argument('--vertical-spacing', type=int, default=1, help='Space between lines')
-            self.parser.add_argument('--space-width', type=int, default=1, help='Width of the space character')
-
-    def to_binary(self):
-        return self.builder.from_file(
-            self.input_file, self.input_type,
-            num_chars=self.num_chars, base_char=self.base_char, height=self.height,
-            horizontal_spacing=self.horizontal_spacing, vertical_spacing=self.vertical_spacing,
-            space_width=self.space_width
-        )
+@AssetTool(font, 'Convert fonts for 32Blit')
+@click.option('--height', type=int, default=0, help='Font height (calculated from image if not specified)')
+@click.option('--horizontal-spacing', type=int, default=1, help='Additional space between characters for variable-width mode')
+@click.option('--vertical-spacing', type=int, default=1, help='Space between lines')
+@click.option('--space-width', type=int, default=3, help='Width of the space character')
+def font_cli(input_file, input_type, **kwargs):
+    return font.from_file(input_file, input_type, **kwargs)

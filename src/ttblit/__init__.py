@@ -1,54 +1,32 @@
 
 __version__ = '0.5.0'
 
-import argparse
-import logging
-import pathlib
-import sys
+import click
 
-from .core.tool import Tool
-
-
-def exception_handler(exception_type, exception, traceback):
-    sys.stderr.write(f"{type(exception).__name__}: {exception}\n")
-    sys.stderr.flush()
+from .asset.builder import AssetTool
+from .tool.cmake import cmake_cli
+from .tool.flasher import flash_cli
+from .tool.metadata import metadata_cli
+from .tool.packer import pack_cli
+from .tool.relocs import relocs_cli
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--debug', action='store_true', help='Enable exception traces')
-    parser.add_argument('-v', '--verbosity', action='count', default=0, help='Output verbosity')
-    subparsers = parser.add_subparsers(dest='command', help='Commands')
+@click.group()
+@click.option('--debug', is_flag=True)
+def main(debug):
+    pass
 
-    if len(sys.argv) == 2:
-        path = pathlib.Path(sys.argv[1])
-        if path.suffix == '.blit':
-            sys.argv[1:] = ['flash', 'save', '--file', str(path)]
 
-    if len(sys.argv) == 3:
-        path = pathlib.Path(sys.argv[2])
-        if sys.argv[1] == 'flash' and path.suffix == '.blit':
-            sys.argv[1:] = ['flash', 'flash', '--file', str(path)]
+for n, c in AssetTool._commands.items():
+    main.add_command(c)
 
-    tools = {}
+main.add_command(cmake_cli)
+main.add_command(flash_cli)
+main.add_command(metadata_cli)
+main.add_command(pack_cli)
+main.add_command(relocs_cli)
 
-    for command, cls in Tool._by_command.items():
-        tools[command] = cls(subparsers)
 
-    args = parser.parse_args()
-
-    log_format = '%(levelname)s: %(message)s'
-
-    log_verbosity = min(args.verbosity, 3)
-    log_level = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG][log_verbosity]
-    logging.basicConfig(level=log_level, format=log_format)
-
-    if args.debug:
-        logging.basicConfig(level=logging.DEBUG, format=log_format)
-    else:
-        sys.excepthook = exception_handler
-
-    if args.command is None:
-        parser.print_help()
-    else:
-        sys.exit(tools[args.command].run(args))
+@main.command(help='Print version and exit')
+def version():
+    print(__version__)

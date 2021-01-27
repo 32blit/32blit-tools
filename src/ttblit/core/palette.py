@@ -157,18 +157,3 @@ class Palette():
 
     def __getitem__(self, index):
         return self.entries[index]
-
-
-def type_palette(palette_file):
-    # Only used as a type in argparse.
-    # This wrapper around Palette traps errors and
-    # raises in a way that's visible to the user
-    if isinstance(palette_file, Palette):
-        return palette_file
-
-    try:
-        return Palette(palette_file)
-    except TypeError as e:
-        raise argparse.ArgumentTypeError(None, str(e))
-    except ValueError as e:
-        raise argparse.ArgumentError(None, str(e))

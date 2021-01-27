@@ -1,9 +1,11 @@
 import io
 import logging
+import pathlib
 
+import click
 from PIL import Image
 
-from ...core.palette import Colour, Palette, type_palette
+from ...core.palette import Colour, Palette
 from ...core.struct import struct_blit_image
 from ..builder import AssetBuilder, AssetTool
 
@@ -42,48 +44,11 @@ def image(data, subtype, palette=None, transparent=None, strict=False, packed=Tr
     })
 
 
-class ImageAsset(AssetTool):
-    command = 'image'
-    help = 'Convert images/sprites for 32Blit'
-    builder = image
-
-    def __init__(self, parser=None):
-        self.options.update({
-            'palette': (Palette, Palette()),
-            'transparent': Colour,
-            'packed': (str, 'yes'),
-            'strict': (bool, False)
-        })
-
-        super().__init__(parser)
-
-        self.palette = None
-        self.transparent = None
-        self.packed = True
-        self.strict = False
-
-        if self.parser is not None:
-            self.parser.add_argument('--palette', type=type_palette, default=None, help='Image or palette file of colours to use')
-            self.parser.add_argument('--transparent', type=Colour, help='Transparent colour')
-            self.parser.add_argument('--packed', type=str, nargs='?', default='yes', choices=('yes', 'no'), help='Pack into bits depending on palette colour count')
-            self.parser.add_argument('--strict', action='store_true', help='Reject colours not in the palette')
-
-    def prepare(self, args):
-        super().prepare(args)
-
-        if type(self.packed) is not bool:
-            self.packed = self.packed == 'yes'
-
-        if self.transparent is not None:
-            r, g, b = self.transparent
-            p = self.palette.set_transparent_colour(r, g, b)
-            if p is not None:
-                logging.info(f'Found transparent colour ({r},{g},{b}) in palette')
-            else:
-                logging.warning(f'Could not find transparent colour ({r},{g},{b}) in palette')
-
-    def to_binary(self):
-        return self.builder.from_file(
-            self.input_file, self.input_type,
-            palette=self.palette, transparent=self.transparent, strict=self.strict, packed=self.packed
-        )
+@AssetTool(image, 'Convert images/sprites for 32Blit')
+@click.option('--palette', type=pathlib.Path, help='Image or palette file of colours to use')
+@click.option('--transparent', type=Colour, default=None, help='Transparent colour')
+@click.option('--packed', type=click.Choice(['yes', 'no'], case_sensitive=False), default='yes', help='Pack into bits depending on palette colour count')
+@click.option('--strict/--no-strict', default=False, help='Reject colours not in the palette')
+def image_cli(input_file, input_type, packed, **kwargs):
+    packed = (packed.lower() == 'yes')
+    return image.from_file(input_file, input_type, packed=packed, **kwargs)

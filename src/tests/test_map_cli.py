@@ -18,24 +18,15 @@ def test_input_file():
     return temp_tmx
 
 
-def test_map_tiled_cli_no_args(parsers):
-    from ttblit.asset.builders import map
-
-    parser, subparser = parsers
-
-    map = map.MapAsset(subparser)
+def test_map_tiled_cli_no_args():
+    from ttblit import main
 
     with pytest.raises(SystemExit):
-        parser.parse_args(['map'])
+        main(['map'])
 
 
-def test_map_tiled_cli(parsers, test_input_file):
-    from ttblit.asset.builders import map
+def test_map_tiled_cli(test_input_file):
+    from ttblit import main
 
-    parser, subparser = parsers
-
-    map = map.MapAsset(subparser)
-
-    args = parser.parse_args(['map', '--input_file', test_input_file.name, '--output_format', 'c_header'])
-
-    map.run(args)
+    with pytest.raises(SystemExit):
+        main(['map', '--input_file', test_input_file.name, '--output_format', 'c_header'])

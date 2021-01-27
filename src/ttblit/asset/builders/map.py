@@ -1,5 +1,7 @@
 import struct
 
+import click
+
 from ..builder import AssetBuilder, AssetTool
 from .raw import csv_to_list
 
@@ -46,28 +48,8 @@ def map(data, subtype, empty_tile=0, output_struct=False):
         return tiled_to_binary(data, empty_tile, output_struct)
 
 
-class MapAsset(AssetTool):
-    command = 'map'
-    help = 'Convert popular tilemap formats for 32Blit'
-    builder = map
-
-    def __init__(self, parser=None):
-        self.options.update({
-            'empty_tile': (int, 0),
-            'output_struct': (bool, False)
-        })
-
-        super().__init__(parser)
-
-        self.empty_tile = 0
-        self.output_struct = False
-
-        if self.parser is not None:
-            self.parser.add_argument('--empty-tile', type=int, default=0, help='Remap .tmx empty tiles')
-            self.parser.add_argument('--output-struct', type=bool, default=False, help='Output .tmx as struct with level width/height, etc')
-
-    def to_binary(self):
-        return self.builder.from_file(
-            self.input_file, self.input_type,
-            empty_tile=self.empty_tile, output_struct=self.output_struct
-        )
+@AssetTool(map, 'Convert popular tilemap formats for 32Blit')
+@click.option('--empty-tile', type=int, default=0, help='Remap .tmx empty tiles')
+@click.option('--output-struct', type=bool, default=False, help='Output .tmx as struct with level width/height, etc')
+def map_cli(input_file, input_type, **kwargs):
+    return map.from_file(input_file, input_type, **kwargs)

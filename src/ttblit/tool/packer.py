@@ -1,27 +1,20 @@
 import logging
 import pathlib
 
+import click
+
 from ..asset.builder import AssetBuilder, make_symbol_name
 from ..asset.writer import AssetWriter
-from ..core.tool import Tool
+from ..core.yamlloader import YamlLoader
 
 
-class Packer(Tool):
-    command = 'pack'
-    help = 'Pack a collection of assets for 32Blit'
+class Packer(YamlLoader):
 
-    def __init__(self, parser):
-        Tool.__init__(self, parser)
-        self.parser.add_argument('--config', type=pathlib.Path, help='Asset config file')
-        self.parser.add_argument('--output', type=pathlib.Path, help='Name for output file(s) or root path when using --config')
-        self.parser.add_argument('--files', nargs='+', type=pathlib.Path, help='Input files')
-        self.parser.add_argument('--force', action='store_true', help='Force file overwrite')
-
-        self.config = {}
+    def run(self, config, output, files, force):
+        if config is None and not files:
+            raise click.UsageError('You must supply a config or list of input files.')
         self.targets = []
-
-    def run(self, args):
-        self.setup_for_config(args.config, args.output, args.files)
+        self.setup_for_config(config, output, files)
 
         # Top level of our config is filegroups and general settings
         for target, options in self.config.items():
@@ -79,7 +72,7 @@ class Packer(Tool):
                 for asset in self.build_assets(input_files, self.working_path, prefix=options.get('prefix'), **file_opts):
                     aw.add_asset(*asset)
 
-            aw.write(options.get('type'), self.destination_path / path.name, force=args.force)
+            aw.write(options.get('type'), self.destination_path / path.name, force=force)
 
     def build_assets(self, input_files, working_path, name=None, type=None, prefix=None, **builder_options):
         if type is None:
@@ -114,3 +107,12 @@ class Packer(Tool):
 
             yield symbol_name, builder.from_file(file, input_subtype, **builder_options)
             logging.info(f' - {typestr} {file} -> {symbol_name}')
+
+
+@click.command('pack', help='Pack a collection of assets for 32Blit')
+@click.option('--config', type=pathlib.Path, help='Asset config file')
+@click.option('--output', type=pathlib.Path, help='Name for output file(s) or root path when using --config')
+@click.option('--files', multiple=True, type=pathlib.Path, help='Input files')
+@click.option('--force', is_flag='store_true', help='Force file overwrite')
+def pack_cli(config, output, files, force):
+    Packer().run(config, output, files, force)

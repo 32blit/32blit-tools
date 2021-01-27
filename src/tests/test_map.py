@@ -1,17 +1,7 @@
-import argparse
 import struct
 
-import pytest
 
-
-@pytest.fixture
-def subparser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--debug', action='store_true', help='Enable exception traces')
-    return parser.add_subparsers(dest='command', help='Commands')
-
-
-def test_map_tiled(subparser):
+def test_map_tiled():
     from ttblit.asset.builders import map
 
     output = map.map.build('''<?xml version="1.0" encoding="UTF-8"?>
@@ -27,7 +17,7 @@ def test_map_tiled(subparser):
     assert output == b'\x00'
 
 
-def test_map_tiled_struct(subparser):
+def test_map_tiled_struct():
     from ttblit.asset.builders import map
 
     output = map.map.build('''<?xml version="1.0" encoding="UTF-8"?>
@@ -43,7 +33,7 @@ def test_map_tiled_struct(subparser):
     assert output == struct.pack('<4sBHHH4B', b'MTMX', 0, 4, 1, 1, 0, 1, 2, 3)
 
 
-def test_map_tiled_layer_reorder(subparser):
+def test_map_tiled_layer_reorder():
     from ttblit.asset.builders import map
 
     output = map.map.build('''<?xml version="1.0" encoding="UTF-8"?>
@@ -63,7 +53,7 @@ def test_map_tiled_layer_reorder(subparser):
     assert output == struct.pack('<4sBHHH8B', b'MTMX', 0, 4, 1, 2, 0, 1, 2, 3, 4, 5, 6, 7)
 
 
-def test_map_empty_tiled_remap_empty(subparser):
+def test_map_empty_tiled_remap_empty():
     from ttblit.asset.builders import map
 
     output = map.map.build('''<?xml version="1.0" encoding="UTF-8"?>

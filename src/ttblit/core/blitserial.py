@@ -9,8 +9,10 @@ from tqdm import tqdm
 
 from ..core.struct import struct_blit_meta_standalone
 
+
 class BlitSerialException(Exception):
     pass
+
 
 class BlitSerialWrongModeException(BlitSerialException):
     pass
@@ -20,7 +22,7 @@ def firmware_command(fn):
     """Check if we are in the firmware before running commands that require it."""
     @functools.wraps(fn)
     def _decorated(self, *args, **kwargs):
-        #if self.status != 'firmware':
+        # if self.status != 'firmware':
         #    # Note: we could instead reset_to_firmware here.
         #    raise BlitSerialWrongModeException("32Blit is not in firmware mode. Please exit game or reset.")
         return fn(self, *args, **kwargs)

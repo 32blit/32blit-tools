@@ -1,10 +1,11 @@
+import functools
 import importlib
-import logging
 import pathlib
 import pkgutil
 import re
 
-from ..core.tool import Tool
+import click
+
 from . import builders
 from .formatter import AssetFormatter
 from .writer import AssetWriter
@@ -85,61 +86,30 @@ class AssetBuilder:
             raise TypeError('Could not find a builder for {path}.')
 
 
-class AssetTool(Tool):
+class AssetTool:
 
-    builder = None
+    _commands = {}
 
-    options = {
-        'input_file': pathlib.Path,
-        'input_type': str,
-        'output_file': pathlib.Path,
-        'output_format': AssetFormatter.parse,
-        'symbol_name': str,
-        'force': bool,
-        'prefix': str,
-        'working_path': pathlib.Path
-    }
+    def __init__(self, builder, help):
+        self.builder = builder
+        self.name = builder.name
+        self.help = help
 
-    def __init__(self, parser=None):
-        Tool.__init__(self, parser)
+    def __call__(self, f):
+        @click.command(self.name, help=self.help)
+        @click.option('--input_file', type=pathlib.Path, required=True, help='Input file')
+        @click.option('--input_type', type=click.Choice(self.builder.typemap.keys(), case_sensitive=False), default=None, help='Input file type')
+        @click.option('--output_file', type=pathlib.Path, default=None, help='Output file')
+        @click.option('--output_format', type=click.Choice(AssetFormatter.names(), case_sensitive=False), default=None, help='Output file format')
+        @click.option('--symbol_name', type=str, default=None, help='Output symbol name')
+        @click.option('--force/--keep', default=False, help='Force file overwriting')
+        @functools.wraps(f)
+        def cmd(input_file, input_type, output_file, output_format, symbol_name, force, **kwargs):
+            aw = AssetWriter()
+            aw.add_asset(symbol_name, f(input_file, input_type, **kwargs))
+            aw.write(output_format, output_file, force, report=False)
 
-        if self.parser is not None:
-            self.parser.add_argument('--input_file', type=pathlib.Path, required=True, help='Input file')
-            if(self.builder and len(self.builder.typemap.keys()) > 1):
-                self.parser.add_argument('--input_type', type=str, default=None, choices=self.builder.typemap.keys(), help='Input file type')
-            self.parser.add_argument('--output_file', type=pathlib.Path, default=None)
-            self.parser.add_argument('--output_format', type=str, default=None, choices=AssetFormatter.names(), help='Output file format')
-            self.parser.add_argument('--symbol_name', type=str, default=None, help='Output symbol name')
-            self.parser.add_argument('--force', action='store_true', help='Force file overwrite')
-
-    def prepare(self, opts):
-        """Imports a dictionary of options to class variables.
-
-        Requires options to already be in their correct types.
-
-        """
-        for option, option_type in self.options.items():
-            default_value = None
-            if type(option_type) is tuple:
-                option_type, default_value = option_type
-            setattr(self, option, opts.get(option, default_value))
-
-        if self.input_type is None:
-            self.input_type = self.builder.guess_subtype(self.input_file)
-            logging.info(f"Guessed type {self.input_type} for {self.input_file}.")
-        elif self.input_type not in self.builder.typemap.keys():
-            raise ValueError(f'Invalid type {self.input_type}, choices {self.builder.typemap.keys()}')
-
-        self.symbol_name = make_symbol_name(
-            base=self.symbol_name, working_path=self.working_path, input_file=self.input_file,
-            input_type=self.builder.name, input_subtype=self.input_type, prefix=self.prefix
-        )
-
-    def run(self, args):
-        self.prepare(vars(args))
-        aw = AssetWriter()
-        aw.add_asset(self.symbol_name, self.to_binary())
-        aw.write(self.output_format, self.output_file, self.force, report=False)
+        self._commands[self.name] = cmd
 
 
 # Load all the implementations dynamically.

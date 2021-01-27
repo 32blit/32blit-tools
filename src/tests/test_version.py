@@ -1,14 +1,10 @@
-def test_version(parsers, capsys):
-    from ttblit.tool import version
-    from ttblit import __version__
+import pytest
 
-    parser, subparser = parsers
 
-    version = version.Version(subparser)
+def test_version(capsys):
+    from ttblit import main, __version__
 
-    args = parser.parse_args([
-        'version'])
-
-    version.run(args)
+    with pytest.raises(SystemExit):
+        main(['version'])
 
     assert capsys.readouterr().out == f'{__version__}\n'
