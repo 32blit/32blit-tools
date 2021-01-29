@@ -1,5 +1,6 @@
 import functools
 import logging
+import pathlib
 import struct
 import time
 
@@ -92,21 +93,20 @@ class BlitSerial(serial.Serial):
             self.reset(timeout)
 
     @firmware_command
-    def send_file(self, file, dest, directory='/'):
+    def send_file(self, file, drive, directory=pathlib.PurePosixPath('/')):
         sent_byte_count = 0
         chunk_size = 64
         file_name = file.name
         file_size = file.stat().st_size
 
-        if dest == 'sd':
-            if not directory.endswith('/'):
-                directory = f'{directory}/'
-
+        if drive == 'sd':
             logging.info(f'Saving {file} ({file_size} bytes) as {file_name} in {directory}')
-            command = f'32BLSAVE{directory}{file_name}\x00{file_size}\x00'
-        elif dest == 'flash':
+            command = f'32BLSAVE{directory}/{file_name}\x00{file_size}\x00'
+        elif drive == 'flash':
             logging.info(f'Flashing {file} ({file_size} bytes)')
             command = f'32BLPROG{file_name}\x00{file_size}\x00'
+        else:
+            raise TypeError(f'Unknown destination {drive}.')
 
         self.reset_output_buffer()
         self.write(command.encode('ascii'))
