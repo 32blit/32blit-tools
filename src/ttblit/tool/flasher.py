@@ -11,16 +11,22 @@ block_size = 64 * 1024
 
 
 @click.group('flash', help='Flash a binary or save games/files to 32Blit')
-def flash_cli():
-    pass
+@click.option('ports', '--port', multiple=True, help='Serial port')
+@click.pass_context
+def flash_cli(ctx, ports):
+    print(ports)
+    ctx.obj = ports
 
 
 def serial_command(fn):
     """Set up and tear down serial connections."""
 
     @click.option('ports', '--port', multiple=True, help='Serial port')
+    @click.pass_context
     @functools.wraps(fn)
-    def _decorated(ports, **kwargs):
+    def _decorated(ctx, ports, **kwargs):
+        if ctx.obj:
+            ports = ctx.obj + ports
         if not ports:
             ports = BlitSerial.find_comport()
 
