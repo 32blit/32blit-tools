@@ -71,10 +71,10 @@ class CMake(YamlLoader):
                 logging.warning(f'Unable to guess type of {target}, assuming raw/binary')
                 output_formatter = AssetFormatter.parse('raw_binary')
 
-            if output_formatter.components is None:
-                all_outputs.append(self.destination_path / target.name)
-            else:
-                for suffix in output_formatter.components:
+            for suffix in output_formatter.components:
+                if suffix is None:
+                    all_outputs.append(self.destination_path / target.name)
+                else:
                     all_outputs.append(self.destination_path / target.with_suffix(f'.{suffix}').name)
 
             # Strip high-level options from the dict
