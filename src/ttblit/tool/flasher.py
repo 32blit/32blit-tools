@@ -27,7 +27,7 @@ def serial_command(fn):
     def _decorated(ctx, ports, **kwargs):
         if ctx.obj:
             ports = ctx.obj + ports
-        if not ports:
+        if not ports or ports[0].lower() == 'auto':
             ports = BlitSerial.find_comport()
 
         for port in ports:
