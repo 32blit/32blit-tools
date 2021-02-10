@@ -118,6 +118,13 @@ Supported formats:
 
 # Changelog
 
+0.6.0
+-----
+
+* Significant code refactor and fixes by @Ali1234
+* Tools have been ported to Click
+* New `32blit install` command that installs files/blits intelligently
+
 0.5.0
 -----
 
