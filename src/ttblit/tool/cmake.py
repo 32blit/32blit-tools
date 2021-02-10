@@ -2,33 +2,25 @@ import logging
 import pathlib
 import textwrap
 
+import click
+
 from ..asset.formatter import AssetFormatter
-from ..core.tool import Tool
+from ..core.yamlloader import YamlLoader
 
 
-class CMake(Tool):
-    command = 'cmake'
-    help = 'Generate CMake configuration for the asset packer'
+class CMake(YamlLoader):
 
-    def __init__(self, parser):
-        Tool.__init__(self, parser)
-        self.parser.add_argument('--config', type=pathlib.Path, help='Asset config file')
-        self.parser.add_argument('--cmake', type=pathlib.Path, help='Output CMake file', required=True)
-        self.parser.add_argument('--output', type=pathlib.Path, help='Name for output file(s) or root path when using --config')
-
-        self.config = {}
-
-    def run(self, args):
-        self.setup_for_config(args.config, args.output)
+    def run(self, config, cmake, output):
+        self.setup_for_config(config, output)
 
         if 'title' in self.config and 'description' in self.config:
             logging.info('Detected metadata config')
-            self.run_for_metadata_config(args)
+            self.run_for_metadata_config(cmake)
         else:
             logging.info('Detected asset config')
-            self.run_for_asset_config(args)
+            self.run_for_asset_config(cmake)
 
-    def run_for_metadata_config(self, args):
+    def run_for_metadata_config(self, cmake):
         all_inputs = []
 
         if 'splash' in self.config:
@@ -63,9 +55,9 @@ class CMake(Tool):
             config=self.config,
         )
 
-        args.cmake.write_text(result)
+        cmake.write_text(result)
 
-    def run_for_asset_config(self, args):
+    def run_for_asset_config(self, cmake):
         all_inputs = []
         all_outputs = []
 
@@ -79,10 +71,10 @@ class CMake(Tool):
                 logging.warning(f'Unable to guess type of {target}, assuming raw/binary')
                 output_formatter = AssetFormatter.parse('raw_binary')
 
-            if output_formatter.components is None:
-                all_outputs.append(self.destination_path / target.name)
-            else:
-                for suffix in output_formatter.components:
+            for suffix in output_formatter.components:
+                if suffix is None:
+                    all_outputs.append(self.destination_path / target.name)
+                else:
                     all_outputs.append(self.destination_path / target.with_suffix(f'.{suffix}').name)
 
             # Strip high-level options from the dict
@@ -137,4 +129,12 @@ class CMake(Tool):
             outputs=all_outputs,
         )
 
-        args.cmake.write_text(result)
+        cmake.write_text(result)
+
+
+@click.command('cmake', help='Generate CMake configuration for the asset packer')
+@click.option('--config', type=pathlib.Path, help='Asset config file')
+@click.option('--cmake', type=pathlib.Path, help='Output CMake file', required=True)
+@click.option('--output', type=pathlib.Path, help='Name for output file(s) or root path when using --config')
+def cmake_cli(config, cmake, output):
+    CMake().run(config, cmake, output)

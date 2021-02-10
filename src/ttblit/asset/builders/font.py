@@ -1,159 +1,158 @@
 import io
 import struct
 
+import click
 import freetype
 from PIL import Image
 
-from ..builder import AssetBuilder
+from ..builder import AssetBuilder, AssetTool
 
-
-class FontAsset(AssetBuilder):
-    command = 'font'
-    help = 'Convert fonts for 32Blit'
-    types = ['image', 'font']
-    typemap = {
-        'image': ('.png', '.gif'),
-        'font': ('.ttf')  # possibly other freetype supported formats...
+font_typemap = {
+    'image': {
+        '.png': False,
+        '.gif': False,
+    },
+    'font': {
+        # possibly other freetype supported formats...
+        '.ttf': True,
     }
+}
 
-    def __init__(self, parser=None):
-        self.options.update({
-            'height': (int, 0),
-            'horizontal_spacing': (int, 1),
-            'vertical_spacing': (int, 1),
-            'space_width': (int, 3)
-        })
 
-        AssetBuilder.__init__(self, parser)
+def process_image_font(data, num_chars, height, horizontal_spacing, space_width):
+    # Since we already have bytes, we need to pass PIL an io.BytesIO object
+    image = Image.open(io.BytesIO(data)).convert('1')
+    w, h = image.size
 
-        self.height = 0
-        self.horizontal_spacing = 1
-        self.vertical_spacing = 1
-        self.space_width = 3
-        self.base_char = ord(' ')
-        self.num_chars = 96
+    if height != 0 and height != h:
+        raise TypeError("Specified height does not match image height")
 
-        if self.parser is not None:
-            self.parser.add_argument('--height', type=int, default=0, help='Font height (calculated from image if not specified)')
-            self.parser.add_argument('--horizontal-spacing', type=int, default=1, help='Additional space between characters for variable-width mode')
-            self.parser.add_argument('--vertical-spacing', type=int, default=1, help='Space between lines')
-            self.parser.add_argument('--space-width', type=int, default=1, help='Width of the space character')
+    char_width = w // num_chars
+    char_height = h
 
-    def process_image_font(self, input_data):
-        # Since we already have bytes, we need to pass PIL an io.BytesIO object
-        image = Image.open(io.BytesIO(input_data)).convert('1')
-        w, h = image.size
+    font_data = []
+    font_w = []  # per character width for variable-width mode
 
-        if self.height != 0 and self.height != h:
-            raise TypeError("Specified height does not match image height")
+    for c in range(0, num_chars):
+        char_w = 0
 
-        char_width = w // self.num_chars
-        char_height = h
+        for x in range(0, char_width):
+            byte = 0
 
-        font_data = []
-        font_w = []  # per character width for variable-width mode
+            for y in range(0, h):
+                bit = y % 8
 
-        for c in range(0, self.num_chars):
-            char_w = 0
+                # next byte
+                if bit == 0 and y > 0:
+                    font_data.append(byte)
+                    byte = 0
 
-            for x in range(0, char_width):
-                byte = 0
+                if image.getpixel((x + c * char_width, y)) != 0:
+                    byte |= 1 << bit
+                    if x + 1 > char_w:
+                        char_w = x + 1
 
-                for y in range(0, h):
-                    bit = y % 8
+            font_data.append(byte)
 
-                    # next byte
-                    if bit == 0 and y > 0:
-                        font_data.append(byte)
-                        byte = 0
+        if c == 0:  # space
+            font_w.append(space_width)
+        else:
+            font_w.append(char_w + horizontal_spacing)
 
-                    if image.getpixel((x + c * char_width, y)) != 0:
-                        byte |= 1 << bit
-                        if x + 1 > char_w:
-                            char_w = x + 1
+    return font_data, font_w, char_width, char_height
 
-                font_data.append(byte)
 
-            if c == 0:  # space
-                font_w.append(self.space_width)
-            else:
-                font_w.append(char_w + self.horizontal_spacing)
+def process_ft_font(data, num_chars, base_char, height):
+    if height == 0:
+        raise TypeError("Height must be specified for font files")
 
-        return font_data, font_w, char_width, char_height
+    face = freetype.Face(io.BytesIO(data))
 
-    def process_ft_font(self, input_data):
-        if self.height == 0:
-            raise TypeError("Height must be specified for font files")
+    # request height
+    face.set_pixel_sizes(0, height)
 
-        face = freetype.Face(io.BytesIO(input_data))
+    char_width = 0
+    char_height = 0
+    min_y = height
+    font_w = []
 
-        # request height
-        face.set_pixel_sizes(0, self.height)
+    # measure the actual size of the characters (may not match requested)
+    for c in range(0, num_chars):
+        face.load_char(c + base_char, freetype.FT_LOAD_RENDER | freetype.FT_LOAD_TARGET_MONO)
 
-        char_width = 0
-        char_height = 0
-        min_y = self.height
-        font_w = []
+        font_w.append(face.glyph.advance.x >> 6)
 
-        # measure the actual size of the characters (may not match requested)
-        for c in range(0, self.num_chars):
-            face.load_char(c + self.base_char, freetype.FT_LOAD_RENDER | freetype.FT_LOAD_TARGET_MONO)
+        if face.glyph.bitmap.width + face.glyph.bitmap_left > char_width:
+            char_width = face.glyph.bitmap.width + face.glyph.bitmap_left
 
-            font_w.append(face.glyph.advance.x >> 6)
+        if (height - face.glyph.bitmap_top) + face.glyph.bitmap.rows > char_height:
+            char_height = height - face.glyph.bitmap_top + face.glyph.bitmap.rows
 
-            if face.glyph.bitmap.width + face.glyph.bitmap_left > char_width:
-                char_width = face.glyph.bitmap.width + face.glyph.bitmap_left
+        if height - face.glyph.bitmap_top < min_y:
+            min_y = height - face.glyph.bitmap_top
 
-            if (self.height - face.glyph.bitmap_top) + face.glyph.bitmap.rows > char_height:
-                char_height = self.height - face.glyph.bitmap_top + face.glyph.bitmap.rows
+    char_height -= min_y  # trim empty space at the top
 
-            if self.height - face.glyph.bitmap_top < min_y:
-                min_y = self.height - face.glyph.bitmap_top
+    font_data = []
 
-        char_height -= min_y  # trim empty space at the top
+    # now do the conversion
+    for c in range(0, num_chars):
+        face.load_char(c + base_char, freetype.FT_LOAD_RENDER | freetype.FT_LOAD_TARGET_MONO)
 
-        font_data = []
+        x_off = face.glyph.bitmap_left
+        y_off = height - face.glyph.bitmap_top - min_y
 
-        # now do the conversion
-        for c in range(0, self.num_chars):
-            face.load_char(c + self.base_char, freetype.FT_LOAD_RENDER | freetype.FT_LOAD_TARGET_MONO)
+        for x in range(0, char_width):
+            byte = 0
 
-            x_off = face.glyph.bitmap_left
-            y_off = self.height - face.glyph.bitmap_top - min_y
+            for y in range(0, char_height):
+                bit = y % 8
 
-            for x in range(0, char_width):
-                byte = 0
+                # next byte
+                if bit == 0 and y > 0:
+                    font_data.append(byte)
+                    byte = 0
 
-                for y in range(0, char_height):
-                    bit = y % 8
+                if x < x_off or x - x_off >= face.glyph.bitmap.width or y < y_off or y - y_off >= face.glyph.bitmap.rows:
+                    continue
 
-                    # next byte
-                    if bit == 0 and y > 0:
-                        font_data.append(byte)
-                        byte = 0
+                # freetype monochrome bitmaps are the other way around
+                if face.glyph.bitmap.buffer[(x - x_off) // 8 + (y - y_off) * face.glyph.bitmap.pitch] & (
+                        0x80 >> ((x - x_off) & 7)):
+                    byte |= 1 << bit
 
-                    if x < x_off or x - x_off >= face.glyph.bitmap.width or y < y_off or y - y_off >= face.glyph.bitmap.rows:
-                        continue
+            font_data.append(byte)
 
-                    # freetype monochrome bitmaps are the other way around
-                    if face.glyph.bitmap.buffer[(x - x_off) // 8 + (y - y_off) * face.glyph.bitmap.pitch] & (0x80 >> ((x - x_off) & 7)):
-                        byte |= 1 << bit
+    return font_data, font_w, char_width, char_height
 
-                font_data.append(byte)
 
-        return font_data, font_w, char_width, char_height
+@AssetBuilder(typemap=font_typemap)
+def font(data, subtype, num_chars=96, base_char=ord(' '), height=0, horizontal_spacing=1, vertical_spacing=1, space_width=3):
+    if subtype == 'image':
+        font_data, font_w_data, char_width, char_height = process_image_font(
+            data, num_chars, height, horizontal_spacing, space_width
+        )
+    elif subtype == 'font':
+        font_data, font_w_data, char_width, char_height = process_ft_font(
+            data, num_chars, base_char, height
+        )
+    else:
+        raise TypeError(f'Unknown subtype {subtype} for font.')
 
-    def to_binary(self, input_data):
-        if self.input_type == 'image':
-            font_data, font_w_data, char_width, char_height = self.process_image_font(input_data)
-        elif self.input_type == 'font':
-            font_data, font_w_data, char_width, char_height = self.process_ft_font(input_data)
+    head_data = struct.pack('<BBBB', num_chars, char_width, char_height, vertical_spacing)
 
-        head_data = struct.pack('<BBBB', self.num_chars, char_width, char_height, self.vertical_spacing)
+    data = bytes('FONT', encoding='utf-8')
+    data += head_data
+    data += bytes(font_w_data)
+    data += bytes(font_data)
 
-        data = bytes('FONT', encoding='utf-8')
-        data += head_data
-        data += bytes(font_w_data)
-        data += bytes(font_data)
+    return data
 
-        return data
+
+@AssetTool(font, 'Convert fonts for 32Blit')
+@click.option('--height', type=int, default=0, help='Font height (calculated from image if not specified)')
+@click.option('--horizontal-spacing', type=int, default=1, help='Additional space between characters for variable-width mode')
+@click.option('--vertical-spacing', type=int, default=1, help='Space between lines')
+@click.option('--space-width', type=int, default=3, help='Width of the space character')
+def font_cli(input_file, input_type, **kwargs):
+    return font.from_file(input_file, input_type, **kwargs)

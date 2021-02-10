@@ -50,63 +50,48 @@ def test_cmake_file():
     return temp_cmake
 
 
-def test_cmake_no_args(parsers):
-    from ttblit.tool import cmake
-
-    parser, subparser = parsers
-
-    cmake = cmake.CMake(subparser)
+def test_cmake_no_args():
+    from ttblit import main
 
     with pytest.raises(SystemExit):
-        parser.parse_args(['cmake'])
+        main(['cmake'])
 
 
-def test_cmake_asset(parsers, test_asset_config_file, test_cmake_file):
-    from ttblit.tool import cmake
+def test_cmake_asset(test_asset_config_file, test_cmake_file):
+    from ttblit import main
 
-    parser, subparser = parsers
-
-    cmake = cmake.CMake(subparser)
-
-    args = parser.parse_args([
-        'cmake',
-        '--config', test_asset_config_file.name,
-        '--cmake', test_cmake_file.name])
-
-    cmake.run(args)
+    with pytest.raises(SystemExit):
+        main([
+            'cmake',
+            '--config', test_asset_config_file.name,
+            '--cmake', test_cmake_file.name
+        ])
 
 
-def test_cmake(parsers, test_metadata_file, test_cmake_file):
-    from ttblit.tool import cmake
+def test_cmake(test_metadata_file, test_cmake_file):
+    from ttblit import main
 
     test_metadata_file, test_metadata_splash_png = test_metadata_file
-    parser, subparser = parsers
 
-    cmake = cmake.CMake(subparser)
-
-    args = parser.parse_args([
-        'cmake',
-        '--config', test_metadata_file.name,
-        '--cmake', test_cmake_file.name])
-
-    cmake.run(args)
+    with pytest.raises(SystemExit):
+        main([
+            'cmake',
+            '--config', test_metadata_file.name,
+            '--cmake', test_cmake_file.name
+        ])
 
     assert open(test_cmake_file.name).read().startswith('# Auto Generated File - DO NOT EDIT!')
 
 
-def test_cmake_no_depends(parsers, test_empty_metadata_file, test_cmake_file):
-    from ttblit.tool import cmake
+def test_cmake_no_depends(test_empty_metadata_file, test_cmake_file):
+    from ttblit import main
 
-    parser, subparser = parsers
-
-    cmake = cmake.CMake(subparser)
-
-    args = parser.parse_args([
-        'cmake',
-        '--config', test_empty_metadata_file.name,
-        '--cmake', test_cmake_file.name])
-
-    cmake.run(args)
+    with pytest.raises(SystemExit):
+        main([
+            'cmake',
+            '--config', test_empty_metadata_file.name,
+            '--cmake', test_cmake_file.name
+        ])
 
     assert open(test_cmake_file.name).read().replace('    ', '') == '''# Auto Generated File - DO NOT EDIT!
 set(METADATA_DEPENDS
@@ -119,19 +104,14 @@ set(METADATA_VERSION "v1.0.0")
 '''
 
 
-def test_cmake_multiple_outputs(parsers, test_resources, test_cmake_file):
-    from ttblit.tool import cmake
+def test_cmake_multiple_outputs(test_resources, test_cmake_file):
+    from ttblit import main
 
-    parser, subparser = parsers
-
-    cmake = cmake.CMake(subparser)
-
-    args = parser.parse_args([
-        'cmake',
-        '--config', str(test_resources / 'assets_multi_out.yml'),
-        '--cmake', test_cmake_file.name
-    ])
-
-    cmake.run(args)
+    with pytest.raises(SystemExit):
+        main([
+            'cmake',
+            '--config', str(test_resources / 'assets_multi_out.yml'),
+            '--cmake', test_cmake_file.name
+        ])
 
     assert open(test_cmake_file.name).read().startswith('# Auto Generated File - DO NOT EDIT!')

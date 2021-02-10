@@ -25,79 +25,57 @@ def test_invalid_binary_file():
     return temp_bin
 
 
-def test_metadata_no_args(parsers):
-    from ttblit.tool import metadata
-
-    parser, subparser = parsers
-
-    metadata = metadata.Metadata(subparser)
+def test_metadata_no_args():
+    from ttblit import main
 
     with pytest.raises(SystemExit):
-        args = parser.parse_args(['metadata'])
-        metadata.run(args)
+        main(['metadata'])
 
 
-def test_metadata(parsers, test_resources, test_binary_file):
-    from ttblit.tool import metadata
+def test_metadata(test_resources, test_binary_file):
+    from ttblit import main
 
-    parser, subparser = parsers
-
-    metadata = metadata.Metadata(subparser)
-
-    args = parser.parse_args([
-        'metadata',
-        '--config', str(test_resources / 'metadata-basic.yml'),
-        '--file', test_binary_file.name])
-
-    metadata.run(args)
+    with pytest.raises(SystemExit):
+        main([
+            'metadata',
+            '--config', str(test_resources / 'metadata-basic.yml'),
+            '--file', test_binary_file.name
+        ])
 
 
-def test_metadata_file_associations(parsers, test_resources, test_binary_file):
-    from ttblit.tool import metadata
+def test_metadata_file_associations(test_resources, test_binary_file):
+    from ttblit import main
 
-    parser, subparser = parsers
-
-    metadata = metadata.Metadata(subparser)
-
-    args = parser.parse_args([
-        'metadata',
-        '--config', str(test_resources / 'metadata-file-associations.yml'),
-        '--file', test_binary_file.name])
-
-    metadata.run(args)
+    with pytest.raises(SystemExit):
+        main([
+            'metadata',
+            '--config', str(test_resources / 'metadata-file-associations.yml'),
+            '--file', test_binary_file.name
+        ])
 
 
-def test_metadata_icns(parsers, test_resources, test_binary_file, test_icns_file):
-    from ttblit.tool import metadata
+def test_metadata_icns(test_resources, test_binary_file, test_icns_file):
+    from ttblit import main
 
-    parser, subparser = parsers
-
-    metadata = metadata.Metadata(subparser)
-
-    args = parser.parse_args([
-        'metadata',
-        '--config', str(test_resources / 'metadata-basic.yml'),
-        '--file', test_binary_file.name,
-        '--icns', test_icns_file.name,
-        '--force'])
-
-    metadata.run(args)
+    with pytest.raises(SystemExit):
+        main([
+            'metadata',
+            '--config', str(test_resources / 'metadata-basic.yml'),
+            '--file', test_binary_file.name,
+            '--icns', test_icns_file.name,
+            '--force'
+        ])
 
     test_icns_file.flush()
     assert test_icns_file.read()[:4] == b'icns'
 
 
-def test_metadata_invalid_bin(parsers, test_resources, test_invalid_binary_file):
-    from ttblit.tool import metadata
-
-    parser, subparser = parsers
-
-    metadata = metadata.Metadata(subparser)
-
-    args = parser.parse_args([
-        'metadata',
-        '--config', str(test_resources / 'metadata-basic.yml'),
-        '--file', test_invalid_binary_file.name])
+def test_metadata_invalid_bin(test_resources, test_invalid_binary_file):
+    from ttblit import main
 
     with pytest.raises(ValueError):
-        metadata.run(args)
+        main([
+            'metadata',
+            '--config', str(test_resources / 'metadata-basic.yml'),
+            '--file', test_invalid_binary_file.name
+        ])

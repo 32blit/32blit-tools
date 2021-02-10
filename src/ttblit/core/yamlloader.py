@@ -4,13 +4,7 @@ import pathlib
 import yaml
 
 
-class Tool():
-    options = {}
-
-    def __init__(self, parser=None):
-        self.parser = None
-        if parser is not None:
-            self.parser = parser.add_parser(self.command, help=self.help)
+class YamlLoader():
 
     def setup_for_config(self, config_file, output_path, files=None):
         self.working_path = pathlib.Path('.')
@@ -29,6 +23,3 @@ class Tool():
             self.destination_path = output_path
         else:
             self.destination_path = self.working_path
-
-    def run(self, args):
-        raise NotImplementedError

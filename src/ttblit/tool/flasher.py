@@ -1,217 +1,123 @@
+import functools
 import logging
 import pathlib
-import struct
-import time
+import textwrap
 
-import serial.tools.list_ports
-from construct.core import ConstructError
-from serial.serialutil import SerialException
-from tqdm import tqdm
+import click
 
-from ..core.struct import struct_blit_meta_standalone
-from ..core.tool import Tool
+from ..core.blitserial import BlitSerial
+
+block_size = 64 * 1024
 
 
-class Flasher(Tool):
-    command = 'flash'
-    help = 'Flash a binary or save games/files to 32Blit'
+@click.group('flash', help='Flash a binary or save games/files to 32Blit')
+@click.option('ports', '--port', multiple=True, help='Serial port')
+@click.pass_context
+def flash_cli(ctx, ports):
+    print(ports)
+    ctx.obj = ports
 
-    def __init__(self, subparser):
-        Tool.__init__(self, subparser)
 
-        self.parser.add_argument('--port', help='Serial port', type=self.validate_comport)
+def serial_command(fn):
+    """Set up and tear down serial connections."""
 
-        operations = self.parser.add_subparsers(dest='operation', help='Flasher operations')
+    @click.option('ports', '--port', multiple=True, help='Serial port')
+    @click.pass_context
+    @functools.wraps(fn)
+    def _decorated(ctx, ports, **kwargs):
+        if ctx.obj:
+            ports = ctx.obj + ports
+        if not ports or ports[0].lower() == 'auto':
+            ports = BlitSerial.find_comport()
 
-        self.op_save = operations.add_parser('save', help='Save a game/file to your 32Blit')
-        self.op_save.add_argument('--file', type=pathlib.Path, required=True, help='File to save')
-        self.op_save.add_argument('--directory', type=str, default='/', help='Target directory')
+        for port in ports:
+            with BlitSerial(port) as sp:
+                fn(sp, **kwargs)
 
-        self.op_flash = operations.add_parser('flash', help='Flash a game to your 32Blit')
-        self.op_flash.add_argument('--file', type=pathlib.Path, required=True, help='File to flash')
+    return _decorated
 
-        self.op_delete = operations.add_parser('delete', help='Delete a game/file from your 32Blit')
-        group = self.op_delete.add_mutually_exclusive_group(required=True)
-        group.add_argument('--offset', type=int, help='Flash offset of game to delete')
-        group.add_argument('--block', type=int, help='Flash block of game to delete')
 
-        self.op_list = operations.add_parser('list', help='List games/files on your 32Blit')
-        self.op_debug = operations.add_parser('debug', help='Enter serial debug mode')
-        self.op_reset = operations.add_parser('reset', help='Reset your 32Blit')
-        self.op_info = operations.add_parser('info', help='Get 32Blit run status')
+@flash_cli.command(help="Deprecated: use '32blit install' instead. Copy a file to SD card")
+@serial_command
+@click.option('--file', type=pathlib.Path, required=True, help='File to save')
+@click.option('--directory', type=str, default='/', help='Target directory')
+def save(blitserial, file, directory):
+    blitserial.reset_to_firmware()
+    blitserial.send_file(file, 'sd', directory=directory)
 
-    def find_comport(self):
-        ret = []
-        for comport in serial.tools.list_ports.comports():
-            if comport.vid == 0x0483 and comport.pid == 0x5740:
-                logging.info(f'Found 32Blit on {comport.device}')
-                ret.append(comport.device)
 
-        if ret:
-            return ret
+@flash_cli.command(help="Deprecated: use '32blit install' instead. Install a .blit to flash")
+@serial_command
+@click.option('--file', type=pathlib.Path, required=True, help='File to save')
+def flash(blitserial, file):
+    blitserial.reset_to_firmware()
+    blitserial.send_file(file, 'flash')
 
-        raise RuntimeError('Unable to find 32Blit')
 
-    def validate_comport(self, device):
-        if device.lower() == 'auto':
-            return self.find_comport()[:1]
-        if device.lower() == 'all':
-            return self.find_comport()
+# TODO: options should be mutually exclusive
+@flash_cli.command(help="Delete a .blit from flash by block index or offset")
+@serial_command
+@click.option('--offset', type=int, help='Flash offset of game to delete')
+@click.option('--block', type=int, help='Flash block of game to delete')
+def delete(blitserial, offset, block):
+    blitserial.reset_to_firmware()
+    if offset is None:
+        offset = block * block_size
+    blitserial.erase(offset)
 
-        for comport in serial.tools.list_ports.comports():
-            if comport.device == device:
-                if comport.vid == 0x0483 and comport.pid == 0x5740:
-                    logging.info(f'Found 32Blit on {comport.device}')
-                    return [device]
-                # if the user asked for a port with no vid/pid assume they know what they're doing
-                elif comport.vid is None and comport.pid is None:
-                    logging.info(f'Using unidentified port {comport.device}')
-                    return [device]
-        raise RuntimeError(f'Unable to find 32Blit on {device}')
 
-    def run(self, args):
-        if args.operation is not None:
-            dispatch = f'run_{args.operation}'
-            getattr(self, dispatch)(vars(args))
+@flash_cli.command(help="List .blits installed in flash memory")
+@serial_command
+def list(blitserial):
+    blitserial.reset_to_firmware()
+    for meta, offset, size in blitserial.list():
+        offset_blocks = offset // block_size
+        size_blocks = (size - 1) // block_size + 1
 
-    def serial_command(fn):
-        """Set up and tear down serial connections."""
-        def _decorated(self, args):
-            ports = args.get('port', None)
-            if ports is None:
-                ports = self.find_comport()
+        print(f"Game at block {offset_blocks}")
+        print(f"Size: {size_blocks:3d} blocks ({size / 1024:.1f}kB)")
 
-            for port in ports:
-                sp = serial.Serial(port, timeout=5)
-                fn(self, sp, args)
-                sp.close()
-        return _decorated
+        if meta is not None:
+            print(textwrap.dedent(f"""\
+                Title:       {meta.data.title}
+                Description: {meta.data.description}
+                Version:     {meta.data.version}
+                Author:      {meta.data.author}
+            """))
 
-    def _get_status(self, serial):
-        serial.write(b'32BLINFO\x00')
-        response = serial.read(8)
-        if response == b'':
-            raise RuntimeError('Timeout waiting for 32Blit status.')
-        return 'game' if response == b'32BL_EXT' else 'firmware'
 
-    def _reset(self, serial, timeout=5.0):
-        serial.write(b'32BL_RST\x00')
-        serial.flush()
-        serial.close()
-        time.sleep(0.5)
-        t_start = time.time()
-        while time.time() - t_start < timeout:
-            try:
-                serial.open()
-                return
-            except SerialException:
-                time.sleep(0.1)
-        raise RuntimeError(f"Failed to connect to 32Blit on {serial.port} after reset")
+@flash_cli.command(help="Not implemented")
+@serial_command
+def debug(blitserial):
+    pass
 
-    def _reset_to_firmware(self, serial):
-        if self._get_status(serial) == 'game':
-            self._reset(serial)
 
-    def _send_file(self, serial, file, dest, directory='/'):
-        sent_byte_count = 0
-        chunk_size = 64
-        file_name = file.name
-        file_size = file.stat().st_size
+@flash_cli.command(help="Reset 32Blit")
+@serial_command
+def reset(blitserial):
+    logging.info('Resetting your 32Blit...')
+    blitserial.reset()
 
-        if dest == 'sd':
-            if not directory.endswith('/'):
-                directory = f'{directory}/'
 
-            logging.info(f'Saving {file} ({file_size} bytes) as {file_name} in {directory}')
-            command = f'32BLSAVE{directory}{file_name}\x00{file_size}\x00'
-        elif dest == 'flash':
-            logging.info(f'Flashing {file} ({file_size} bytes)')
-            command = f'32BLPROG{file_name}\x00{file_size}\x00'
+@flash_cli.command(help="Get current runtime status of 32Blit")
+@serial_command
+def info(blitserial):
+    logging.info('Getting 32Blit run status...')
+    print(f'Running: {blitserial.status}')
 
-        serial.reset_output_buffer()
-        serial.write(command.encode('ascii'))
 
-        with open(file, 'rb') as file:
-            progress = tqdm(total=file_size, desc="Flashing...", unit_scale=True, unit_divisor=1024, unit="B", ncols=70, dynamic_ncols=True)
+@click.command('install', help="Install files to 32Blit")
+@serial_command
+@click.argument("source", type=pathlib.Path, required=True)
+@click.argument("destination", type=pathlib.PurePosixPath, default=None, required=False)
+def install_cli(blitserial, source, destination):
+    if destination is None and source.suffix.lower() == '.blit':
+        drive = 'flash'
+    else:
+        drive = 'sd'
+        if destination is None:
+            destination = pathlib.PurePosixPath('/')
+        elif not destination.is_absolute():
+            destination = pathlib.PurePosixPath('/') / destination
 
-            while sent_byte_count < file_size:
-                data = file.read(chunk_size)
-                serial.write(data)
-                serial.flush()
-                sent_byte_count += chunk_size
-                progress.update(chunk_size)
-
-    @serial_command
-    def run_save(self, serial, args):
-        self._reset_to_firmware(serial)
-        self._send_file(serial, args.get('file'), 'sd', directory=args.get('directory'))
-
-    @serial_command
-    def run_flash(self, serial, args):
-        self._reset_to_firmware(serial)
-        self._send_file(serial, args.get('file'), 'flash')
-
-    @serial_command
-    def run_delete(self, serial, args):
-        self._reset_to_firmware(serial)
-        serial.write(b'32BLERSE\x00')
-
-        offset = args.get('offset')
-        if offset is None:
-            offset = args.get('block') * 64 * 1024
-
-        serial.write(struct.pack("<I", offset))
-
-    @serial_command
-    def run_list(self, serial, args):
-        self._reset_to_firmware(serial)
-
-        serial.write(b'32BL__LS\x00')
-        offset_str = serial.read(4)
-
-        while offset_str != '' and offset_str != b'\xff\xff\xff\xff':
-            offset, = struct.unpack('<I', offset_str)
-
-            size, = struct.unpack('<I', serial.read(4))
-            meta_head = serial.read(10)
-            meta_size, = struct.unpack('<H', meta_head[8:])
-
-            meta = None
-            if meta_size:
-                size += meta_size + 10
-                try:
-                    meta = struct_blit_meta_standalone.parse(meta_head + serial.read(meta_size))
-                except ConstructError:
-                    pass
-
-            block_size = 64 * 1024
-
-            offset_blocks = offset // block_size
-            size_blocks = (size - 1) // block_size + 1
-
-            print(f"""Game at block {offset_blocks}
-    Size:        {size_blocks} blocks ({size / 1024:.1f}kB)""")
-
-            if meta is not None:
-                print(f"""    Title:       {meta.data.title}
-    Description: {meta.data.description}
-    Version:     {meta.data.version}
-    Author:      {meta.data.author}
-""")
-
-            offset_str = serial.read(4)
-
-    @serial_command
-    def run_debug(self, serial, args):
-        pass
-
-    @serial_command
-    def run_reset(self, serial, args):
-        logging.info('Resetting your 32Blit...')
-        self._reset(serial)
-
-    @serial_command
-    def run_info(self, serial, args):
-        logging.info('Getting 32Blit run status...')
-        status = self._get_status(serial)
-        print(f'Running: {status}')
+    blitserial.send_file(source, drive, destination)

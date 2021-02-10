@@ -10,53 +10,38 @@ def output_dir():
     return temp_output.name
 
 
-def test_packer_cli_no_args(parsers):
-    from ttblit.tool import packer
+def test_packer_cli_no_args():
+    from ttblit import main
 
-    parser, subparser = parsers
-
-    packer = packer.Packer(subparser)
-
-    args = parser.parse_args(['pack'])
-
-    packer.run(args)
+    with pytest.raises(SystemExit):
+        main(['pack'])
 
 
-def test_packer_cli_relative_yml(parsers, test_resources, output_dir):
-    from ttblit.tool import packer
+def test_packer_cli_relative_yml(test_resources, output_dir):
+    from ttblit import main
 
-    parser, subparser = parsers
-
-    packer = packer.Packer(subparser)
-
-    args = parser.parse_args([
-        'pack',
-        '--force',
-        '--config', str(test_resources / 'assets_relative.yml'),
-        '--output', output_dir
-    ])
-
-    packer.run(args)
+    with pytest.raises(SystemExit):
+        main([
+            'pack',
+            '--force',
+            '--config', str(test_resources / 'assets_relative.yml'),
+            '--output', output_dir
+        ])
 
     assert (pathlib.Path(output_dir) / "assets.hpp").exists()
     assert (pathlib.Path(output_dir) / "assets.cpp").exists()
 
 
-def test_packer_cli_wildcard_format(parsers, test_resources, output_dir):
-    from ttblit.tool import packer
+def test_packer_cli_wildcard_format(test_resources, output_dir):
+    from ttblit import main
 
-    parser, subparser = parsers
-
-    packer = packer.Packer(subparser)
-
-    args = parser.parse_args([
-        'pack',
-        '--force',
-        '--config', str(test_resources / 'assets_wildcard_format.yml'),
-        '--output', output_dir
-    ])
-
-    packer.run(args)
+    with pytest.raises(SystemExit):
+        main([
+            'pack',
+            '--force',
+            '--config', str(test_resources / 'assets_wildcard_format.yml'),
+            '--output', output_dir
+        ])
 
     assert (pathlib.Path(output_dir) / "assets.hpp").exists()
     assert (pathlib.Path(output_dir) / "assets.cpp").exists()
@@ -67,21 +52,16 @@ def test_packer_cli_wildcard_format(parsers, test_resources, output_dir):
     assert "asset_map_level_02" in hpp
 
 
-def test_packer_cli_wildcard_default(parsers, test_resources, output_dir):
-    from ttblit.tool import packer
+def test_packer_cli_wildcard_default(test_resources, output_dir):
+    from ttblit import main
 
-    parser, subparser = parsers
-
-    packer = packer.Packer(subparser)
-
-    args = parser.parse_args([
-        'pack',
-        '--force',
-        '--config', str(test_resources / 'assets_wildcard_default.yml'),
-        '--output', output_dir
-    ])
-
-    packer.run(args)
+    with pytest.raises(SystemExit):
+        main([
+            'pack',
+            '--force',
+            '--config', str(test_resources / 'assets_wildcard_default.yml'),
+            '--output', output_dir
+        ])
 
     assert (pathlib.Path(output_dir) / "assets.hpp").exists()
     assert (pathlib.Path(output_dir) / "assets.cpp").exists()
@@ -92,40 +72,31 @@ def test_packer_cli_wildcard_default(parsers, test_resources, output_dir):
     assert "asset_level_02_tmx" in hpp
 
 
-def test_packer_cli_invalid_input(parsers, test_resources, output_dir):
-    from ttblit.tool import packer
+def test_packer_cli_invalid_input(test_resources, output_dir):
+    from ttblit import main
 
-    parser, subparser = parsers
+    with pytest.raises(SystemExit):
+        main([
+            'pack',
+            '--force',
+            '--config', str(test_resources / 'assets_invalid_input.yml'),
+            '--output', output_dir
+        ])
 
-    packer = packer.Packer(subparser)
-
-    args = parser.parse_args([
-        'pack',
-        '--force',
-        '--config', str(test_resources / 'assets_invalid_input.yml'),
-        '--output', output_dir
-    ])
-
-    packer.run(args)
-
-    assert packer.targets[0][1][0].type == 'raw/binary'
+    # TODO: This attribute no longer exists
+    # assert packer.targets[0][1][0].type == 'raw/binary'
 
 
-def test_packer_cli_multiple_outputs(parsers, test_resources, output_dir):
-    from ttblit.tool import packer
+def test_packer_cli_multiple_outputs(test_resources, output_dir):
+    from ttblit import main
 
-    parser, subparser = parsers
-
-    packer = packer.Packer(subparser)
-
-    args = parser.parse_args([
-        'pack',
-        '--force',
-        '--config', str(test_resources / 'assets_multi_out.yml'),
-        '--output', output_dir
-    ])
-
-    packer.run(args)
+    with pytest.raises(SystemExit):
+        main([
+            'pack',
+            '--force',
+            '--config', str(test_resources / 'assets_multi_out.yml'),
+            '--output', output_dir
+        ])
 
     assert (pathlib.Path(output_dir) / "assets.hpp").exists()
     assert (pathlib.Path(output_dir) / "assets.cpp").exists()

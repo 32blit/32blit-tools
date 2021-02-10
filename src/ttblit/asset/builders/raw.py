@@ -1,39 +1,45 @@
-from ..builder import AssetBuilder
+from ..builder import AssetBuilder, AssetTool
 
-
-class RawAsset(AssetBuilder):
-    command = 'raw'
-    help = 'Convert raw/binary or csv data for 32Blit'
-    types = ['binary', 'csv']
-    typemap = {
-        'binary': ('.bin', '.raw'),
-        'csv': ('.csv')
+binary_typemap = {
+    'binary': {
+        '.bin': True,
+        '.raw': True,
+    },
+    'csv': {
+        '.csv': True
     }
+}
 
-    def csv_to_list(self, input_data, base):
-        if type(input_data) == bytes:
-            input_data = input_data.decode('utf-8')
 
-        # Strip leading/trailing whitespace
-        input_data = input_data.strip()
+def csv_to_list(input_data, base):
+    if type(input_data) == bytes:
+        input_data = input_data.decode('utf-8')
 
-        # Replace '1, 2, 3' to '1,2,3', might as well do it here
-        input_data = input_data.replace(' ', '')
+    # Strip leading/trailing whitespace
+    input_data = input_data.strip()
 
-        # Split out into rows on linebreak
-        input_data = input_data.split('\n')
+    # Replace '1, 2, 3' to '1,2,3', might as well do it here
+    input_data = input_data.replace(' ', '')
 
-        # Split every row into columns on the comma
-        input_data = [row.split(',') for row in input_data]
+    # Split out into rows on linebreak
+    input_data = input_data.split('\n')
 
-        # Flatten our rows/cols 2d array into a 1d array of bytes
-        # Might as well do the int conversion here, to save another loop
-        return [int(col, base) for row in input_data for col in row if col != '']
+    # Split every row into columns on the comma
+    input_data = [row.split(',') for row in input_data]
 
-    def csv_to_binary(self, input_data, base):
-        return bytes(self.csv_to_list(input_data, base))
+    # Flatten our rows/cols 2d array into a 1d array of bytes
+    # Might as well do the int conversion here, to save another loop
+    return [int(col, base) for row in input_data for col in row if col != '']
 
-    def to_binary(self, input_data):
-        if self.input_type == 'csv':
-            input_data = bytes(self.csv_to_list(input_data, base=10))
-        return input_data
+
+@AssetBuilder(typemap=binary_typemap)
+def raw(data, subtype):
+    if subtype == 'csv':
+        return bytes(csv_to_list(data, base=10))
+    else:
+        return data
+
+
+@AssetTool(raw, 'Convert raw/binary or csv data for 32Blit')
+def raw_cli(input_file, input_type):
+    return raw.from_file(input_file, input_type)

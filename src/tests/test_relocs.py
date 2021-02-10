@@ -25,17 +25,13 @@ def test_output_file():
     return temp_bin
 
 
-def test_relocs(parsers, test_input_bin, test_input_elf, test_output_file):
-    from ttblit.tool import relocs
+def test_relocs(test_input_bin, test_input_elf, test_output_file):
+    from ttblit import main
 
-    parser, subparser = parsers
-
-    relocs = relocs.Relocs(subparser)
-
-    args = parser.parse_args([
-        'relocs',
-        '--bin-file', test_input_bin.name,
-        '--elf-file', test_input_elf.name,
-        '--output', test_output_file.name])
-
-    relocs.run(args)
+    with pytest.raises(SystemExit):
+        main([
+            'relocs',
+            '--bin-file', test_input_bin.name,
+            '--elf-file', test_input_elf.name,
+            '--output', test_output_file.name
+        ])
