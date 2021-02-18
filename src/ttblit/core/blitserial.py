@@ -148,3 +148,7 @@ class BlitSerial(serial.Serial):
             yield (meta, offset, size)
 
             offset_str = self.read(4)
+
+    @firmware_command
+    def launch(self, filename):
+        self.write(f'32BLLNCH{filename}\x00'.encode('ascii'))

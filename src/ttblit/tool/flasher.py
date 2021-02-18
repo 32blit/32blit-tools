@@ -121,3 +121,10 @@ def install_cli(blitserial, source, destination):
             destination = pathlib.PurePosixPath('/') / destination
 
     blitserial.send_file(source, drive, destination)
+
+
+@click.command('launch', help="Launch a game/file on 32Blit")
+@serial_command
+@click.argument("filename", type=str, required=True)
+def launch_cli(blitserial, filename):
+    blitserial.launch(filename)
