@@ -101,6 +101,8 @@ set(METADATA_TITLE "Rocks & Diamonds")
 set(METADATA_AUTHOR "gadgetoid")
 set(METADATA_DESCRIPTION "A pulse pounding, rock rollin', diamond hunting adventure")
 set(METADATA_VERSION "v1.0.0")
+set(METADATA_URL "")
+set(METADATA_CATEGORY "none")
 '''
 
 
