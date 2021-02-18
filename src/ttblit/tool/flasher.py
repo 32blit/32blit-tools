@@ -110,7 +110,8 @@ def info(blitserial):
 @serial_command
 @click.argument("source", type=pathlib.Path, required=True)
 @click.argument("destination", type=pathlib.PurePosixPath, default=None, required=False)
-def install_cli(blitserial, source, destination):
+@click.option("--launch/--no-launch", default=False)
+def install_cli(blitserial, source, destination, launch):
     if destination is None and source.suffix.lower() == '.blit':
         drive = 'flash'
     else:
@@ -120,7 +121,7 @@ def install_cli(blitserial, source, destination):
         elif not destination.is_absolute():
             destination = pathlib.PurePosixPath('/') / destination
 
-    blitserial.send_file(source, drive, destination)
+    blitserial.send_file(source, drive, destination, launch)
 
 
 @click.command('launch', help="Launch a game/file on 32Blit")

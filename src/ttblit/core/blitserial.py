@@ -93,7 +93,7 @@ class BlitSerial(serial.Serial):
             self.reset(timeout)
 
     @firmware_command
-    def send_file(self, file, drive, directory=pathlib.PurePosixPath('/')):
+    def send_file(self, file, drive, directory=pathlib.PurePosixPath('/'), auto_launch=False):
         sent_byte_count = 0
         chunk_size = 64
         file_name = file.name
@@ -124,6 +124,24 @@ class BlitSerial(serial.Serial):
                 self.flush()
                 sent_byte_count += chunk_size
                 progress.update(chunk_size)
+
+        response = self.read(8)
+
+        if response == b'32BL__OK':
+            # get block for flash
+            if drive == 'flash':
+                block, = struct.unpack('<H', self.read(2))
+
+                # do launch if requested
+                if auto_launch:
+                    self.launch(f'flash:/{block}')
+            elif auto_launch:
+                self.launch(f'{directory}/{file_name}')
+
+            logging.info(f'Wrote {file_name} successfully')
+        else:
+            response += self.read(self.in_waiting)
+            raise RuntimeError(f"Failed to save/flash {file_name}: {response.decode()}")
 
     @firmware_command
     def erase(self, offset):
