@@ -39,6 +39,9 @@ class CMake(YamlLoader):
 
         all_inputs = '\n    '.join(f'"{x}"'.replace('\\', '/') for x in all_inputs)
 
+        url = self.config.get('url', '')
+        category = self.config.get('category', 'none')
+
         result = textwrap.dedent(
             '''\
             # Auto Generated File - DO NOT EDIT!
@@ -49,10 +52,14 @@ class CMake(YamlLoader):
             set(METADATA_AUTHOR "{config[author]}")
             set(METADATA_DESCRIPTION "{config[description]}")
             set(METADATA_VERSION "{config[version]}")
+            set(METADATA_URL "{url}")
+            set(METADATA_CATEGORY "{category}")
             '''
         ).format(
             inputs=all_inputs,
             config=self.config,
+            url=url,
+            category=category,
         )
 
         cmake.write_text(result)
