@@ -51,6 +51,6 @@ def map(data, subtype, empty_tile=0, output_struct=False, tile_size=1):
 @AssetTool(map, 'Convert popular tilemap formats for 32Blit')
 @click.option('--empty-tile', type=int, default=0, help='Remap .tmx empty tiles')
 @click.option('--output-struct', type=bool, default=False, help='Output .tmx as struct with level width/height, etc')
-@click.option('--tile-size', type=bool, default=1, help='Determine how many bytes are used for each tile')
+@click.option('--tile-size', type=int, default=1, help='Determine how many bytes are used for each tile')
 def map_cli(input_file, input_type, **kwargs):
     return map.from_file(input_file, input_type, **kwargs)
