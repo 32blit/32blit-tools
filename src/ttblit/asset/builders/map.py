@@ -13,7 +13,7 @@ map_typemap = {
 }
 
 
-def tiled_to_binary(data, empty_tile, output_struct, tile_size):
+def tiled_to_binary(data, empty_tile, output_struct, more_tiles):
     from xml.etree import ElementTree as ET
     root = ET.fromstring(data)
     layers = root.findall('layer')
@@ -25,7 +25,7 @@ def tiled_to_binary(data, empty_tile, output_struct, tile_size):
         layer = csv_to_list(layer_csv.find('data').text, 10)
         # Shift 1-indexed tiles to 0-indexed, and remap empty tile (0) to specified index
         layer = [empty_tile if i == 0 else i - 1 for i in layer]
-        layer_data.append(b''.join([i.to_bytes(tile_size, 'little') for i in layer]))
+        layer_data.append(b''.join([i.to_bytes(2 if more_tiles else 1, 'little') for i in layer]))
 
     if output_struct:  # Fancy struct
         width = int(root.get("width"))
@@ -33,7 +33,7 @@ def tiled_to_binary(data, empty_tile, output_struct, tile_size):
         layers = len(layer_data)
 
         map_data = bytes('MTMX', encoding='utf-8')
-        map_data += struct.pack('<BBHHH', empty_tile, tile_size, width, height, layers)
+        map_data += struct.pack('<BHHH', empty_tile, width, height, layers)
         map_data += b''.join(layer_data)
 
         return map_data
@@ -43,14 +43,14 @@ def tiled_to_binary(data, empty_tile, output_struct, tile_size):
 
 
 @AssetBuilder(typemap=map_typemap)
-def map(data, subtype, empty_tile=0, output_struct=False, tile_size=1):
+def map(data, subtype, empty_tile=0, output_struct=False, more_tiles=False):
     if subtype == 'tiled':
-        return tiled_to_binary(data, empty_tile, output_struct, tile_size)
+        return tiled_to_binary(data, empty_tile, output_struct, more_tiles)
 
 
 @AssetTool(map, 'Convert popular tilemap formats for 32Blit')
 @click.option('--empty-tile', type=int, default=0, help='Remap .tmx empty tiles')
 @click.option('--output-struct', type=bool, default=False, help='Output .tmx as struct with level width/height, etc')
-@click.option('--tile-size', type=int, default=1, help='Determine how many bytes are used for each tile')
+@click.option('--more-tiles', type=bool, default=1, help='Use 2 bytes per tile instead of 1')
 def map_cli(input_file, input_type, **kwargs):
     return map.from_file(input_file, input_type, **kwargs)
