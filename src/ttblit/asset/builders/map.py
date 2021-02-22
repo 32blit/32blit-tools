@@ -22,17 +22,28 @@ def tiled_to_binary(data, empty_tile, output_struct):
     layer_data = []
     # Sort layers by ID (since .tmx files can have them in arbitrary orders)
     layers.sort(key=lambda l: int(l.get('id')))
+
+    converted_layers = []
+
+    use_16bits = False
+    
     for layer_csv in layers:
         layer = csv_to_list(layer_csv.find('data').text, 10)
         # Shift 1-indexed tiles to 0-indexed, and remap empty tile (0) to specified index
         layer = [empty_tile if i == 0 else i - 1 for i in layer]
 
-        try:
-            layer_data.append(bytes(layer))
-        except ValueError:
+        if max(layer) > 255:
             # Let's assume it's got 2-byte tile indices
             logging.info(f'Using 1 byte per tile failed, using 2 bytes instead')
+            use_16bits = True
+
+        converted_layers.append(layer)
+        
+    for layer in converted_layers:
+        if use_16bits:
             layer_data.append(b''.join([i.to_bytes(2, 'little') for i in layer]))
+        else:
+            layer_data.append(bytes(layer))
 
     if output_struct:  # Fancy struct
         width = int(root.get("width"))
