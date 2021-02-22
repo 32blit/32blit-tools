@@ -1,4 +1,5 @@
 import struct
+import logging
 
 import click
 
