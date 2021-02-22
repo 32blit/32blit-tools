@@ -1,3 +1,11 @@
+0.6.1
+-----
+
+* Ensure the minimum required version of click is installed - thanks @LordEidi
+* Add separate launch command (in SDK v0.1.11 and later) and `--launch` flag to install - thanks @Daft-Freak
+* Support 16bit tile indexes - thanks @ThePythonator
+* Output URL/Category metadata for SDL builds - thanks @Daft-Freak
+
 0.6.0
 -----
 
