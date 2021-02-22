@@ -25,8 +25,7 @@ def tiled_to_binary(data, empty_tile, output_struct, tile_size):
         layer = csv_to_list(layer_csv.find('data').text, 10)
         # Shift 1-indexed tiles to 0-indexed, and remap empty tile (0) to specified index
         layer = [empty_tile if i == 0 else i - 1 for i in layer]
-        # layer_data.append(bytes(layer))
-        layer_data.append([i.to_bytes(tile_size, 'little') for i in layer])
+        layer_data.append(b''.join([i.to_bytes(tile_size, 'little') for i in layer]))
 
     if output_struct:  # Fancy struct
         width = int(root.get("width"))
@@ -34,7 +33,7 @@ def tiled_to_binary(data, empty_tile, output_struct, tile_size):
         layers = len(layer_data)
 
         map_data = bytes('MTMX', encoding='utf-8')
-        map_data += struct.pack('<BHHH', empty_tile, width, height, layers, tile_size)
+        map_data += struct.pack('<BBHHH', empty_tile, tile_size, width, height, layers)
         map_data += b''.join(layer_data)
 
         return map_data
