@@ -1,4 +1,5 @@
 import struct
+import logging
 
 import click
 
@@ -17,29 +18,47 @@ def tiled_to_binary(data, empty_tile, output_struct):
     from xml.etree import ElementTree as ET
     root = ET.fromstring(data)
     layers = root.findall('layer')
-    map_data = root.find('map')
     layer_data = []
     # Sort layers by ID (since .tmx files can have them in arbitrary orders)
     layers.sort(key=lambda l: int(l.get('id')))
+
+    use_16bits = False
+
     for layer_csv in layers:
         layer = csv_to_list(layer_csv.find('data').text, 10)
         # Shift 1-indexed tiles to 0-indexed, and remap empty tile (0) to specified index
         layer = [empty_tile if i == 0 else i - 1 for i in layer]
-        layer_data.append(bytes(layer))
+
+        if max(layer) > 255 and not use_16bits:
+            # Let's assume it's got 2-byte tile indices
+            logging.info('Found a tile index > 255, using 16bit tile sizes!')
+            use_16bits = True
+
+        # Always build up a 1d array of layer data
+        layer_data += layer
+
+    if use_16bits:
+        layer_data = struct.pack(f'<{len(layer_data)}H', *layer_data)
+    else:
+        layer_data = struct.pack(f'<{len(layer_data)}B', *layer_data)
 
     if output_struct:  # Fancy struct
+        layer_count = len(layers)
         width = int(root.get("width"))
         height = int(root.get("height"))
-        layers = len(layer_data)
 
-        map_data = bytes('MTMX', encoding='utf-8')
-        map_data += struct.pack('<BHHH', empty_tile, width, height, layers)
-        map_data += b''.join(layer_data)
+        return struct.pack(
+            '<4sBHHH',
+            bytes('MTMX', encoding='utf-8'),
+            empty_tile,
+            width,
+            height,
+            layer_count
+        ) + layer_data
 
-        return map_data
-
-    else:  # Just return the raw layer data (legacy compatibility mode)
-        return b''.join(layer_data)
+    else:
+        # Just return the raw layer data
+        return layer_data
 
 
 @AssetBuilder(typemap=map_typemap)
