@@ -13,7 +13,7 @@ map_typemap = {
 }
 
 
-def tiled_to_binary(data, empty_tile, output_struct, more_tiles):
+def tiled_to_binary(data, empty_tile, output_struct):
     from xml.etree import ElementTree as ET
     root = ET.fromstring(data)
     layers = root.findall('layer')
@@ -25,7 +25,13 @@ def tiled_to_binary(data, empty_tile, output_struct, more_tiles):
         layer = csv_to_list(layer_csv.find('data').text, 10)
         # Shift 1-indexed tiles to 0-indexed, and remap empty tile (0) to specified index
         layer = [empty_tile if i == 0 else i - 1 for i in layer]
-        layer_data.append(b''.join([i.to_bytes(2 if more_tiles else 1, 'little') for i in layer]))
+
+        try:
+            layer_data.append(bytes(layer))
+        except ValueError:
+            # Let's assume it's got 2-byte tile indices
+            logging.info(f'Using 1 byte per tile failed, using 2 bytes instead')
+            layer_data.append(b''.join([i.to_bytes(2, 'little') for i in layer]))
 
     if output_struct:  # Fancy struct
         width = int(root.get("width"))
@@ -43,14 +49,13 @@ def tiled_to_binary(data, empty_tile, output_struct, more_tiles):
 
 
 @AssetBuilder(typemap=map_typemap)
-def map(data, subtype, empty_tile=0, output_struct=False, more_tiles=False):
+def map(data, subtype, empty_tile=0, output_struct=False):
     if subtype == 'tiled':
-        return tiled_to_binary(data, empty_tile, output_struct, more_tiles)
+        return tiled_to_binary(data, empty_tile, output_struct)
 
 
 @AssetTool(map, 'Convert popular tilemap formats for 32Blit')
 @click.option('--empty-tile', type=int, default=0, help='Remap .tmx empty tiles')
 @click.option('--output-struct', type=bool, default=False, help='Output .tmx as struct with level width/height, etc')
-@click.option('--more-tiles', type=bool, default=False, help='Use 2 bytes per tile instead of 1')
 def map_cli(input_file, input_type, **kwargs):
     return map.from_file(input_file, input_type, **kwargs)
