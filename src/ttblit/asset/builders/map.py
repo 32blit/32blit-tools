@@ -19,16 +19,20 @@ def tiled_to_binary(data, empty_tile, output_struct):
     root = ET.fromstring(data)
     layers = root.findall('layer')
     layer_data = []
+    transform_data = []
     # Sort layers by ID (since .tmx files can have them in arbitrary orders)
     layers.sort(key=lambda l: int(l.get('id')))
 
     use_16bits = False
 
     for layer_csv in layers:
-        layer = csv_to_list(layer_csv.find('data').text, 10)
+        raw_layer = csv_to_list(layer_csv.find('data').text, 10)
         # Shift 1-indexed tiles to 0-indexed, and remap empty tile (0) to specified index
         # The highest three bits store the transform
-        layer = [empty_tile if i == 0 else (i & 0x1FFFFFFF) - 1 for i in layer]
+        layer = [empty_tile if i == 0 else (i & 0x1FFFFFFF) - 1 for i in raw_layer]
+
+        # This matches the flags used by the TileMap class, but doesn't match SpriteTransform...
+        layer_transforms = [i >> 29 for i in raw_layer]
 
         if max(layer) > 255 and not use_16bits:
             # Let's assume it's got 2-byte tile indices
@@ -37,6 +41,7 @@ def tiled_to_binary(data, empty_tile, output_struct):
 
         # Always build up a 1d array of layer data
         layer_data += layer
+        transform_data += layer_transforms
 
     if use_16bits:
         layer_data = struct.pack(f'<{len(layer_data)}H', *layer_data)
@@ -55,11 +60,11 @@ def tiled_to_binary(data, empty_tile, output_struct):
             width,
             height,
             layer_count
-        ) + layer_data
+        ) + layer_data + bytes(transform_data)
 
     else:
         # Just return the raw layer data
-        return layer_data
+        return layer_data + bytes(transform_data)
 
 
 @AssetBuilder(typemap=map_typemap)
