@@ -27,7 +27,8 @@ def tiled_to_binary(data, empty_tile, output_struct):
     for layer_csv in layers:
         layer = csv_to_list(layer_csv.find('data').text, 10)
         # Shift 1-indexed tiles to 0-indexed, and remap empty tile (0) to specified index
-        layer = [empty_tile if i == 0 else i - 1 for i in layer]
+        # The highest three bits store the transform
+        layer = [empty_tile if i == 0 else (i & 0x1FFFFFFF) - 1 for i in layer]
 
         if max(layer) > 255 and not use_16bits:
             # Let's assume it's got 2-byte tile indices
