@@ -38,6 +38,9 @@ class CMake(YamlLoader):
                 all_inputs += list(self.working_path.glob(str(file)))
 
         all_inputs = '\n    '.join(f'"{x}"'.replace('\\', '/') for x in all_inputs)
+        title = self.config['title'].replace('"', r'\"')
+        author = self.config['author'].replace('"', r'\"')
+        description = self.config['description'].replace('"', r'\"')
 
         url = self.config.get('url', '')
         category = self.config.get('category', 'none')
@@ -48,9 +51,9 @@ class CMake(YamlLoader):
             set(METADATA_DEPENDS
                 {inputs}
             )
-            set(METADATA_TITLE "{config[title]}")
-            set(METADATA_AUTHOR "{config[author]}")
-            set(METADATA_DESCRIPTION "{config[description]}")
+            set(METADATA_TITLE "{title}")
+            set(METADATA_AUTHOR "{author}")
+            set(METADATA_DESCRIPTION "{description}")
             set(METADATA_VERSION "{config[version]}")
             set(METADATA_URL "{url}")
             set(METADATA_CATEGORY "{category}")
@@ -58,6 +61,9 @@ class CMake(YamlLoader):
         ).format(
             inputs=all_inputs,
             config=self.config,
+            title=title,
+            author=author,
+            description=description,
             url=url,
             category=category,
         )
