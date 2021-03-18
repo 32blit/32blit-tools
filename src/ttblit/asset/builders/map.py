@@ -1,5 +1,5 @@
-import struct
 import logging
+import struct
 
 import click
 
