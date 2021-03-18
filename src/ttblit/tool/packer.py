@@ -39,9 +39,11 @@ class Packer(YamlLoader):
                     input_files = list(self.working_path.glob(file_glob))
                 else:
                     input_files = [file_glob]
+
+                input_files = [f for f in input_files if f.exists()]
+
                 if len(input_files) == 0:
-                    logging.warning(f'Input file(s) not found {self.working_path / file_glob}')
-                    continue
+                    raise RuntimeError(f'Input file(s) {self.working_path / file_glob} not found for output {output_file}.')
 
                 # Rewrite a single string option to `name: option`
                 # This handles: `inputfile.bin: filename` entries
@@ -57,6 +59,9 @@ class Packer(YamlLoader):
 
                 for file_opts in file_options:
                     asset_sources.append((input_files, file_opts))
+
+            if len(asset_sources) == 0:
+                raise RuntimeError(f'No valid input files found for output {output_file}.')
 
             self.targets.append((
                 output_file,

@@ -87,6 +87,26 @@ def test_packer_cli_invalid_input(test_resources, output_dir):
     # assert packer.targets[0][1][0].type == 'raw/binary'
 
 
+def test_packer_cli_file_missing(test_resources, output_dir):
+    from ttblit import main
+
+    with pytest.raises(RuntimeError):
+        main([
+            'pack',
+            '--force',
+            '--config', str(test_resources / 'assets_file_missing.yml'),
+            '--output', output_dir
+        ])
+
+    with pytest.raises(RuntimeError):
+        main([
+            'pack',
+            '--force',
+            '--config', str(test_resources / 'assets_one_file_missing.yml'),
+            '--output', output_dir
+        ])
+
+
 def test_packer_cli_multiple_outputs(test_resources, output_dir):
     from ttblit import main
 

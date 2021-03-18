@@ -1,0 +1,6 @@
+assets.cpp:
+  prefix: asset_
+  image.png:
+    name: image
+  this-file-does-not-exist.txt:
+    name: missing
