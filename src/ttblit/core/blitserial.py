@@ -92,6 +92,25 @@ class BlitSerial(serial.Serial):
         if self.status != 'firmware':
             self.reset(timeout)
 
+    def user(self, message):
+        """Send a message using 32BLUSER"""
+        length = struct.pack("<H", len(message))
+        command = b'32BLUSER' + length + message.encode('ascii')
+
+        self.reset_output_buffer()
+        self.write('32BLMLTI'.encode('ascii'))
+        self.write(command)
+
+    def readlines(self):
+        """Read messages line by line from serial"""
+        while True:
+            try:
+                line = self.readline()
+            except serial.serialutil.SerialException:
+                print("Unexpected disconnecton!")
+                break
+            yield line.decode('ascii').strip()
+
     @firmware_command
     def send_file(self, file, drive, directory=pathlib.PurePosixPath('/'), auto_launch=False):
         sent_byte_count = 0
