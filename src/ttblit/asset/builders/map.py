@@ -53,9 +53,23 @@ def tiled_to_binary(data, empty_tile, output_struct):
         width = int(root.get("width"))
         height = int(root.get("height"))
 
+        flags = 0
+
+        have_transforms = any(v != 0 for v in transform_data)
+
+        if use_16bits:
+            flags |= (1 << 0)
+        
+        if have_transforms:
+            flags |= (1 << 1)
+        else:
+            transform_data = []
+
         return struct.pack(
-            '<4sBHHH',
+            '<4sHHHHHH',
             bytes('MTMX', encoding='utf-8'),
+            16,
+            flags,
             empty_tile,
             width,
             height,
