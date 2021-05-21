@@ -4,6 +4,7 @@ import pathlib
 import re
 import shutil
 import subprocess
+import textwrap
 
 import click
 
@@ -55,12 +56,36 @@ def install_sdk(sdk_path):
     latest_tag = result.stdout.strip()
     result = subprocess.run(['git', 'checkout', latest_tag], cwd=sdk_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+def vscode_config(project_path, sdk_path):
+    (project_path / '.vscode').mkdir()
+
+    open(project_path / '.vscode' / 'settings.json','w').write(textwrap.dedent(
+        '''
+        {
+            "cmake.configureSettings": {
+                "32BLIT_DIR": "{sdk_path}"
+            },
+            "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
+        } 
+        '''.replace('{sdk_path}', str(sdk_path))))
+
+    open(project_path / '.vscode' / 'cmake-kits.json','w').write(textwrap.dedent(
+        '''
+        [
+            {
+                "name": "32blit",
+                "toolchainFile": "{sdk_path}/32blit.toolchain"
+            }
+        ]
+        '''.replace('{sdk_path}', str(sdk_path))))
+
 @click.command('setup', help='Setup a project', cls=SetupCommand)
 @click.option('--project-name', prompt=True)
 @click.option('--author-name', prompt=True)
 @click.option('--sdk-path', type=pathlib.Path, default=lambda: os.path.expanduser('~/32blit-sdk'), prompt='32Blit SDK path')
 @click.option('--git/--no-git', prompt='Initialise a Git repository?', default=True)
-def setup_cli(project_name, author_name, sdk_path, git):
+@click.option('--vscode/--no-vscode', prompt='Create VS Code configuration?', default=True)
+def setup_cli(project_name, author_name, sdk_path, git, vscode):
     if not (sdk_path / '32blit.toolchain').exists():
         click.confirm(f'32Blit SDK not found at "{sdk_path}", would you like to install it?', abort=True)
         install_sdk(sdk_path)
@@ -97,3 +122,6 @@ def setup_cli(project_name, author_name, sdk_path, git):
         subprocess.run(['git', 'init'], cwd=project_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(['git', 'add', '.'], cwd=project_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.run(['git', 'commit', '-m', 'Initial commit'], cwd=project_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    if vscode:
+        vscode_config(project_path, sdk_path)
