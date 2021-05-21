@@ -79,13 +79,87 @@ def vscode_config(project_path, sdk_path):
         ]
         '''.replace('{sdk_path}', str(sdk_path))))
 
+def visualstudio_config(project_path, sdk_path):
+    open(project_path / 'CMakeSettings.json','w').write(textwrap.dedent(
+        '''
+        {
+            "configurations": [
+                {
+                    "name": "x64-Debug",
+                    "generator": "Ninja",
+                    "configurationType": "Debug",
+                    "inheritEnvironments": [ "msvc_x64_x64" ],
+                    "buildRoot": "${projectDir}\\\\out\\\\build\\\\${name}",
+                    "installRoot": "${projectDir}\\\\out\\\\install\\\\${name}",
+                    "cmakeCommandArgs": "",
+                    "buildCommandArgs": "",
+                    "ctestCommandArgs": "",
+                    "variables": [
+                        {
+                            "name": "32BLIT_DIR",
+                            "value": "{sdk_path}",
+                            "type": "PATH"
+                        }
+                    ]
+                },
+                {
+                    "name": "x64-Release",
+                    "generator": "Ninja",
+                    "configurationType": "Release",
+                    "buildRoot": "${projectDir}\\\\out\\\\build\\\\${name}",
+                    "installRoot": "${projectDir}\\\\out\\\\install\\\\${name}",
+                    "cmakeCommandArgs": "",
+                    "buildCommandArgs": "",
+                    "ctestCommandArgs": "",
+                    "inheritEnvironments": [ "msvc_x64_x64" ],
+                    "variables": [
+                        {
+                            "name": "32BLIT_DIR",
+                            "value": "{sdk_path}",
+                            "type": "PATH"
+                        }
+                    ]
+                },
+                {
+                    "name": "32Blit-Debug",
+                    "generator": "Ninja",
+                    "configurationType": "Debug",
+                    "buildRoot": "${projectDir}\\\\out\\\\build\\\\${name}",
+                    "installRoot": "${projectDir}\\\\out\\\\install\\\\${name}",
+                    "cmakeCommandArgs": "",
+                    "buildCommandArgs": "",
+                    "ctestCommandArgs": "",
+                    "inheritEnvironments": [ "gcc-arm" ],
+                    "variables": [],
+                    "cmakeToolchain": "{sdk_path}/32blit.toolchain",
+                    "intelliSenseMode": "linux-gcc-arm"
+                },
+                {
+                    "name": "32Blit-Release",
+                    "generator": "Ninja",
+                    "configurationType": "Release",
+                    "buildRoot": "${projectDir}\\\\out\\\\build\\\\${name}",
+                    "installRoot": "${projectDir}\\\\out\\\\install\\\\${name}",
+                    "cmakeCommandArgs": "",
+                    "buildCommandArgs": "",
+                    "ctestCommandArgs": "",
+                    "cmakeToolchain": "{sdk_path}/32blit.toolchain",
+                    "inheritEnvironments": [ "gcc-arm" ],
+                    "variables": [],
+                    "intelliSenseMode": "linux-gcc-arm"
+                }
+            ]
+        }
+        '''.replace('{sdk_path}', str(sdk_path))))
+
 @click.command('setup', help='Setup a project', cls=SetupCommand)
 @click.option('--project-name', prompt=True)
 @click.option('--author-name', prompt=True)
 @click.option('--sdk-path', type=pathlib.Path, default=lambda: os.path.expanduser('~/32blit-sdk'), prompt='32Blit SDK path')
 @click.option('--git/--no-git', prompt='Initialise a Git repository?', default=True)
 @click.option('--vscode/--no-vscode', prompt='Create VS Code configuration?', default=True)
-def setup_cli(project_name, author_name, sdk_path, git, vscode):
+@click.option('--visualstudio/--no-visualstudio', prompt='Create Visual Studio configuration?')
+def setup_cli(project_name, author_name, sdk_path, git, vscode, visualstudio):
     if not (sdk_path / '32blit.toolchain').exists():
         click.confirm(f'32Blit SDK not found at "{sdk_path}", would you like to install it?', abort=True)
         install_sdk(sdk_path)
@@ -125,3 +199,5 @@ def setup_cli(project_name, author_name, sdk_path, git, vscode):
 
     if vscode:
         vscode_config(project_path, sdk_path)
+    if visualstudio:
+        visualstudio_config(project_path, sdk_path)
