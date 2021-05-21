@@ -10,6 +10,7 @@ from .tool.flasher import flash_cli, install_cli, launch_cli
 from .tool.metadata import metadata_cli
 from .tool.packer import pack_cli
 from .tool.relocs import relocs_cli
+from .tool.setup import setup_cli
 
 
 @click.group()
@@ -33,6 +34,7 @@ main.add_command(launch_cli)
 main.add_command(metadata_cli)
 main.add_command(pack_cli)
 main.add_command(relocs_cli)
+main.add_command(setup_cli)
 
 
 @main.command(help='Print version and exit')
