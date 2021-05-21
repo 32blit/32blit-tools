@@ -3,6 +3,7 @@ import logging
 import pathlib
 import re
 import shutil
+import stat
 import subprocess
 import textwrap
 
@@ -48,7 +49,7 @@ class SetupCommand(click.Command):
 
 def install_sdk(sdk_path):
     click.echo('Installing SDK...')
-    subprocess.run(['git', 'clone', 'https://github.com/32blit/32blit-sdk', sdk_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(['git', 'clone', 'https://github.com/32blit/32blit-sdk', str(sdk_path)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # checkout the latest release
     # TODO: could do something with the GitHub API and download the release?
@@ -131,7 +132,7 @@ def visualstudio_config(project_path, sdk_path):
                     "ctestCommandArgs": "",
                     "inheritEnvironments": [ "gcc-arm" ],
                     "variables": [],
-                    "cmakeToolchain": "{sdk_path}/32blit.toolchain",
+                    "cmakeToolchain": "{sdk_path}\\\\32blit.toolchain",
                     "intelliSenseMode": "linux-gcc-arm"
                 },
                 {
@@ -143,14 +144,14 @@ def visualstudio_config(project_path, sdk_path):
                     "cmakeCommandArgs": "",
                     "buildCommandArgs": "",
                     "ctestCommandArgs": "",
-                    "cmakeToolchain": "{sdk_path}/32blit.toolchain",
+                    "cmakeToolchain": "{sdk_path}\\\\32blit.toolchain",
                     "inheritEnvironments": [ "gcc-arm" ],
                     "variables": [],
                     "intelliSenseMode": "linux-gcc-arm"
                 }
             ]
         }
-        '''.replace('{sdk_path}', str(sdk_path))))
+        '''.replace('{sdk_path}', str(sdk_path).replace('\\', '\\\\'))))
 
 @click.command('setup', help='Setup a project', cls=SetupCommand)
 @click.option('--project-name', prompt=True)
@@ -173,10 +174,14 @@ def setup_cli(project_name, author_name, sdk_path, git, vscode, visualstudio):
 
     # get the boilerplate
     click.echo('Downloading boilerplate...')
-    subprocess.run(['git', 'clone', '--depth', '1', 'https://github.com/32blit/32blit-boilerplate', project_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(['git', 'clone', '--depth', '1', 'https://github.com/32blit/32blit-boilerplate', str(project_path)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # de-git it (using the template on GitHub also removes the history)
-    shutil.rmtree(pathlib.Path(project_name_clean) / '.git')
+    def remove_readonly(func, path, _):
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+
+    shutil.rmtree(pathlib.Path(project_name_clean) / '.git', onerror=remove_readonly)
 
     # do some editing
     cmakelists = open(project_path / 'CMakeLists.txt').read()
