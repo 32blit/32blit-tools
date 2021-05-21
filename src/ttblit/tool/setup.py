@@ -7,7 +7,45 @@ import subprocess
 
 import click
 
-@click.command('setup', help='Setup a project')
+# check environment before prompting
+class SetupCommand(click.Command):
+    def parse_args(self, ctx, args):
+        logging.info("Checking for prerequisites...")
+
+        # command/name/required version
+        prereqs = [
+            (['git', '--version'], 'Git', None),
+            (['cmake', '--version'], 'CMake', [3, 9]),
+            (['arm-none-eabi-gcc', '--version'], 'GCC Arm Toolchain', [7, 3])
+        ]
+
+        failed = False
+
+        for command, name, version in prereqs:
+            try:
+                result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
+
+                version_str = ".".join([str(x) for x in version]) if version else 'any'
+                found_version_str = re.search(r'[0-9]+\.[0-9\.]+', result.stdout).group(0)
+
+                if version:
+                    found_version_list = [int(x) for x in found_version_str.split('.')[:len(version)]]
+                    if found_version_list < version:
+                        logging.critical(f'Found {name} version {found_version_str}, {version_str} is required!')
+                        failed = True
+
+                logging.info(f'Found {name} version {found_version_str} (required {version_str})')
+            except:
+                logging.critical(f'Could not find {name}!')
+                failed = True
+
+        if failed:
+            click.echo('\nCheck the documentation for info on installing.\nhttps://github.com/32blit/32blit-sdk#you-will-need')
+            raise click.Abort()
+
+        super().parse_args(ctx, args)
+
+@click.command('setup', help='Setup a project', cls=SetupCommand)
 @click.option('--project-name', prompt=True)
 @click.option('--author-name', prompt=True)
 @click.option('--sdk-path', type=pathlib.Path, default=lambda: os.path.expanduser('~/32blit-sdk'), prompt='32Blit SDK path')
