@@ -2,6 +2,7 @@
 __version__ = '0.6.1'
 
 import click
+import logging
 
 from .asset.builder import AssetTool
 from .tool.cmake import cmake_cli
@@ -13,8 +14,13 @@ from .tool.relocs import relocs_cli
 
 @click.group()
 @click.option('--debug', is_flag=True)
-def main(debug):
-    pass
+@click.option('-v', '--verbose', count=True)
+def main(debug, verbose):
+    log_format = '%(levelname)s: %(message)s'
+
+    log_verbosity = min(verbose, 3)
+    log_level = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG][log_verbosity]
+    logging.basicConfig(level=log_level, format=log_format)
 
 
 for n, c in AssetTool._commands.items():
