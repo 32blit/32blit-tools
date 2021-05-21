@@ -45,6 +45,16 @@ class SetupCommand(click.Command):
 
         super().parse_args(ctx, args)
 
+def install_sdk(sdk_path):
+    click.echo('Installing SDK...')
+    subprocess.run(['git', 'clone', 'https://github.com/32blit/32blit-sdk', sdk_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    # checkout the latest release
+    # TODO: could do something with the GitHub API and download the release?
+    result = subprocess.run(['git', 'describe', '--tags', '--abbrev=0'], cwd=sdk_path, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    latest_tag = result.stdout.strip()
+    result = subprocess.run(['git', 'checkout', latest_tag], cwd=sdk_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
 @click.command('setup', help='Setup a project', cls=SetupCommand)
 @click.option('--project-name', prompt=True)
 @click.option('--author-name', prompt=True)
@@ -52,8 +62,8 @@ class SetupCommand(click.Command):
 @click.option('--git/--no-git', prompt='Initialise a Git repository?', default=True)
 def setup_cli(project_name, author_name, sdk_path, git):
     if not (sdk_path / '32blit.toolchain').exists():
-        if click.confirm(f'32Blit SDK not found at "{sdk_path}", would you like to install it?', abort=True):
-            click.echo('Installing SDK...')
+        click.confirm(f'32Blit SDK not found at "{sdk_path}", would you like to install it?', abort=True)
+        install_sdk(sdk_path)
 
     project_name_clean = re.sub(r'[^a-z0-9]+', '-', project_name.lower()).strip('-')
     project_path = pathlib.Path.cwd() / project_name_clean
