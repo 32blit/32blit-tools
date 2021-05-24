@@ -16,16 +16,24 @@ class SetupCommand(click.Command):
 
         # command/name/required version
         prereqs = [
-            (['git', '--version'], 'Git', None),
-            (['cmake', '--version'], 'CMake', [3, 9]),
-            (['arm-none-eabi-gcc', '--version'], 'GCC Arm Toolchain', [7, 3])
+            ('git --version', 'Git', None),
+            ('cmake --version', 'CMake', [3, 9]),
+            ('arm-none-eabi-gcc --version', 'GCC Arm Toolchain', [7, 3])
         ]
+
+        # adjust path to dectct the VS Arm toolchain
+        path = os.getenv('PATH')
+        vs_dir = os.getenv('VSInstallDir')
+
+        if vs_dir:
+            path = ';'.join([path, vs_dir + 'Linux\\gcc_arm\\bin'])
+            print(path)
 
         failed = False
 
         for command, name, version in prereqs:
             try:
-                result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
+                result = subprocess.run(command, stdout=subprocess.PIPE, text=True, shell=True, env={'PATH': path})
 
                 version_str = ".".join([str(x) for x in version]) if version else 'any'
                 found_version_str = re.search(r'[0-9]+\.[0-9\.]+', result.stdout).group(0)
