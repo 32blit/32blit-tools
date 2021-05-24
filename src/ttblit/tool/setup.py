@@ -68,7 +68,7 @@ def vscode_config(project_path, sdk_path):
             },
             "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
         } 
-        '''.replace('{sdk_path}', str(sdk_path))))
+        '''.replace('{sdk_path}', str(sdk_path).replace('\\', '\\\\'))))
 
     open(project_path / '.vscode' / 'cmake-kits.json','w').write(textwrap.dedent(
         '''
@@ -78,7 +78,7 @@ def vscode_config(project_path, sdk_path):
                 "toolchainFile": "{sdk_path}/32blit.toolchain"
             }
         ]
-        '''.replace('{sdk_path}', str(sdk_path))))
+        '''.replace('{sdk_path}', str(sdk_path).replace('\\', '\\\\'))))
 
 def visualstudio_config(project_path, sdk_path):
     open(project_path / 'CMakeSettings.json','w').write(textwrap.dedent(
