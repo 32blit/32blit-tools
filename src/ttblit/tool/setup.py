@@ -206,3 +206,7 @@ def setup_cli(project_name, author_name, sdk_path, git, vscode, visualstudio):
         vscode_config(project_path, sdk_path)
     if visualstudio:
         visualstudio_config(project_path, sdk_path)
+
+    click.echo(f'\nYour new project has been created in: {project_path}!')
+
+    click.echo(f'If using CMake directly, make sure to pass -DCMAKE_TOOLCHAIN_FILE={sdk_path / "32blit.toolchain"} (building for the device)\nor -D32BLIT_DIR={sdk_path} when calling cmake.')
