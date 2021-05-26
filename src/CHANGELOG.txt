@@ -1,3 +1,11 @@
+0.7.0
+-----
+
+* Reworked Tiled maps support (requires updated SDK) - thanks @Daft-Freak
+* Metadata CMake tool now escapes quotes - thanks @Daft-Freak
+* New project setup tool "32blit setup" for downloading/configuring a boilerplate project - thanks @DaftFreak
+* Fixed asset builder throwing a cryptic error if no valid input files were found
+
 0.6.1
 -----
 
