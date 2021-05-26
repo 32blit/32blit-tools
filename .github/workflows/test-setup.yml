@@ -1,0 +1,61 @@
+name: Runtime Tests - Setup
+
+on:
+  push:
+  pull_request:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-20.04
+            name: Ubuntu / STM32
+            cache-key: stm32
+            release-suffix: STM32
+            cmake-args: -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/32blit-sdk/32blit.toolchain -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+            apt-packages: ccache gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib python3-setuptools
+
+    runs-on: ${{matrix.os}}
+
+    steps:
+    # Linux deps
+    - name: Install Dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt update && sudo apt install ${{matrix.apt-packages}}
+  
+    - uses: actions/checkout@v2
+    - name: Grab the SDK
+      uses: actions/checkout@v2
+      with:
+        repository: 32blit/32blit-sdk
+        path: 32blit-sdk
+
+    - name: Install 32Blit Tools
+      working-directory: src
+      run: |
+        python3 setup.py install --user
+
+    - name: Test Setup Tool
+      run: |
+        python3 -m ttblit setup --project-name Test --author-name Test --sdk-path=$GITHUB_WORKSPACE/32blit-sdk --git --vscode --visualstudio
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{runner.workspace}}/build
+
+    - name: Configure CMake
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: cmake $GITHUB_WORKSPACE/test -DCMAKE_BUILD_TYPE=$BUILD_TYPE ${{matrix.cmake-args}}
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
+      run: |
+        ccache --zero-stats || true
+        cmake --build . --config $BUILD_TYPE -j 2
+        ccache --show-stats || true
