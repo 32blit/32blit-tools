@@ -2,8 +2,6 @@ import pytest
 import tempfile
 import textwrap
 
-from ttblit.core.palette import Palette
-
 def test_palette_entries():
     from ttblit.core.palette import Palette
 
@@ -66,6 +64,8 @@ def test_palette_entries():
 
 
 def test_palette_gpl():
+    from ttblit.core.palette import Palette
+
     with tempfile.NamedTemporaryFile('w', suffix='.gpl') as test_palette_file:
         test_palette_file.write(textwrap.dedent('''
             GIMP Palette
