@@ -30,12 +30,6 @@ class Metadata(YamlLoader):
         data = b''.join(struct_blit_pixel.build(image.data.palette[i]) for i in image.data.pixels)
         return Image.frombytes("RGBA", (image.data.width, image.data.height), data)
 
-    def binary_size(self, bin):
-        return struct.unpack('<I', bin[16:20])[0] & 0xffffff
-
-    def checksum(self, bin):
-        return struct.pack('<I', binascii.crc32(bin))
-
     def build_icns(self, config, working_path):
         image_file = pathlib.Path(config.get('file', ''))
         if not image_file.is_file():
