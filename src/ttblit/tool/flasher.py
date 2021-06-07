@@ -14,7 +14,6 @@ block_size = 64 * 1024
 @click.option('ports', '--port', multiple=True, help='Serial port')
 @click.pass_context
 def flash_cli(ctx, ports):
-    print(ports)
     ctx.obj = ports
 
 
