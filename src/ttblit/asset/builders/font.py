@@ -22,12 +22,16 @@ def process_image_font(data, num_chars, height, horizontal_spacing, space_width)
     # Since we already have bytes, we need to pass PIL an io.BytesIO object
     image = Image.open(io.BytesIO(data)).convert('1')
     w, h = image.size
+    rows = 1
+    cols = num_chars
 
+    # if height is specified calculate rows/cols, otherwise assume a single row with the image height as the character height
     if height != 0 and height != h:
-        raise TypeError("Specified height does not match image height")
+        rows = h // height
+        cols = num_chars // rows
 
-    char_width = w // num_chars
-    char_height = h
+    char_width = w // cols
+    char_height = h // rows
 
     font_data = []
     font_w = []  # per character width for variable-width mode
@@ -35,10 +39,13 @@ def process_image_font(data, num_chars, height, horizontal_spacing, space_width)
     for c in range(0, num_chars):
         char_w = 0
 
+        char_col = c % cols
+        char_row = c // cols
+
         for x in range(0, char_width):
             byte = 0
 
-            for y in range(0, h):
+            for y in range(0, char_height):
                 bit = y % 8
 
                 # next byte
@@ -46,7 +53,7 @@ def process_image_font(data, num_chars, height, horizontal_spacing, space_width)
                     font_data.append(byte)
                     byte = 0
 
-                if image.getpixel((x + c * char_width, y)) != 0:
+                if image.getpixel((x + char_col * char_width, y + char_row * char_height)) != 0:
                     byte |= 1 << bit
                     if x + 1 > char_w:
                         char_w = x + 1
