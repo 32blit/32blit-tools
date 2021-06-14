@@ -1,5 +1,6 @@
 import pytest
-
+import tempfile
+import textwrap
 
 def test_palette_entries():
     from ttblit.core.palette import Palette
@@ -60,3 +61,24 @@ def test_palette_entries():
 
     # the iter should also have the same length
     assert len(list(palette)) == len(palette)
+
+
+def test_palette_gpl():
+    from ttblit.core.palette import Palette
+
+    with tempfile.NamedTemporaryFile('w', suffix='.gpl') as test_palette_file:
+        test_palette_file.write(textwrap.dedent('''
+            GIMP Palette
+            Name: Test
+            Columns: 8
+            #
+            255 255 255\tUntitled
+              0   0   0\tUntitled
+            255   0   0
+        '''))
+        test_palette_file.flush()
+
+        palette = Palette(test_palette_file.name)
+
+        assert len(palette) == 3
+        assert palette[0] == (255, 255, 255, 255)

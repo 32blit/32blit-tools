@@ -1,6 +1,7 @@
 import argparse
 import logging
 import pathlib
+import re
 import struct
 
 from PIL import Image
@@ -83,13 +84,17 @@ class Palette():
 
     def load_gpl(self, palette_file, data):
         palette = data
-        palette = palette.decode('utf-8').strip()
+        palette = palette.decode('utf-8').strip().replace('\r\n', '\n')
         if not palette.startswith('GIMP Palette'):
             raise ValueError(f'palette {palette_file} is not a valid GIMP .gpl')
         # Split the whole file into palette entries
-        palette = palette.split('\r\n')
+        palette = palette.split('\n')
         # drop 'GIMP Palette' from the first entry
         palette.pop(0)
+
+        # drop metadata/comments
+        while palette[0].startswith(('Name:', 'Columns:', '#')):
+            palette.pop(0)
 
         # calculate our image width/height here because len(palette)
         # equals the number of palette entries
@@ -98,7 +103,7 @@ class Palette():
 
         # Split out the palette entries into R, G, B and drop the hex colour
         # This convoluted list comprehension does this while also flatenning to a 1d array
-        palette = [int(c) for entry in palette for c in entry.split('\t')[:-1]]
+        palette = [int(c) for entry in palette for c in re.split(r'\s+', entry.strip())[0:3]]
         self.image = Image.frombytes('RGB', (self.width, self.height), bytes(palette)).convert('RGBA')
 
     def load_image(self, palette_file):
