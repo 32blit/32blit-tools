@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 import pathlib
 import re
 import shutil
@@ -8,6 +8,7 @@ import subprocess
 import textwrap
 
 import click
+
 
 # check environment before prompting
 class SetupCommand(click.Command):
@@ -45,7 +46,7 @@ class SetupCommand(click.Command):
                         failed = True
 
                 logging.info(f'Found {name} version {found_version_str} (required {version_str})')
-            except:
+            except subprocess.CalledProcessError:
                 logging.critical(f'Could not find {name}!')
                 failed = True
 
@@ -54,6 +55,7 @@ class SetupCommand(click.Command):
             raise click.Abort()
 
         super().parse_args(ctx, args)
+
 
 def install_sdk(sdk_path):
     click.echo('Installing SDK...')
@@ -65,20 +67,21 @@ def install_sdk(sdk_path):
     latest_tag = result.stdout.strip()
     result = subprocess.run(['git', 'checkout', latest_tag], cwd=sdk_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+
 def vscode_config(project_path, sdk_path):
     (project_path / '.vscode').mkdir()
 
-    open(project_path / '.vscode' / 'settings.json','w').write(textwrap.dedent(
+    open(project_path / '.vscode' / 'settings.json', 'w').write(textwrap.dedent(
         '''
         {
             "cmake.configureSettings": {
                 "32BLIT_DIR": "{sdk_path}"
             },
             "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
-        } 
+        }
         '''.replace('{sdk_path}', str(sdk_path).replace('\\', '\\\\'))))
 
-    open(project_path / '.vscode' / 'cmake-kits.json','w').write(textwrap.dedent(
+    open(project_path / '.vscode' / 'cmake-kits.json', 'w').write(textwrap.dedent(
         '''
         [
             {
@@ -88,8 +91,9 @@ def vscode_config(project_path, sdk_path):
         ]
         '''.replace('{sdk_path}', str(sdk_path).replace('\\', '\\\\'))))
 
+
 def visualstudio_config(project_path, sdk_path):
-    open(project_path / 'CMakeSettings.json','w').write(textwrap.dedent(
+    open(project_path / 'CMakeSettings.json', 'w').write(textwrap.dedent(
         '''
         {
             "configurations": [
@@ -160,6 +164,7 @@ def visualstudio_config(project_path, sdk_path):
             ]
         }
         '''.replace('{sdk_path}', str(sdk_path).replace('\\', '\\\\'))))
+
 
 @click.command('setup', help='Setup a project', cls=SetupCommand)
 @click.option('--project-name', prompt=True)

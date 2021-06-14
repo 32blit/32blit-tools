@@ -59,7 +59,7 @@ def tiled_to_binary(data, empty_tile, output_struct):
 
         if use_16bits:
             flags |= (1 << 0)
-        
+
         if have_transforms:
             flags |= (1 << 1)
         else:

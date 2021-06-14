@@ -1,8 +1,9 @@
 
 __version__ = '0.7.0'
 
-import click
 import logging
+
+import click
 
 from .asset.builder import AssetTool
 from .tool.cmake import cmake_cli
