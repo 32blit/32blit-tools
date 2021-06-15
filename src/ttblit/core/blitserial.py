@@ -15,22 +15,6 @@ class BlitSerialException(Exception):
     pass
 
 
-class BlitSerialWrongModeException(BlitSerialException):
-    pass
-
-
-def firmware_command(fn):
-    """Check if we are in the firmware before running commands that require it."""
-    @functools.wraps(fn)
-    def _decorated(self, *args, **kwargs):
-        # if self.status != 'firmware':
-        #    # Note: we could instead reset_to_firmware here.
-        #    raise BlitSerialWrongModeException("32Blit is not in firmware mode. Please exit game or reset.")
-        return fn(self, *args, **kwargs)
-
-    return _decorated
-
-
 class BlitSerial(serial.Serial):
     def __init__(self, port):
         super().__init__(port, timeout=5)
@@ -88,11 +72,6 @@ class BlitSerial(serial.Serial):
                 time.sleep(0.1)
         raise RuntimeError(f"Failed to connect to 32Blit on {serial.port} after reset")
 
-    def reset_to_firmware(self, timeout=5.0):
-        if self.status != 'firmware':
-            self.reset(timeout)
-
-    @firmware_command
     def send_file(self, file, drive, directory=pathlib.PurePosixPath('/'), auto_launch=False):
         sent_byte_count = 0
         chunk_size = 64
@@ -143,12 +122,10 @@ class BlitSerial(serial.Serial):
             response += self.read(self.in_waiting)
             raise RuntimeError(f"Failed to save/flash {file_name}: {response.decode()}")
 
-    @firmware_command
     def erase(self, offset):
         self.write(b'32BLERSE\x00')
         self.write(struct.pack("<I", offset))
 
-    @firmware_command
     def list(self):
         self.write(b'32BL__LS\x00')
         offset_str = self.read(4)
@@ -172,6 +149,5 @@ class BlitSerial(serial.Serial):
 
             offset_str = self.read(4)
 
-    @firmware_command
     def launch(self, filename):
         self.write(f'32BLLNCH{filename}\x00'.encode('ascii'))

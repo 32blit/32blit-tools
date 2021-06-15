@@ -14,7 +14,6 @@ block_size = 64 * 1024
 @click.option('ports', '--port', multiple=True, help='Serial port')
 @click.pass_context
 def flash_cli(ctx, ports):
-    print(ports)
     ctx.obj = ports
 
 
@@ -42,7 +41,6 @@ def serial_command(fn):
 @click.option('--file', type=pathlib.Path, required=True, help='File to save')
 @click.option('--directory', type=str, default='/', help='Target directory')
 def save(blitserial, file, directory):
-    blitserial.reset_to_firmware()
     blitserial.send_file(file, 'sd', directory=directory)
 
 
@@ -50,7 +48,6 @@ def save(blitserial, file, directory):
 @serial_command
 @click.option('--file', type=pathlib.Path, required=True, help='File to save')
 def flash(blitserial, file):
-    blitserial.reset_to_firmware()
     blitserial.send_file(file, 'flash')
 
 
@@ -60,7 +57,6 @@ def flash(blitserial, file):
 @click.option('--offset', type=int, help='Flash offset of game to delete')
 @click.option('--block', type=int, help='Flash block of game to delete')
 def delete(blitserial, offset, block):
-    blitserial.reset_to_firmware()
     if offset is None:
         offset = block * block_size
     blitserial.erase(offset)
@@ -69,7 +65,6 @@ def delete(blitserial, offset, block):
 @flash_cli.command(help="List .blits installed in flash memory")
 @serial_command
 def list(blitserial):
-    blitserial.reset_to_firmware()
     for meta, offset, size in blitserial.list():
         offset_blocks = offset // block_size
         size_blocks = (size - 1) // block_size + 1

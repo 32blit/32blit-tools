@@ -132,15 +132,6 @@ blit_game_with_meta_and_relo = Struct(
     'meta' / struct_blit_meta
 )
 
-
-def compute_icns_data_length(ctx):
-    """Compute the required data length for palette based images.
-    We need this computation here so we can use `math.ceil` and
-    byte-align the result.
-    """
-    return math.ceil((ctx.width * ctx.height * ctx.bit_length) / 8)
-
-
 blit_icns = Struct(
     'header' / Const(b'icns'),
     'size' / Rebuild(Int32ub, len_(this.data) + 16),
