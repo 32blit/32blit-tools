@@ -14,6 +14,11 @@ jobs:
         python: [3.7, 3.8]
 
     steps:
+      # Linux deps
+      - name: Install Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt update && sudo apt install gcc-arm-none-eabi
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v2
