@@ -1,7 +1,7 @@
 # 32blit Tools
 
 [![Build Status](https://shields.io/github/workflow/status/32blit/32blit-tools/Python%20Tests.svg)](https://github.com/32blit/32blit-tools/actions/workflows/test.yml)
-[![Coverage Status](https://coveralls.io/repos/github/pimoroni/32blit-tools/badge.svg?branch=master)](https://coveralls.io/github/pimoroni/32blit-tools?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/32blit/32blit-tools/badge.svg?branch=master)](https://coveralls.io/github/32blit/32blit-tools?branch=master)
 [![PyPi Package](https://img.shields.io/pypi/v/32blit.svg)](https://pypi.python.org/pypi/32blit)
 [![Python Versions](https://img.shields.io/pypi/pyversions/32blit.svg)](https://pypi.python.org/pypi/32blit)
 
