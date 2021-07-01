@@ -1,11 +1,13 @@
 
 __version__ = '0.7.0'
 
-import click
 import logging
+
+import click
 
 from .asset.builder import AssetTool
 from .tool.cmake import cmake_cli
+from .tool.dfu import dfu_cli
 from .tool.flasher import flash_cli, install_cli, launch_cli
 from .tool.metadata import metadata_cli
 from .tool.packer import pack_cli
@@ -35,6 +37,7 @@ main.add_command(metadata_cli)
 main.add_command(pack_cli)
 main.add_command(relocs_cli)
 main.add_command(setup_cli)
+main.add_command(dfu_cli)
 
 
 @main.command(help='Print version and exit')

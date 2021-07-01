@@ -2,6 +2,7 @@ import json
 import pathlib
 import tempfile
 
+
 def test_visualstudio_windows():
     from ttblit.tool.setup import visualstudio_config
 
