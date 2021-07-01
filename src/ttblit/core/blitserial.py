@@ -90,15 +90,15 @@ class BlitSerial(serial.Serial):
         self.reset_output_buffer()
         self.write(command.encode('ascii'))
 
-        with open(file, 'rb') as file:
-            progress = tqdm(total=file_size, desc="Flashing...", unit_scale=True, unit_divisor=1024, unit="B", ncols=70, dynamic_ncols=True)
+        with open(file, 'rb') as input_file:
+            progress = tqdm(total=file_size, desc=f"Flashing {file.name}", unit_scale=True, unit_divisor=1024, unit="B", ncols=70, dynamic_ncols=True)
             while sent_byte_count < file_size:
                 # if we received something, there was an error
                 if self.in_waiting:
                     progress.close()
                     break
 
-                data = file.read(chunk_size)
+                data = input_file.read(chunk_size)
                 self.write(data)
                 self.flush()
                 sent_byte_count += chunk_size
