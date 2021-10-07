@@ -2,6 +2,7 @@ import pytest
 import tempfile
 import textwrap
 
+
 def test_palette_entries():
     from ttblit.core.palette import Palette
 
