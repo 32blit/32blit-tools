@@ -1,5 +1,4 @@
 import binascii
-import math
 
 from construct import (Adapter, Bytes, Checksum, Const, GreedyBytes, Int8ul,
                        Int16ul, Int32ub, Int32ul, Optional, PaddedString,

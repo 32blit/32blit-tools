@@ -59,7 +59,7 @@ def test_dfu_dump(test_resources, test_output_file):
             '--input-file', test_output_file.name
         ])
 
-    output_bin_file = pathlib.Path(test_output_file.name.replace('.dfu','-0-0x08000000.bin'))
+    output_bin_file = pathlib.Path(test_output_file.name.replace('.dfu', '-0-0x08000000.bin'))
 
     assert output_bin_file.is_file()
 
