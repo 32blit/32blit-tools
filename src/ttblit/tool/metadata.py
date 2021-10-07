@@ -1,8 +1,6 @@
-import binascii
 import io
 import logging
 import pathlib
-import struct
 from datetime import datetime
 
 import click
