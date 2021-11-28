@@ -26,6 +26,10 @@ def relocs_cli(bin_file, elf_file, output):
         # find sidata/sdata
         sidata = 0
         sdata = 0
+
+        itcm_data = 0
+        itcm_text_start = 0
+
         relocs = elffile.get_section_by_name('.rel.text')
         symtable = elffile.get_section(relocs['sh_link'])
         for reloc in relocs.iter_relocations():
@@ -34,8 +38,12 @@ def relocs_cli(bin_file, elf_file, output):
                 sidata = symbol['st_value']
             elif symbol.name == '_sdata':
                 sdata = symbol['st_value']
+            elif symbol.name == 'itcm_data':
+                itcm_data = symbol['st_value']
+            elif symbol.name == 'itcm_text_start':
+                itcm_text_start = symbol['st_value']
 
-            if sidata and sdata:
+            if sidata and sdata and itcm_data and itcm_text_start:
                 break
 
         assert(sidata != 0 and sdata != 0)
@@ -60,6 +68,23 @@ def relocs_cli(bin_file, elf_file, output):
             assert((flash_offset & 3) == 0)
 
             reloc_offsets.append(flash_offset)
+
+        # references to the GOT from ITCM code
+        relocs = elffile.get_section_by_name('.rel.itcm')
+        if relocs:
+            symtable = elffile.get_section(relocs['sh_link'])
+
+            for reloc in relocs.iter_relocations():
+                symbol = symtable.get_symbol(reloc['r_info_sym'])
+
+                # doesn't point to flash
+                if symbol['st_value'] < 0x90000000:
+                    continue
+
+                if symbol.name == '_GLOBAL_OFFSET_TABLE_':
+                    flash_offset = (reloc['r_offset'] - itcm_text_start) + itcm_data
+
+                    reloc_offsets.append(flash_offset)
 
         with open(output, 'wb') as out_f:
             all_offsets = got_offsets + init_offsets + fini_offsets + reloc_offsets
