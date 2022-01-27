@@ -1,7 +1,7 @@
 # 32blit Tools
 
 [![Build Status](https://shields.io/github/workflow/status/32blit/32blit-tools/Python%20Tests.svg)](https://github.com/32blit/32blit-tools/actions/workflows/test.yml)
-[![Coverage Status](https://coveralls.io/repos/github/pimoroni/32blit-tools/badge.svg?branch=master)](https://coveralls.io/github/pimoroni/32blit-tools?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/32blit/32blit-tools/badge.svg?branch=master)](https://coveralls.io/github/32blit/32blit-tools?branch=master)
 [![PyPi Package](https://img.shields.io/pypi/v/32blit.svg)](https://pypi.python.org/pypi/32blit)
 [![Python Versions](https://img.shields.io/pypi/pyversions/32blit.svg)](https://pypi.python.org/pypi/32blit)
 
@@ -117,6 +117,30 @@ Supported formats:
 
 
 # Changelog
+
+0.7.2
+-----
+
+* Add reloc support for ITCM RAM - thanks @Daft-Freak
+
+0.7.1
+-----
+
+* Added DFU tool
+* Filename now shown when flashing
+* Remove unecessary reset-to-firmware code
+* Fixed GIMP palette handling
+* Support for more image font layouts (multiple row support)
+* Make freetype a soft dependency when processing font data
+* Misc small tweaks & tidyup
+
+0.7.0
+-----
+
+* Reworked Tiled maps support (requires updated SDK) - thanks @Daft-Freak
+* Metadata CMake tool now escapes quotes - thanks @Daft-Freak
+* New project setup tool "32blit setup" for downloading/configuring a boilerplate project - thanks @Daft-Freak
+* Fixed asset builder throwing a cryptic error if no valid input files were found
 
 0.6.1
 -----

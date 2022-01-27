@@ -110,7 +110,7 @@ def relocs_cli(bin_file, elf_file, output):
                     # check for the address where we expect it
                     # (ldr.w pc, [pc] followed by the address)
                     ex_addr, = struct.unpack('<I', itcm_section_data[itcm_offset + 4:itcm_offset + 8])
-                    
+
                     assert ex_addr == target_addr
 
                     reloc_offsets.append(flash_offset + 4)

@@ -27,7 +27,7 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt update && sudo apt install ${{matrix.apt-packages}}
-  
+
     - uses: actions/checkout@v2
     - name: Grab the SDK
       uses: actions/checkout@v2
