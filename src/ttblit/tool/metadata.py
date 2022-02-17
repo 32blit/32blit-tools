@@ -61,8 +61,8 @@ class Metadata(YamlLoader):
         if file and not file.is_file():
             raise ValueError(f'Unable to find bin file at {file}')
 
-        icon = b''
-        splash = b''
+        icon = None
+        splash = None
 
         game = None
 
@@ -112,17 +112,25 @@ class Metadata(YamlLoader):
         self.setup_for_config(config, None)
 
         if 'icon' in self.config:
-            icon = self.prepare_image_asset('icon', self.config['icon'], self.working_path)
-        else:
+            icon = struct_blit_image.parse(self.prepare_image_asset('icon', self.config['icon'], self.working_path))
+            if icon.data.width != 8 or icon.data.height != 8:
+                icon = None
+
+        if icon is None:
             raise ValueError('An 8x8 pixel icon is required!"')
 
         if 'splash' in self.config:
-            splash = self.prepare_image_asset('splash', self.config['splash'], self.working_path)
+            splash = struct_blit_image.parse(self.prepare_image_asset('splash', self.config['splash'], self.working_path))
+
+            if splash.data.width != 128 or splash.data.height != 96:
+                splash = None
+
             if icns is not None:
                 if not icns.is_file() or force:
                     open(icns, 'wb').write(self.build_icns(self.config['splash'], self.working_path))
                     logging.info(f'Saved macOS icon to {icns}')
-        else:
+
+        if splash is None:
             raise ValueError('A 128x96 pixel splash is required!"')
 
         if not game:
@@ -185,8 +193,8 @@ class Metadata(YamlLoader):
                 'category': category,
                 'filetypes': filetypes,
                 'url': url,
-                'icon': struct_blit_image.parse(icon),
-                'splash': struct_blit_image.parse(splash)
+                'icon': icon,
+                'splash': splash
             }
         }
 
