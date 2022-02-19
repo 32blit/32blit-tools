@@ -136,9 +136,6 @@ class Metadata(YamlLoader):
         if splash is None:
             raise ValueError('A 128x96 pixel splash is required!"')
 
-        if not game:
-            return
-
         title = self.config.get('title', None)
         description = self.config.get('description', '')
         version = self.config.get('version', None)
@@ -180,6 +177,9 @@ class Metadata(YamlLoader):
             for filetype in filetypes:
                 if len(filetype) > 4:
                     raise ValueError('Filetype should be a maximum of 4 characters! (Hint, don\'t include the .)')
+
+        if not game:
+            return
 
         if game.meta is not None:
             if not force:
