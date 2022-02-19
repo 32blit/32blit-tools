@@ -1,0 +1,8 @@
+title: Rocks & Diamonds
+description: A pulse pounding, rock rollin', diamond hunting adventure
+author: gadgetoid
+icon:
+  file: no-icon.png
+splash:
+  file: image.png #this is the wrong size
+version: v1.0.0

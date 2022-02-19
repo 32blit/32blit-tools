@@ -79,3 +79,12 @@ def test_metadata_invalid_bin(test_resources, test_invalid_binary_file):
             '--config', str(test_resources / 'metadata-basic.yml'),
             '--file', test_invalid_binary_file.name
         ])
+
+def test_metadata_invalid_splash(test_resources, test_invalid_binary_file):
+    from ttblit import main
+
+    with pytest.raises(ValueError):
+        main([
+            'metadata',
+            '--config', str(test_resources / 'metadata-invalid-splash.yml')
+        ])
