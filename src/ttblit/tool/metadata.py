@@ -54,6 +54,40 @@ class Metadata(YamlLoader):
 
         return blit_icns.build({'data': image_bytes.read()})
 
+    def dump_game_metadata(self, file, game, dump_images):
+        print(f'\nParsed:      {file.name} ({game.bin.length:,} bytes)')
+        if game.relo is not None:
+            print(f'Relocations: Yes ({len(game.relo.relocs)})')
+        else:
+            print('Relocations: No')
+        if game.meta is not None:
+            print('Metadata:    Yes')
+            for field in ['title', 'description', 'version', 'author', 'category', 'url']:
+                print(f'{field.title()+":":13s}{getattr(game.meta.data, field)}')
+            if len(game.meta.data.filetypes) > 0:
+                print('    Filetypes:   ')
+                for filetype in game.meta.data.filetypes:
+                    print('       ', filetype)
+            if game.meta.data.icon is not None:
+                game_icon = game.meta.data.icon
+                print(f'    Icon:        {game_icon.data.width}x{game_icon.data.height} ({len(game_icon.data.palette)} colours) ({game_icon.type})')
+                if dump_images:
+                    image_icon = self.blit_image_to_pil(game_icon)
+                    image_icon_filename = file.with_suffix(".icon.png")
+                    image_icon.save(image_icon_filename)
+                    print(f'    Dumped to:   {image_icon_filename}')
+            if game.meta.data.splash is not None:
+                game_splash = game.meta.data.splash
+                print(f'    Splash:      {game_splash.data.width}x{game_splash.data.height} ({len(game_splash.data.palette)} colours) ({game_splash.type})')
+                if dump_images:
+                    image_splash = self.blit_image_to_pil(game_splash)
+                    image_splash_filename = file.with_suffix('.splash.png')
+                    image_splash.save(image_splash_filename)
+                    print(f'    Dumped to:   {image_splash_filename}')
+        else:
+            print('Metadata:    No')
+        print('')
+
     def run(self, config, icns, file, force, dump_images):
         if file is None and config is None:
             raise click.UsageError('the following arguments are required: --config and/or --file')
@@ -75,38 +109,7 @@ class Metadata(YamlLoader):
 
         # No config supplied, so dump the game info
         if config is None:
-            print(f'\nParsed:      {file.name} ({game.bin.length:,} bytes)')
-            if game.relo is not None:
-                print(f'Relocations: Yes ({len(game.relo.relocs)})')
-            else:
-                print('Relocations: No')
-            if game.meta is not None:
-                print('Metadata:    Yes')
-                for field in ['title', 'description', 'version', 'author', 'category', 'url']:
-                    print(f'{field.title()+":":13s}{getattr(game.meta.data, field)}')
-                if len(game.meta.data.filetypes) > 0:
-                    print('    Filetypes:   ')
-                    for filetype in game.meta.data.filetypes:
-                        print('       ', filetype)
-                if game.meta.data.icon is not None:
-                    game_icon = game.meta.data.icon
-                    print(f'    Icon:        {game_icon.data.width}x{game_icon.data.height} ({len(game_icon.data.palette)} colours) ({game_icon.type})')
-                    if dump_images:
-                        image_icon = self.blit_image_to_pil(game_icon)
-                        image_icon_filename = file.with_suffix(".icon.png")
-                        image_icon.save(image_icon_filename)
-                        print(f'    Dumped to:   {image_icon_filename}')
-                if game.meta.data.splash is not None:
-                    game_splash = game.meta.data.splash
-                    print(f'    Splash:      {game_splash.data.width}x{game_splash.data.height} ({len(game_splash.data.palette)} colours) ({game_splash.type})')
-                    if dump_images:
-                        image_splash = self.blit_image_to_pil(game_splash)
-                        image_splash_filename = file.with_suffix('.splash.png')
-                        image_splash.save(image_splash_filename)
-                        print(f'    Dumped to:   {image_splash_filename}')
-            else:
-                print('Metadata:    No')
-            print('')
+            self.dump_game_metadata(file, game, dump_images)
             return
 
         self.setup_for_config(config, None)
