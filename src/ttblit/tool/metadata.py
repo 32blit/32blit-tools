@@ -1,6 +1,7 @@
 import io
 import logging
 import pathlib
+import textwrap
 from datetime import datetime
 
 import click
@@ -8,9 +9,10 @@ from construct.core import StreamError
 from PIL import Image
 
 from ..asset.builder import AssetBuilder
+from ..asset.formatters.c import c_initializer
 from ..core.struct import (blit_game, blit_game_with_meta,
                            blit_game_with_meta_and_relo, blit_icns,
-                           struct_blit_image, struct_blit_pixel)
+                           struct_blit_image, struct_blit_image_bi, struct_blit_pixel)
 from ..core.yamlloader import YamlLoader
 
 
@@ -88,7 +90,40 @@ class Metadata(YamlLoader):
             print('Metadata:    No')
         print('')
 
-    def run(self, config, icns, file, force, dump_images):
+    def write_pico_bi_source(self, pico_bi_file, metadata):
+
+        title = metadata['title'].replace('"', r'\"')
+        author = metadata['author'].replace('"', r'\"')
+        description = metadata['description'].replace('"', r'\"')
+
+        icon = struct_blit_image_bi.build({'data': metadata['icon']})
+        splash = struct_blit_image_bi.build({'data': metadata['splash']})
+
+        open(pico_bi_file, "w").write(textwrap.dedent(
+            '''
+            #include "pico/binary_info.h"
+
+            #include "binary_info.hpp"
+
+            bi_decl(bi_program_name("{title}"))
+            bi_decl(bi_program_description("{description}"))
+            bi_decl(bi_program_version_string("{version}"))
+            bi_decl(bi_program_url("{url}"))
+
+            bi_decl(bi_string(BINARY_INFO_TAG_32BLIT, BINARY_INFO_ID_32BLIT_AUTHOR, "{author}"))
+            bi_decl(bi_string(BINARY_INFO_TAG_32BLIT, BINARY_INFO_ID_32BLIT_CATEGORY, "{category}"))
+
+            static const uint8_t metadata_icon[]{icon};
+            static const uint8_t metadata_splash[]{splash};
+
+            __bi_decl(bi_metadata_icon, &((binary_info_raw_data_t *)metadata_icon)->core, ".binary_info.keep.", __used);
+            __bi_decl(bi_metadata_splash, &((binary_info_raw_data_t *)metadata_splash)->core, ".binary_info.keep.", __used);
+            ''').format(title=title, description=description, version=metadata['version'], url=metadata['url'],
+                        author=author, category=metadata['category'], icon=c_initializer(icon), splash=c_initializer(splash)))
+
+        logging.info(f'Wrote pico-sdk binary info to {pico_bi_file}')
+
+    def run(self, config, icns, pico_bi, file, force, dump_images):
         if file is None and config is None:
             raise click.UsageError('the following arguments are required: --config and/or --file')
 
@@ -178,6 +213,25 @@ class Metadata(YamlLoader):
                 if len(filetype) > 4:
                     raise ValueError('Filetype should be a maximum of 4 characters! (Hint, don\'t include the .)')
 
+
+        metadata = {
+            'date': datetime.now().strftime("%Y%m%dT%H%M%S"),
+            'title': title,
+            'description': description,
+            'version': version,
+            'author': author,
+            'category': category,
+            'filetypes': filetypes,
+            'url': url,
+            'icon': icon,
+            'splash': splash
+        }
+
+        if pico_bi is not None:
+            if not pico_bi.is_file() or force:
+                self.write_pico_bi_source(pico_bi, metadata)
+
+        # Add to the game file
         if not game:
             return
 
@@ -187,18 +241,7 @@ class Metadata(YamlLoader):
                 return 1
 
         game.meta = {
-            'data': {
-                'date': datetime.now().strftime("%Y%m%dT%H%M%S"),
-                'title': title,
-                'description': description,
-                'version': version,
-                'author': author,
-                'category': category,
-                'filetypes': filetypes,
-                'url': url,
-                'icon': icon,
-                'splash': splash
-            }
+            'data': metadata
         }
 
         # Force through a non-optional builder if relo symbols exist
@@ -218,8 +261,9 @@ class Metadata(YamlLoader):
 @click.command('metadata', help='Tag a 32Blit .blit file with metadata')
 @click.option('--config', type=pathlib.Path, help='Metadata config file')
 @click.option('--icns', type=pathlib.Path, help='macOS icon output file')
+@click.option('--pico-bi', type=pathlib.Path, help='pico-sdk binary info source file output')
 @click.option('--file', type=pathlib.Path, help='Input file')
 @click.option('--force', is_flag=True, help='Force file overwrite')
 @click.option('--dump-images', is_flag=True, help='Dump images from metadata')
-def metadata_cli(config, icns, file, force, dump_images):
-    Metadata().run(config, icns, file, force, dump_images)
+def metadata_cli(config, icns, pico_bi, file, force, dump_images):
+    Metadata().run(config, icns, pico_bi, file, force, dump_images)

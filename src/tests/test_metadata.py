@@ -8,6 +8,10 @@ def test_icns_file():
     temp_icns = tempfile.NamedTemporaryFile('rb+', suffix='.icns')
     return temp_icns
 
+@pytest.fixture
+def test_bi_source_file():
+    temp_src = tempfile.NamedTemporaryFile('rb+', suffix='.cpp')
+    return temp_src
 
 @pytest.fixture
 def test_binary_file():
@@ -76,6 +80,17 @@ def test_metadata_dump(test_resources):
         main([
             'metadata',
             '--file', str(test_resources / 'doom-fire.blit')
+        ])
+
+def test_metadata_pico_bi(test_resources, test_binary_file, test_bi_source_file):
+    from ttblit import main
+
+    with pytest.raises(SystemExit):
+        main([
+            'metadata',
+            '--config', str(test_resources / 'metadata-basic.yml'),
+            '--pico-bi', test_bi_source_file.name,
+            '--force'
         ])
 
 def test_metadata_invalid_bin(test_resources, test_invalid_binary_file):
