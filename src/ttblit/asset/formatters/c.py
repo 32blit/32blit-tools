@@ -3,7 +3,7 @@ import textwrap
 from ..formatter import AssetFormatter
 
 wrapper = textwrap.TextWrapper(
-    initial_indent='    ', subsequent_indent='    ', width=80
+    break_on_hyphens=False, initial_indent='    ', subsequent_indent='    ', width=80
 )
 
 
