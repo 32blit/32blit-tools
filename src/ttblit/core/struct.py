@@ -138,3 +138,9 @@ blit_icns = Struct(
     'data_length' / Rebuild(Int32ub, len_(this.data) + 8),
     'data' / Bytes(this.data_length - 8)
 )
+
+struct_blit_image_bi = Struct(
+    'type' / Const(1, Int16ul), # raw data
+    'tag' / Const(b'3B'), # 32blit tag
+    'data' / struct_blit_image
+)
