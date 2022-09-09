@@ -88,6 +88,21 @@ def test_metadata_dump(test_resources):
             '--file', str(test_resources / 'doom-fire.blit')
         ])
 
+def test_metadata_dump_images(test_resources):
+    from ttblit import main
+
+    file = test_resources / 'doom-fire.blit'
+
+    with pytest.raises(SystemExit):
+        main([
+            'metadata',
+            '--file', str(file),
+            '--dump-images'
+        ])
+
+    assert open(file.with_suffix(".icon.png"), 'rb').read(4) == b'\x89PNG'
+    assert open(file.with_suffix(".splash.png"), 'rb').read(4) == b'\x89PNG'
+
 def test_metadata_pico_bi(test_resources, test_binary_file, test_bi_source_file):
     from ttblit import main
 
