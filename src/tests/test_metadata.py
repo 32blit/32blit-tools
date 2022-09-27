@@ -14,6 +14,12 @@ def test_bi_source_file():
     return temp_src
 
 @pytest.fixture
+def test_blmeta_file():
+    temp_src = tempfile.NamedTemporaryFile('rb+', suffix='.blmeta')
+    return temp_src
+
+
+@pytest.fixture
 def test_binary_file():
     temp_bin = tempfile.NamedTemporaryFile('wb', suffix='.bin')
     temp_bin.write(b'BLIT000000000000\x14\x00\x00\x00')
@@ -82,6 +88,21 @@ def test_metadata_dump(test_resources):
             '--file', str(test_resources / 'doom-fire.blit')
         ])
 
+def test_metadata_dump_images(test_resources):
+    from ttblit import main
+
+    file = test_resources / 'doom-fire.blit'
+
+    with pytest.raises(SystemExit):
+        main([
+            'metadata',
+            '--file', str(file),
+            '--dump-images'
+        ])
+
+    assert open(file.with_suffix(".icon.png"), 'rb').read(4) == b'\x89PNG'
+    assert open(file.with_suffix(".splash.png"), 'rb').read(4) == b'\x89PNG'
+
 def test_metadata_pico_bi(test_resources, test_binary_file, test_bi_source_file):
     from ttblit import main
 
@@ -90,6 +111,17 @@ def test_metadata_pico_bi(test_resources, test_binary_file, test_bi_source_file)
             'metadata',
             '--config', str(test_resources / 'metadata-basic.yml'),
             '--pico-bi', test_bi_source_file.name,
+            '--force'
+        ])
+
+def test_metadata_standalone(test_resources, test_binary_file, test_blmeta_file):
+    from ttblit import main
+
+    with pytest.raises(SystemExit):
+        main([
+            'metadata',
+            '--config', str(test_resources / 'metadata-basic.yml'),
+            '--metadata-file', test_blmeta_file.name,
             '--force'
         ])
 
