@@ -106,7 +106,7 @@ class AssetTool:
         @functools.wraps(f)
         def cmd(input_file, input_type, output_file, output_format, symbol_name, force, **kwargs):
             aw = AssetWriter()
-            aw.add_asset(symbol_name, f(input_file, input_type, **kwargs))
+            aw.add_asset(symbol_name, f(input_file, input_type, **kwargs), input_file)
             aw.write(output_format, output_file, force, report=False)
 
         self._commands[self.name] = cmd

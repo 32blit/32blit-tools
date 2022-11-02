@@ -8,10 +8,10 @@ class AssetWriter:
     def __init__(self):
         self._assets = {}
 
-    def add_asset(self, symbol, data):
+    def add_asset(self, symbol, data, path):
         if symbol in self._assets:
             raise NameError(f'Symbol {symbol} has already been added.')
-        self._assets[symbol] = data
+        self._assets[symbol] = {"data": data, "path":path}
 
     def _sorted(self, sort):
         if sort is None:
@@ -19,7 +19,7 @@ class AssetWriter:
         elif sort == 'symbol':
             return sorted(self._assets.items())
         elif sort == 'size':
-            return sorted(self._assets.items(), key=lambda i: len(i[1]))
+            return sorted(self._assets.items(), key=lambda i: len(i.data[1]))
         else:
             raise ValueError(f"Don't know how to sort by {sort}.")
 
@@ -38,7 +38,7 @@ class AssetWriter:
     def write(self, fmt=None, path=None, force=False, report=True, sort=None):
         fmt = self._get_format(fmt, path)
         assets = self._sorted(sort)
-        fragments = [fmt.fragments(symbol, data) for symbol, data in assets]
+        fragments = [fmt.fragments(symbol, asset["data"], asset["path"]) for symbol, asset in assets]
         components = {key: [f[key] for f in fragments] for key in fragments[0]}
         outpaths = []
 
@@ -61,8 +61,8 @@ class AssetWriter:
             lines = [
                 f'Formatter: {fmt.name}',
                 'Files:', *(f'    {path}' for path in outpaths),
-                'Assets:', *('    {}: {}'.format(symbol, len(data)) for symbol, data in assets),
-                'Total size: {}'.format(sum(len(data) for symbol, data in assets)),
+                'Assets:', *('    {}: {}'.format(symbol, len(asset["data"])) for symbol, asset in assets),
+                'Total size: {}'.format(sum(len(asset["data"]) for symbol, asset in assets)),
                 '',
             ]
             path.with_name(path.stem + '_report.txt').write_text('\n'.join(lines))
