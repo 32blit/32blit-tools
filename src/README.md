@@ -118,6 +118,14 @@ Supported formats:
 
 # Changelog
 
+0.7.3
+-----
+
+* Validate metadata image sizes - thanks @Daft-Freak
+* Support for standalone metadata output - thanks @Daft-Freak
+* Support for generating a source file with Pico (RP2040) binary info - thanks @Daft-Freak
+* Output slightly more optimised C output - thanks @Daft-Freak
+
 0.7.2
 -----
 
