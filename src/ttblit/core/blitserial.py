@@ -122,8 +122,10 @@ class BlitSerial(serial.Serial):
             raise RuntimeError(f"Failed to save/flash {file_name}: {response.decode()}")
 
     def erase(self, offset):
-        self.write(b'32BLERSE\x00')
+        logging.info(f'Deleting at offset {offset}')
+        self.write(b'32BLERSE')
         self.write(struct.pack("<I", offset))
+        self.write(b'\x00')
 
     def list(self):
         self.write(b'32BL__LS\x00')
