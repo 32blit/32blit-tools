@@ -69,7 +69,7 @@ class BlitSerial(serial.Serial):
                 return
             except BlitSerialException:
                 time.sleep(0.1)
-        raise RuntimeError(f"Failed to connect to 32Blit on {serial.port} after reset")
+        raise RuntimeError(f"Failed to connect to 32Blit on {self.port} after reset")
 
     def send_file(self, file, drive, directory=pathlib.PurePosixPath('/'), auto_launch=False):
         sent_byte_count = 0
