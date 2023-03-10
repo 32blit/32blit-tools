@@ -69,7 +69,7 @@ class BlitSerial(serial.Serial):
                 return
             except BlitSerialException:
                 time.sleep(0.1)
-        raise RuntimeError(f"Failed to connect to 32Blit on {serial.port} after reset")
+        raise RuntimeError(f"Failed to connect to 32Blit on {self.port} after reset")
 
     def send_file(self, file, drive, directory=pathlib.PurePosixPath('/'), auto_launch=False):
         sent_byte_count = 0
@@ -122,8 +122,10 @@ class BlitSerial(serial.Serial):
             raise RuntimeError(f"Failed to save/flash {file_name}: {response.decode()}")
 
     def erase(self, offset):
-        self.write(b'32BLERSE\x00')
+        logging.info(f'Deleting at offset {offset}')
+        self.write(b'32BLERSE')
         self.write(struct.pack("<I", offset))
+        self.write(b'\x00')
 
     def list(self):
         self.write(b'32BL__LS\x00')
