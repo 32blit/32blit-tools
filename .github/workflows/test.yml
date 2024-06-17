@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   test:
@@ -19,9 +19,9 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt update && sudo apt install gcc-arm-none-eabi
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
       - name: Install Dependencies
