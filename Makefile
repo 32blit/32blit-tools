@@ -64,7 +64,7 @@ python-dist: python-clean python-wheels python-sdist
 	-python3 -m twine check src/dist/*
 
 python-testdeploy: python-dist
-	twine upload --repository-url https://test.pypi.org/legacy/ src/dist/*
+	twine upload --repository testpypi src/dist/*
 
 python-deploy: check python-dist
 	twine upload src/dist/*

@@ -118,6 +118,13 @@ Supported formats:
 
 # Changelog
 
+0.7.4
+-----
+
+* Fix bug when deleting from flash - thanks @ali1234
+* Fix serial port in error message - thanks @ali1234
+* Fix image encoding - thanks @Daft-Freak
+
 0.7.3
 -----
 
