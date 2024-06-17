@@ -1,4 +1,4 @@
-def test_image_struct():
+def test_image_struct(test_resources):
     from ttblit.core.struct import struct_blit_image
     from ttblit.core.palette import Palette
 
@@ -13,16 +13,26 @@ def test_image_struct():
         b1 = struct_blit_image.build(p)
         assert b1 == b
 
-    # TODO: Use a real image to test?
+    # default splash image
     palette = Palette()
-    palette.get_entry(255, 255, 255, 255)
+    palette.get_entry(  0,   0,   0, 255)
+    palette.get_entry( 99, 175, 227, 255)
+    palette.get_entry( 45, 100, 143, 255)
+    palette.get_entry( 56,  66,  67, 255)
+    palette.get_entry( 52,  62,  59, 255)
+    palette.get_entry( 37,  55,  60, 255)
+    palette.get_entry( 12,  29,  33, 255)
+    palette.get_entry(234,  92, 181, 255)
+    palette.get_entry(100, 246, 178, 255)
+    palette.get_entry(234, 226,  81, 255)
+    palette.get_entry(140, 139, 144, 255)
 
     image_dict = {
         'data': {
-            'width': 0x10,
-            'height': 0x4,
+            'width': 128,
+            'height': 96,
             'palette': palette.tostruct(),
-            'pixels': b'\x00' * 0x40,
+            'pixels': open(test_resources / 'no_image.raw', 'rb').read(),
         }
     }
 

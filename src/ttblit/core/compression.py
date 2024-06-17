@@ -47,7 +47,7 @@ class RL:
         stream = ConstBitStream(bytes=data)
         result = []
         while len(result) < output_length:
-            t = stream.read(1)
+            t = stream.read(1).uint
             if t:
                 count = stream.read(8).uint + 1
             else:
