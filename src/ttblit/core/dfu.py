@@ -118,7 +118,7 @@ Targets: {parsed.fields.value.bTargets}''')
 ''')
 
 
-def build(input_file, output_file, address, force=False, id_product=0x0000, id_vendor=0x0483):
+def build(input_file, output_file, address, force=False, id_product=0xdf11, id_vendor=0x0483):
     if not output_file.parent.is_dir():
         raise RuntimeError(f'Output directory "{output_file.parent}" does not exist!')
     elif output_file.is_file() and not force:
