@@ -21,7 +21,7 @@ def tiled_to_binary(data, empty_tile, output_struct):
     layer_data = []
     transform_data = []
     # Sort layers by ID (since .tmx files can have them in arbitrary orders)
-    layers.sort(key=lambda l: int(l.get('id')))
+    layers.sort(key=lambda layer: int(layer.get('id')))
 
     use_16bits = False
 

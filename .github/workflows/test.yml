@@ -26,11 +26,10 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade setuptools tox
+          make dev-deps
       - name: Run Tests
-        working-directory: src
         run: |
-          tox -e py
+          make qa
       - name: Coverage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
