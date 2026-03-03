@@ -36,9 +36,8 @@ jobs:
         path: 32blit-sdk
 
     - name: Install 32Blit Tools
-      working-directory: src
       run: |
-        python3 setup.py install --user
+        python3 -m pip install src/ --user
 
     - name: Test Setup Tool
       run: |
