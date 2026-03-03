@@ -33,6 +33,7 @@ pytest:
 	cd src && tox -e py
 
 build:
+	@cp README.md src/README.md
 	@cd src && hatch build src/
 
 clean:
