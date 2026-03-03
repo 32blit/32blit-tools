@@ -21,3 +21,4 @@ library/debian/
 .vscode
 /.idea
 /venv
+src/dist
