@@ -1,3 +1,114 @@
 [build-system]
-requires = ["setuptools>=40.8.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-fancy-pypi-readme", "hatch-requirements-txt"]
+build-backend = "hatchling.build"
+
+[project]
+name = "32blit"
+dynamic = ["version", "readme", "optional-dependencies"]
+description = "32Blit asset preparation and upload tools"
+license = {file = "LICENSE"}
+requires-python = ">= 3.7"
+authors = [
+    { name = "Philip Howard", email = "phil@pimoroni.com" },
+]
+maintainers = [
+    { name = "Philip Howard", email = "phil@pimoroni.com" },
+]
+keywords = [
+    "32Blit CLI"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Hardware",
+]
+dependencies = [
+    "click>=7",
+    "pillow",
+    "pyyaml",
+    "bitstring",
+    "pyserial",
+    "tqdm",
+    "freetype-py",
+    "construct>=2.9",
+    "pyelftools"
+]
+
+[project.urls]
+GitHub = "https://www.github.com/pimoroni/32blit-tools"
+Homepage = "https://32blit.com"
+
+[project.scripts]
+32blit = "ttblit:main"
+
+[tool.hatch.version]
+path = "ttblit/__init__.py"
+
+[tool.hatch.build]
+include = [
+    "ttblit",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "*"
+]
+exclude = [
+    ".*",
+    "dist"
+]
+
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = "text/markdown"
+fragments = [
+  { path = "README.md" },
+  { text = "\n" },
+  { path = "CHANGELOG.md" }
+]
+
+[tool.ruff]
+exclude = [
+    '.tox',
+    '.egg',
+    '.git',
+    '__pycache__',
+    'build',
+    'dist'
+]
+line-length = 200
+
+[tool.codespell]
+skip = """
+./.tox,\
+./.egg,\
+./.git,\
+./__pycache__,\
+./build,\
+./dist.\
+"""
+
+[tool.isort]
+extend_skip = [
+    'tests/'
+]
+
+[tool.check-manifest]
+ignore = [
+    'tox.ini',
+    'tests/*',
+    '.coveragerc',
+]
