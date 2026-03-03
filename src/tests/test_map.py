@@ -30,7 +30,7 @@ def test_map_tiled_struct_8bit():
 </map>
 ''', 'tiled', output_struct=True)
     # Tile indexes 1, 2, 3, 4 will be remapped -1 to 0, 1, 2, 3
-    assert output == struct.pack('<4sHHHHHH4B', b'MTMX', 16, 0, 0, 4, 1, 1, 0, 1, 2, 3)
+    assert output == struct.pack('<4sHHHHHH4B13s', b'MTMX', 16, 4, 0, 4, 1, 1, 0, 1, 2, 3, b'Tile Layer 1\0')
 
 
 def test_map_tiled_struct_16bit():
@@ -47,7 +47,7 @@ def test_map_tiled_struct_16bit():
 ''', 'tiled', output_struct=True)
     # Tile indexes 256, 257, 258, 259 will be remapped -1 to 255, 256, 257, 258
     # output tile data will be 16bit!
-    assert output == struct.pack('<4sHHHHHH4H', b'MTMX', 16, 1, 0, 4, 1, 1, 255, 256, 257, 258)
+    assert output == struct.pack('<4sHHHHHH4H13s', b'MTMX', 16, 5, 0, 4, 1, 1, 255, 256, 257, 258, b'Tile Layer 1\0')
 
 
 def test_map_tiled_layer_reorder():
@@ -67,7 +67,7 @@ def test_map_tiled_layer_reorder():
  </layer>
 </map>
 ''', 'tiled', output_struct=True)
-    assert output == struct.pack('<4sHHHHHH8B', b'MTMX', 16, 0, 0, 4, 1, 2, 0, 1, 2, 3, 4, 5, 6, 7)
+    assert output == struct.pack('<4sHHHHHH8B26s', b'MTMX', 16, 4, 0, 4, 1, 2, 0, 1, 2, 3, 4, 5, 6, 7, b'Tile Layer 1\0Tile Layer 2\0')
 
 
 def test_map_empty_tiled_remap_empty():

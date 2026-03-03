@@ -20,6 +20,7 @@ def tiled_to_binary(data, empty_tile, output_struct):
     layers = root.findall('layer')
     layer_data = []
     transform_data = []
+    layer_names = []
     # Sort layers by ID (since .tmx files can have them in arbitrary orders)
     layers.sort(key=lambda l: int(l.get('id')))
 
@@ -43,6 +44,8 @@ def tiled_to_binary(data, empty_tile, output_struct):
         layer_data += layer
         transform_data += layer_transforms
 
+        layer_names.append(layer_csv.attrib['name'])
+
     if use_16bits:
         layer_data = struct.pack(f'<{len(layer_data)}H', *layer_data)
     else:
@@ -65,6 +68,10 @@ def tiled_to_binary(data, empty_tile, output_struct):
         else:
             transform_data = []
 
+        # append layer names at the very end
+        name_data = b'\0'.join([x.encode() for x in layer_names]) + b'\0'
+        flags |= (1 << 2) # have names
+
         return struct.pack(
             '<4sHHHHHH',
             bytes('MTMX', encoding='utf-8'),
@@ -74,7 +81,7 @@ def tiled_to_binary(data, empty_tile, output_struct):
             width,
             height,
             layer_count
-        ) + layer_data + bytes(transform_data)
+        ) + layer_data + bytes(transform_data) + name_data
 
     else:
         # Just return the raw layer data
