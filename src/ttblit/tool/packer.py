@@ -79,7 +79,7 @@ class Packer(YamlLoader):
 
             aw.write(options.get('type'), self.destination_path / path.name, force=force)
 
-    def build_assets(self, input_files, working_path, name=None, type=None, prefix=None, **builder_options):
+    def build_assets(self, input_files, working_path, name=None, type=None, prefix=None, index=None, **builder_options):
         if type is None:
             # Glob files all have the same suffix, so we only care about the first one
             try:
@@ -110,7 +110,7 @@ class Packer(YamlLoader):
                 input_type=input_type, input_subtype=input_subtype, prefix=prefix
             )
 
-            yield symbol_name, builder.from_file(file, input_subtype, **builder_options)
+            yield symbol_name, builder.from_file(file, input_subtype, **builder_options), index
             logging.info(f' - {typestr} {file} -> {symbol_name}')
 
 
