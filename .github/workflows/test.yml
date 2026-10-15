@@ -29,7 +29,7 @@ jobs:
           make dev-deps
       - name: Run Tests
         run: |
-          make qa
+          make pytest
       - name: Coverage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
