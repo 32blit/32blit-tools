@@ -91,6 +91,30 @@ exclude = [
 ]
 line-length = 200
 
+[tool.ruff.lint]
+ignore = [
+    'B008',
+    'EXE001',
+    'FURB105',
+    'FURB122',
+    'I001',
+    'PERF102',
+    'PIE808',
+    'PLR1730',
+    'PLW1510',
+    'RUF012',
+    'RUF059',
+    'SIM102',
+    'SIM115',
+    'SIM118',
+    'LOG015',
+    'PLW0211',
+    'PLW0133',
+    'UP026',
+    'UP032',
+    'UP039'
+]
+
 [tool.codespell]
 skip = """
 ./.tox,\
