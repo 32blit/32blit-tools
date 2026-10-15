@@ -37,7 +37,7 @@ dependencies = [
     "click>=7",
     "pillow",
     "pyyaml",
-    "bitstring",
+    "bitstring<5",
     "pyserial",
     "tqdm",
     "freetype-py",
