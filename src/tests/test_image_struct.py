@@ -1,6 +1,6 @@
 def test_image_struct(test_resources):
-    from ttblit.core.struct import struct_blit_image
     from ttblit.core.palette import Palette
+    from ttblit.core.struct import struct_blit_image
 
     def check_image(i, t):
         b = struct_blit_image.build(i)

@@ -61,8 +61,8 @@ class AssetWriter:
             lines = [
                 f'Formatter: {fmt.name}',
                 'Files:', *(f'    {path}' for path in outpaths),
-                'Assets:', *('    {}: {}'.format(symbol, len(data)) for symbol, data in assets),
-                'Total size: {}'.format(sum(len(data) for symbol, data in assets)),
+                'Assets:', *(f'    {symbol}: {len(data)}' for symbol, data in assets),
+                f'Total size: {sum(len(data) for symbol, data in assets)}',
                 '',
             ]
             path.with_name(path.stem + '_report.txt').write_text('\n'.join(lines))

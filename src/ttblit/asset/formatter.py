@@ -4,7 +4,7 @@ import pkgutil
 from . import formatters
 
 
-class AssetFormatter():
+class AssetFormatter:
     _by_name = {}
     _by_extension = {}
 

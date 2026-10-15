@@ -36,16 +36,16 @@ def process_image_font(data, num_chars, height, horizontal_spacing, space_width)
     font_data = []
     font_w = []  # per character width for variable-width mode
 
-    for c in range(0, num_chars):
+    for c in range(num_chars):
         char_w = 0
 
         char_col = c % cols
         char_row = c // cols
 
-        for x in range(0, char_width):
+        for x in range(char_width):
             byte = 0
 
-            for y in range(0, char_height):
+            for y in range(char_height):
                 bit = y % 8
 
                 # next byte
@@ -55,8 +55,7 @@ def process_image_font(data, num_chars, height, horizontal_spacing, space_width)
 
                 if image.getpixel((x + char_col * char_width, y + char_row * char_height)) != 0:
                     byte |= 1 << bit
-                    if x + 1 > char_w:
-                        char_w = x + 1
+                    char_w = max(char_w, x + 1)
 
             font_data.append(byte)
 
@@ -85,35 +84,32 @@ def process_ft_font(data, num_chars, base_char, height):
     font_w = []
 
     # measure the actual size of the characters (may not match requested)
-    for c in range(0, num_chars):
+    for c in range(num_chars):
         face.load_char(c + base_char, freetype.FT_LOAD_RENDER | freetype.FT_LOAD_TARGET_MONO)
 
         font_w.append(face.glyph.advance.x >> 6)
 
-        if face.glyph.bitmap.width + face.glyph.bitmap_left > char_width:
-            char_width = face.glyph.bitmap.width + face.glyph.bitmap_left
+        char_width = max(char_width, face.glyph.bitmap.width + face.glyph.bitmap_left)
 
-        if (height - face.glyph.bitmap_top) + face.glyph.bitmap.rows > char_height:
-            char_height = height - face.glyph.bitmap_top + face.glyph.bitmap.rows
+        char_height = max(char_height, (height - face.glyph.bitmap_top) + face.glyph.bitmap.rows)
 
-        if height - face.glyph.bitmap_top < min_y:
-            min_y = height - face.glyph.bitmap_top
+        min_y = min(min_y, height - face.glyph.bitmap_top)
 
     char_height -= min_y  # trim empty space at the top
 
     font_data = []
 
     # now do the conversion
-    for c in range(0, num_chars):
+    for c in range(num_chars):
         face.load_char(c + base_char, freetype.FT_LOAD_RENDER | freetype.FT_LOAD_TARGET_MONO)
 
         x_off = face.glyph.bitmap_left
         y_off = height - face.glyph.bitmap_top - min_y
 
-        for x in range(0, char_width):
+        for x in range(char_width):
             byte = 0
 
-            for y in range(0, char_height):
+            for y in range(char_height):
                 bit = y % 8
 
                 # next byte
