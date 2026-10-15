@@ -4,7 +4,7 @@ import pathlib
 import yaml
 
 
-class YamlLoader():
+class YamlLoader:
 
     def setup_for_config(self, config_file, output_path, files=None):
         self.working_path = pathlib.Path('.')

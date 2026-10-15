@@ -2,7 +2,7 @@ import pytest
 
 
 def test_version(capsys):
-    from ttblit import main, __version__
+    from ttblit import __version__, main
 
     with pytest.raises(SystemExit):
         main(['version'])
