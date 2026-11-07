@@ -23,7 +23,7 @@
 
 * Added DFU tool
 * Filename now shown when flashing
-* Remove unecessary reset-to-firmware code
+* Remove unnecessary reset-to-firmware code
 * Fixed GIMP palette handling
 * Support for more image font layouts (multiple row support)
 * Make freetype a soft dependency when processing font data

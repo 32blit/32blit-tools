@@ -89,7 +89,7 @@ class Metadata(YamlLoader):
                     print(f'    Dumped to:   {image_splash_filename}')
         else:
             print('Metadata:    No')
-        print('')
+        print()
 
     def write_pico_bi_source(self, pico_bi_file, metadata):
 

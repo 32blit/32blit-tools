@@ -12,7 +12,7 @@ binary_typemap = {
 
 
 def csv_to_list(input_data, base):
-    if type(input_data) == bytes:
+    if isinstance(input_data, bytes):
         input_data = input_data.decode('utf-8')
 
     # Strip leading/trailing whitespace

@@ -1,6 +1,7 @@
-import pytest
 import tempfile
 import textwrap
+
+import pytest
 
 
 def test_palette_entries():

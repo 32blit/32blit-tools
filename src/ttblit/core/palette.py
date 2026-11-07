@@ -7,7 +7,7 @@ import struct
 from PIL import Image
 
 
-class Colour():
+class Colour:
     def __init__(self, colour):
         if type(colour) is Colour:
             self.r, self.g, self.b = colour
@@ -23,7 +23,7 @@ class Colour():
         return f'Colour{self.r, self.g, self.b}'
 
 
-class Palette():
+class Palette:
     def __init__(self, palette_file=None):
         self.transparent = None
         self.entries = []

@@ -1,6 +1,6 @@
 
-import tempfile
 import pathlib
+import tempfile
 
 import pytest
 

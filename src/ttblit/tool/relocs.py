@@ -121,8 +121,7 @@ def relocs_cli(bin_file, elf_file, output):
 
             out_f.write(b"RELO")
             out_f.write(struct.pack("<L", len(all_offsets)))
-            for off in all_offsets:
-                out_f.write(struct.pack("<L", off))
+            out_f.writelines(struct.pack("<L", off) for off in all_offsets)
 
             out_f.write(open(bin_file, 'rb').read())
 

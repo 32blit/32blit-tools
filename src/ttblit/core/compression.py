@@ -1,6 +1,6 @@
 from math import ceil
 
-from bitstring import BitArray, Bits, ConstBitStream
+from bitstring import BitArray, Bits, Reader
 from construct import Adapter
 
 
@@ -44,15 +44,15 @@ class RL:
 
     @staticmethod
     def decompress(data, bit_length, output_length):
-        stream = ConstBitStream(bytes=data)
+        stream = Reader(Bits.from_bytes(data))
         result = []
         while len(result) < output_length:
-            t = stream.read(1).uint
+            t = stream.read_bits(1).uint
             if t:
-                count = stream.read(8).uint + 1
+                count = stream.read_bits(8).uint + 1
             else:
                 count = 1
-            result.extend([stream.read(bit_length).uint] * count)
+            result.extend([stream.read_bits(bit_length).uint] * count)
         return bytes(result)
 
 
@@ -63,7 +63,7 @@ class PK:
 
     @staticmethod
     def decompress(data, bit_length, num_pixels):
-        return bytes(i.uint for i in Bits(bytes=data).cut(bit_length))
+        return bytes(i.uint for i in Bits.from_bytes(data).cut(bit_length))
 
 
 packers = {cls.__name__: cls for cls in (PK, RL)}

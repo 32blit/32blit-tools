@@ -1,8 +1,9 @@
 import io
 import pathlib
+from unittest import mock
 
-import mock
 import pytest
+
 from ttblit.core.blitserial import BlitSerial, BlitSerialException
 
 
@@ -122,8 +123,9 @@ def test_erase():
 
 def test_list():
     import struct
-    from ttblit.core.struct import struct_blit_meta_standalone
+
     from ttblit.core.palette import Palette
+    from ttblit.core.struct import struct_blit_meta_standalone
 
     palette = Palette()
     palette.get_entry(255, 255, 255, 255)
