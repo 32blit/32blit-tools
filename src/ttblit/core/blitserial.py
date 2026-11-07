@@ -9,6 +9,11 @@ from tqdm import tqdm
 
 from ..core.struct import struct_blit_meta_standalone
 
+AUTODETECT_DEVICES = {
+    (0x0483, 0x5740): "32Blit",
+    (0x2e8a, 0x1101): "Tufty 2350"
+}
+
 
 class BlitSerialException(Exception):
     pass
@@ -22,9 +27,10 @@ class BlitSerial(serial.Serial):
     def find_comport(cls):
         ret = []
         for comport in serial.tools.list_ports.comports():
-            if comport.vid == 0x0483 and comport.pid == 0x5740:
-                logging.info(f'Found 32Blit on {comport.device}')
-                ret.append(comport.device)
+            for (vid, pid), name in AUTODETECT_DEVICES.items():
+                if comport.vid == vid and comport.pid == pid:
+                    logging.info(f'Found {name} on {comport.device}')
+                    ret.append(comport.device)
 
         if ret:
             return ret
